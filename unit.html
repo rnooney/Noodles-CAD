@@ -652,7 +652,7 @@
       });
     }
 
-    // --- HARDWARE GPS AVL TRACKING ---
+    // --- HARDWARE GPS AVL TRACKING WITH AUTO-HEARTBEAT ---
     function toggleGpsTracking() {
       const btn = document.getElementById('btnGpsToggle');
       if (gpsWatchId !== null) {
@@ -685,6 +685,7 @@
                 type: 'LIVE_GPS_AVL',
                 lastUpdated: Date.now()
               });
+              db.ref(`units/${activeUnit}/lastUpdated`).set(Date.now());
             }
           },
           (err) => {
