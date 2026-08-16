@@ -1,0 +1,2978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CAD - Dispatch Control Console</title>
+  
+  <!-- Leaflet CSS & Geoman Polygon Drawing Tools -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 15px; }
+    .container { width: 95%; max-width: 1400px; margin: 0 auto; background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #333; }
+    h1, h2, h3 { color: #e63946; margin-top: 0; }
+
+    /* NAVIGATION TABS */
+    .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; }
+    .tab-btn.active { background: #e63946; color: #fff; border-color: #e63946; }
+
+    /* TAB PAGES */
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+
+    /* FORM STYLES */
+    input[type="text"], input[type="password"], input[type="number"], select { width: 98%; padding: 12px; font-size: 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; margin-bottom: 15px; box-sizing: border-box; }
+    .checkbox-group { margin: 10px 0 20px 0; display: flex; flex-wrap: wrap; gap: 12px; background: #2a2a2a; padding: 12px; border-radius: 4px; border: 1px solid #333; }
+    .checkbox-group label { font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+    /* AUTOCOMPLETE DROPDOWN STYLES */
+    .autocomplete-container { position: relative; width: 100%; }
+    .autocomplete-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #2a2a2a;
+      border: 1px solid #555;
+      border-radius: 0 0 6px 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 999;
+      display: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .autocomplete-item {
+      padding: 12px;
+      border-bottom: 1px solid #3d3d3d;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .autocomplete-item:hover {
+      background: #e63946;
+      color: #fff;
+    }
+
+    /* INCIDENT CARDS */
+    .incident-card { background: #2a2a2a; padding: 18px; margin-bottom: 14px; border-left: 6px solid #e63946; border-radius: 0 6px 6px 0; }
+    .incident-card.pending { border-left-color: #f1c40f; background: #2a2818; }
+    .incident-header { display: flex; justify-content: space-between; align-items: center; }
+
+    /* UNIT ROSTER CARDS */
+    .unit-row { display: flex; flex-direction: column; padding: 14px; margin: 10px 0; background: #2a2a2a; border-radius: 4px; border: 1px solid #333; }
+    .unit-header { display: flex; justify-content: space-between; align-items: center; }
+    .unit-controls-row { display: flex; gap: 15px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+    .role-badges { font-size: 11px; color: #aaa; margin-top: 6px; }
+    .tag { background: #333; border: 1px solid #555; padding: 3px 8px; border-radius: 3px; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
+
+    /* UNIT MANAGER CREATOR PANEL */
+    .unit-creator-card { background: #252525; padding: 20px; border-radius: 6px; border: 1px solid #444; margin-bottom: 20px; }
+    .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; background: #1a1a1a; padding: 12px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
+    .role-grid label { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+    /* MAP TOOLBAR */
+    .map-toolbar { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px 6px 0 0; border: 1px solid #444; border-bottom: none; }
+
+    /* STATUS COLORS */
+    .status-DISPATCHED { color: #2ecc71; font-weight: bold; }
+    .status-OUT_OF_SERVICE { color: #7f8c8d; font-weight: bold; }
+    .status-ON_CALL { color: #8e44ad; font-weight: bold; }
+    .status-IN_QUARTERS { color: #e63946; font-weight: bold; }
+    .status-AVAILABLE { color: #e63946; font-weight: bold; }
+    .status-ENROUTE { color: #2ecc71; font-weight: bold; }
+    .status-ONSCENE { color: #2980b9; font-weight: bold; }
+    .status-TRANSPORTING { color: #f1c40f; font-weight: bold; }
+    .status-ARRIVED { color: #f1c40f; font-weight: bold; }
+
+    /* BUTTONS */
+    button { padding: 10px 18px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    button:hover { background: #c1121f; }
+    
+    .btn-manage { background: #f39c12; font-size: 13px; margin-right: 6px; color: #000; }
+    .btn-manage:hover { background: #d35400; color: #fff; }
+
+    .btn-clear { background: #27ae60; font-size: 13px; }
+    .btn-clear:hover { background: #1e8449; }
+    
+    .btn-upgrade { background: #d35400; color: #fff; font-size: 14px; }
+    .btn-upgrade:hover { background: #e67e22; }
+
+    .btn-edit-unit { background: #f39c12; color: #000; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 10px; }
+    .btn-edit-unit:hover { background: #d35400; color: #fff; }
+
+    .btn-remove-unit { background: #c0392b; color: #fff; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 6px; }
+    .btn-remove-unit:hover { background: #e74c3c; }
+
+    .btn-header-mgr { background: #2980b9; float: right; margin-top: -10px; margin-left: 8px; }
+    .btn-header-mgr:hover { background: #3498db; }
+
+    .btn-action-sm { font-size: 11px; padding: 4px 10px; margin-left: 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
+    .btn-edit-sm { background: #f39c12; color: #000; }
+    .btn-edit-sm:hover { background: #d35400; color: #fff; }
+    .btn-delete-sm { background: #c0392b; }
+    .btn-delete-sm:hover { background: #e74c3c; }
+
+    .btn-suggest { background: #f39c12; color: #000; font-size: 14px; margin-right: 10px; }
+    .btn-suggest:hover { background: #d35400; color: #fff; }
+
+    .btn-global-quarters { background: #2980b9; color: #fff; margin-right: 10px; }
+    .btn-global-quarters:hover { background: #3498db; }
+
+    .btn-global-avail { background: #27ae60; color: #fff; }
+    .btn-global-avail:hover { background: #2ea043; }
+
+    .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
+    .btn-map-control:hover { background: #2c3e50; }
+
+    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; }
+    #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; }
+
+    /* LEAFLET UNIT BUBBLE MARKER CSS */
+    .unit-bubble-icon-container { background: transparent !important; border: none !important; }
+    .unit-bubble-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    .unit-bubble-box { display: flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 16px; font-weight: bold; font-size: 12px; border: 2px solid #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.7); white-space: nowrap; text-align: center; }
+
+    /* MULTI-RADIO CHANNEL STYLES */
+    .radio-assignment-row { display: flex; gap: 8px; align-items: center; background: #181818; padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #333; }
+    .radio-badge-tag { background: #16a085; color: #fff; padding: 3px 7px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-right: 4px; display: inline-block; }
+
+    /* BOX AREA BADGE */
+    .box-badge { background: #8e44ad; color: #fff; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; margin-left: 6px; display: inline-block; }
+
+    /* MODAL WINDOW STYLES */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: #1e1e1e; width: 92%; max-width: 850px; padding: 25px; border-radius: 8px; border: 1px solid #444; max-height: 88vh; overflow-y: auto; }
+    .log-box { background: #0a0a0a; border: 1px solid #333; height: 220px; overflow-y: auto; padding: 12px; font-family: monospace; font-size: 13px; margin-top: 10px; }
+    .log-entry { margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+    .timestamp { color: #888; margin-right: 8px; }
+    .section-title { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .badge-pending { background: #f1c40f; color: #000; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+    .badge-dispatched { background: #e63946; color: #fff; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+
+    /* SCROLLABLE UNIT SELECTION LIST */
+    .unit-dispatch-list { max-height: 340px; overflow-y: auto; background: #0a0a0a; border: 1px solid #333; padding: 12px; border-radius: 4px; margin-bottom: 15px; }
+    .unit-dispatch-item { padding: 12px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .unit-dispatch-item:hover { background: #222; }
+    .dispatch-unit-select { width: 18px; height: 18px; cursor: pointer; accent-color: #e63946; }
+
+    .tag-builder-btn { background: #2a2a2a; border: 1px solid #555; color: #fff; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-right: 6px; margin-bottom: 6px; display: inline-block; }
+    .tag-builder-btn:hover { background: #e63946; border-color: #e63946; }
+    .run-card-chip { background: #e63946; color: #fff; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; margin-right: 6px; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; }
+    .run-card-chip span { cursor: pointer; color: #f1c40f; font-weight: bold; }
+
+    .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div style="overflow: hidden;">
+      <h1 style="margin-bottom: 15px; float: left;">CAD Dispatcher Console</h1>
+      <button class="btn-header-mgr" onclick="openStationModal()">Manage Stations</button>
+      <button class="btn-header-mgr" onclick="openCallTypesModal()">Call Types</button>
+      <button class="btn-header-mgr" onclick="openRadioChannelsModal()">Radio Channels</button>
+      <button class="btn-header-mgr" onclick="openTraitsModal()">Trait Categories</button>
+      <button class="btn-header-mgr" style="background:#8e44ad;" onclick="openBoxAreasModal()">Box Areas</button>
+      <button class="btn-header-mgr" style="background:#16a085;" onclick="openSoundSettingsModal()">Sound Settings</button>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="nav-tabs">
+      <div class="tab-btn active" onclick="switchTab('callTakingTab', this)">Call Taking</div>
+      <div class="tab-btn" onclick="switchTab('activeCallsTab', this)">Active / Pending Calls</div>
+      <div class="tab-btn" onclick="switchTab('unitListTab', this)">Unit Roster</div>
+      <div class="tab-btn" onclick="switchTab('mapTab', this)">Live Map</div>
+    </div>
+
+    <!-- TAB 1: CALL TAKING PAGE -->
+    <div class="tab-page active" id="callTakingTab">
+      <h2>Call Entry Form</h2>
+      
+      <div class="section-title">Incident Location / Address</div>
+      <div class="autocomplete-container">
+        <input type="text" id="incidentAddress" placeholder="Start typing address or landmark..." oninput="handleAddressInput(this.value)" autocomplete="off">
+        <div class="autocomplete-results" id="autocompleteResults"></div>
+      </div>
+
+      <div class="section-title">Call Pin Location (Click map or drag pin to adjust location)</div>
+      <div id="callTakingMap"></div>
+      <p style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 15px;">
+        Coordinates: <span id="callCoordsDisplay" style="color:#f1c40f;">Not Set</span> | 
+        Detected Box Area: <strong id="callBoxAreaDisplay" style="color:#9b59b6;">Out of Area</strong>
+      </p>
+
+      <div class="section-title">Call Type</div>
+      <div class="autocomplete-container">
+        <input type="text" id="incidentType" placeholder="Start typing call type (e.g., Structure Fire)..." oninput="handleTypeInput(this.value)" autocomplete="off">
+        <div class="autocomplete-results" id="typeAutocompleteResults"></div>
+      </div>
+
+      <button onclick="submitPendingCall()" style="width: 100%; padding: 16px; font-size: 16px; background: #f39c12; color: #000;">Submit Pending Call</button>
+    </div>
+
+    <!-- TAB 2: ACTIVE & PENDING CALLS PAGE -->
+    <div class="tab-page" id="activeCallsTab">
+      <h2>Active & Pending Incidents</h2>
+      <div id="activeIncidentList"><em>No active incidents currently dispatched.</em></div>
+    </div>
+
+    <!-- TAB 3: UNIT LIST PAGE -->
+    <div class="tab-page" id="unitListTab">
+      <h2>Connected Active Units & Roster Management</h2>
+
+      <!-- DISPATCHER UNIT CREATOR / MANAGER PANEL -->
+      <div class="unit-creator-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0; color:#2980b9;">Add / Register Unit to Network</h3>
+          <button onclick="toggleUnitCreatorForm()" id="btnToggleCreator" style="background:#444; font-size:12px; padding:6px 12px;">Collapse Form</button>
+        </div>
+
+        <div id="unitCreatorFormFields">
+          <div style="display:flex; gap:12px;">
+            <div style="flex:2;">
+              <span class="section-title">Unit Identifier (Full Name)</span>
+              <input type="text" id="newMgrUnitId" placeholder="e.g. Rescue 33, Engine 1, Squad 2">
+            </div>
+            <div style="flex:1;">
+              <span class="section-title">Short ID (Compact Map Pin)</span>
+              <input type="text" id="newMgrShortId" placeholder="e.g. R33, E1, SQ2">
+            </div>
+            <div style="flex:1.5;">
+              <span class="section-title">MDT Login Password</span>
+              <input type="password" id="newMgrPassword" placeholder="Set unit password (optional)">
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px;">
+            <div style="flex:1;">
+              <span class="section-title">Staffing Type</span>
+              <select id="newMgrStaffingType">
+                <option value="DEDICATED">Dedicated Crew</option>
+                <option value="CROSS_STAFFED">Cross-Staffed</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <span class="section-title">Initial Status</span>
+              <select id="newMgrInitialStatus">
+                <option value="AVAILABLE">Available</option>
+                <option value="IN_QUARTERS">In Quarters</option>
+                <option value="ON_CALL">On Call</option>
+                <option value="OUT_OF_SERVICE">Out of Service</option>
+              </select>
+            </div>
+            <div style="flex:1.5;">
+              <span class="section-title">Assign Home Station</span>
+              <select id="newMgrStationSelect">
+                <option value="">-- No Home Station (GPS AVL Only) --</option>
+              </select>
+            </div>
+          </div>
+
+          <span class="section-title">Operational Capability Tags</span>
+          <div class="role-grid" id="newMgrRoleGrid"></div>
+
+          <button onclick="saveNewRosterUnit()" style="background:#2980b9; width:100%; padding:14px; font-size:15px;">Register & Save Unit</button>
+        </div>
+      </div>
+      
+      <!-- GLOBAL ROSTER STATUS OVERRIDE BUTTONS -->
+      <div style="background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #333; margin-bottom: 20px;">
+        <span class="section-title" style="display: block; margin-bottom: 8px;">Global Roster Status Overrides:</span>
+        <button class="btn-global-quarters" onclick="setAllUnitsStatus('IN_QUARTERS')">Set All Units In Quarters</button>
+        <button class="btn-global-avail" onclick="setAllUnitsStatus('AVAILABLE')">Set All Units Available</button>
+      </div>
+
+      <div id="unitList">Loading active units...</div>
+    </div>
+
+    <!-- TAB 4: LIVE MAP PAGE -->
+    <div class="tab-page" id="mapTab">
+      <h2>Tactical Map Board</h2>
+      
+      <div class="map-toolbar">
+        <span style="font-size: 13px; color: #ccc;">Default CAD Map Center: <strong id="defaultMapCenterDisplay" style="color: #f1c40f;">Loading...</strong></span>
+        <div>
+          <button class="btn-map-control" onclick="saveCurrentViewAsDefault()">Set Current View as CAD Default</button>
+          <button class="btn-map-control" style="background:#e67e22;" onclick="revertMapToDefault()">Revert to Default View</button>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+
+  </div>
+
+  <!-- BOX AREAS MANAGER MODAL -->
+  <div class="modal-overlay" id="boxAreasModal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0; color: #8e44ad;">Response Box Areas & Districts</h2>
+        <button onclick="closeBoxAreasModal()" style="background: #555;">Close Window</button>
+      </div>
+      <p style="color:#aaa; font-size:13px; margin: 5px 0 15px 0;">Use the polygon drawing tools on the Live Map board to outline districts. Calls placed inside these borders will automatically receive the Box Area tag.</p>
+
+      <div style="background:#252525; padding:15px; border-radius:4px; border:1px solid #333; margin-bottom:15px;">
+        <button onclick="startDrawingBoxArea()" style="background:#8e44ad; width:100%; font-size:14px; padding:12px;">+ Draw New Response Box Area on Map</button>
+      </div>
+
+      <div class="section-title">Existing Configured Box Areas</div>
+      <div id="configuredBoxAreasList" style="max-height: 250px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+        <em>Loading box areas...</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOUND PREFERENCES MODAL -->
+  <div class="modal-overlay" id="soundSettingsModal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0; color: #16a085;">CAD Audio Alert Preferences</h2>
+        <button onclick="closeSoundSettingsModal()" style="background: #555;">Close</button>
+      </div>
+      
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Customize alert tones using your own audio files (.wav, .mp3, .ogg) or use the built-in emergency synthesizer.</p>
+
+      <div class="sound-setting-row">
+        <strong>New Pending Call Alert (Dispatcher Notification):</strong>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="file" accept=".wav,.mp3,.ogg" onchange="uploadAudioFile('PENDING_CALL', this)" style="margin-bottom:0; font-size:12px;">
+          <button onclick="CADAudio.playPendingCallAlert()" style="background:#27ae60; padding:6px 12px; font-size:12px;">Test</button>
+          <button onclick="resetAudio('PENDING_CALL')" style="background:#c0392b; padding:6px 12px; font-size:12px;">Reset</button>
+        </div>
+      </div>
+
+      <div class="sound-setting-row">
+        <strong>Incident Alarm Upgrade Alert:</strong>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="file" accept=".wav,.mp3,.ogg" onchange="uploadAudioFile('UPGRADE_ALERT', this)" style="margin-bottom:0; font-size:12px;">
+          <button onclick="CADAudio.playUpgradeAlert()" style="background:#27ae60; padding:6px 12px; font-size:12px;">Test</button>
+          <button onclick="resetAudio('UPGRADE_ALERT')" style="background:#c0392b; padding:6px 12px; font-size:12px;">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT UNIT MODAL -->
+  <div class="modal-overlay" id="editUnitModal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="modalUnitEditTitle" style="margin: 0; color: #f39c12;">Edit Unit Configuration</h2>
+        <button onclick="closeEditUnitModal()" style="background: #555;">Close Window</button>
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <input type="hidden" id="editUnitOriginalId">
+        
+        <div style="display:flex; gap:12px;">
+          <div style="flex:2;">
+            <span class="section-title">Unit Identifier (Full Name)</span>
+            <input type="text" id="editUnitIdInput">
+          </div>
+          <div style="flex:1;">
+            <span class="section-title">Short ID (Compact Map Pin)</span>
+            <input type="text" id="editUnitShortIdInput">
+          </div>
+          <div style="flex:1.5;">
+            <span class="section-title">MDT Login Password</span>
+            <input type="password" id="editUnitPasswordInput" placeholder="Blank for open access">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1;">
+            <span class="section-title">Staffing Type</span>
+            <select id="editUnitStaffingType">
+              <option value="DEDICATED">Dedicated Crew</option>
+              <option value="CROSS_STAFFED">Cross-Staffed</option>
+            </select>
+          </div>
+          <div style="flex:1.5;">
+            <span class="section-title">Home Station Assignment</span>
+            <select id="editUnitStationSelect">
+              <option value="">-- No Home Station (GPS AVL Only) --</option>
+            </select>
+          </div>
+        </div>
+
+        <span class="section-title">Operational Capability Tags</span>
+        <div class="role-grid" id="editUnitRoleGrid"></div>
+
+        <button onclick="saveEditedUnitDetails()" style="background:#f39c12; color:#000; width:100%; padding:14px; font-size:15px; font-weight:bold;">Save Changes to Unit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAIT TYPES & CATEGORIES SETUP MODAL -->
+  <div class="modal-overlay" id="traitsModal">
+    <div class="modal-content" style="max-width: 720px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
+      </div>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="newTraitInput" placeholder="New Trait Name (e.g. Heavy Rescue, Drone, Water Tender)" style="flex: 2; margin-bottom:0;">
+        <select id="newTraitCategorySelect" style="flex: 2; margin-bottom:0;">
+          <option value="1">Engines & Suppression</option>
+          <option value="2">Service Companies (Ladders / Rescues)</option>
+          <option value="3">Tankers / Tenders</option>
+          <option value="4">Brush / Wildland</option>
+          <option value="5">Utilities</option>
+          <option value="6">Boats</option>
+          <option value="7">Air Units</option>
+          <option value="8">Ambulances & EMS</option>
+          <option value="9">Command & Supervisory</option>
+          <option value="10">General / Other</option>
+        </select>
+        <button onclick="saveNewTrait()" style="background: #2980b9; flex: 1;">Add Trait</button>
+      </div>
+
+      <div class="section-title">Configured Traits by Priority Category</div>
+      <div id="configuredTraitsList" style="max-height: 280px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+        <em>Loading trait types...</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT / DISPATCH / UPGRADE INCIDENT MODAL -->
+  <div class="modal-overlay" id="editCallModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="modalCallTitle" style="margin: 0; color: #e63946;">Manage Incident</h2>
+        <button onclick="closeEditModal()" style="background: #555;">Close Window</button>
+      </div>
+      
+      <div style="margin-top: 15px;">
+        <div class="section-title">Location / Address</div>
+        <input type="text" id="modalAddressInput">
+
+        <div class="section-title">Call Type</div>
+        <div class="autocomplete-container">
+          <input type="text" id="modalTypeInput" oninput="handleTypeInputModal(this.value)" autocomplete="off">
+          <div class="autocomplete-results" id="modalTypeAutocompleteResults"></div>
+        </div>
+
+        <!-- UPGRADE CALL SECTION -->
+        <div style="background: #231b15; padding: 15px; border-radius: 4px; border: 1px solid #d35400; margin-bottom: 15px;">
+          <span class="section-title" style="color:#e67e22; display:block; margin-bottom:6px;">Upgrade / Change Call Alarm Level</span>
+          <div style="display:flex; gap:10px;">
+            <div class="autocomplete-container" style="flex:2;">
+              <input type="text" id="modalUpgradeTypeInput" placeholder="Select upgraded call type (e.g. Structure Fire, 2nd Alarm)..." oninput="handleUpgradeTypeInput(this.value)" style="margin-bottom:0;" autocomplete="off">
+              <div class="autocomplete-results" id="modalUpgradeAutocompleteResults"></div>
+            </div>
+            <button class="btn-upgrade" onclick="executeCallUpgrade()" style="flex:1; white-space:nowrap;">Upgrade & Dispatch Additional</button>
+          </div>
+          <small style="color:#aaa; display:block; margin-top:6px;">Analyzes existing on-scene units and automatically calculates and dispatches only the additional differential units needed for the upgraded run card.</small>
+        </div>
+
+        <!-- MULTI-RADIO CHANNEL ASSIGNMENT MATRIX -->
+        <div class="section-title">Assigned Tactical Radio Channels</div>
+        <div style="background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px;">
+          <div id="modalAssignedRadiosContainer" style="margin-bottom: 10px;">
+            <em style="color:#777; font-size:12px;">No radio channels currently assigned to this incident.</em>
+          </div>
+
+          <div style="display: flex; gap: 8px; border-top: 1px solid #333; padding-top: 10px;">
+            <select id="modalAddRadioSelect" style="flex: 1; margin-bottom: 0;">
+              <option value="">-- Add Radio Channel --</option>
+            </select>
+            <input type="text" id="modalAddRadioDescInput" placeholder="Tactical Description (e.g. Command, Fireground, Staging)" style="flex: 2; margin-bottom: 0;">
+            <button onclick="addRadioChannelToCall()" style="background: #16a085; font-size: 13px; padding: 8px 14px; white-space: nowrap;">+ Assign Channel</button>
+          </div>
+        </div>
+
+        <div style="margin: 18px 0; background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #333;">
+          <button onclick="openUnitDispatchModal()" style="background: #e63946; font-size: 15px; padding: 12px 20px;">Dispatch Units</button>
+          <span style="margin-left: 15px; font-size: 14px; color: #aaa;">Assigned Units: <strong id="modalAssignedUnitsListDisplay" style="color: #fff;">None</strong></span>
+        </div>
+
+        <div class="section-title">Call Log & Activity History</div>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="modalLogInput" placeholder="Add entry or notes to call log..." style="margin-bottom:0;">
+          <button onclick="postModalLog()">Post Entry</button>
+        </div>
+        <div class="log-box" id="modalLogFeed"></div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; display: flex; justify-content: space-between;">
+          <button class="btn-clear" onclick="clearCurrentModalCall()">Clear & Archive Call</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEPARATE UNIT DISPATCH SELECTION MODAL -->
+  <div class="modal-overlay" id="unitDispatchModal">
+    <div class="modal-content" style="max-width: 720px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin: 0; color: #e63946;">Select Units to Dispatch</h2>
+        <div>
+          <button class="btn-suggest" onclick="suggestResponseForCall()">Suggest Response</button>
+          <button onclick="closeUnitDispatchModal()" style="background: #555;">Close</button>
+        </div>
+      </div>
+      <p id="suggestResponseNotice" style="font-size: 12px; color: #f1c40f; margin: 0 0 10px 0; display: none;"></p>
+
+      <div class="section-title">Scrollable Roster (Sorted by Real-World Travel Time + On-Call Turnout Delay)</div>
+      <div class="unit-dispatch-list" id="unitDispatchScrollList">
+        <em>Calculating driving routes and staffing turnout times...</em>
+      </div>
+
+      <button onclick="confirmUnitDispatchSelection()" style="width: 100%; background: #27ae60; padding: 14px; font-size: 16px;">Confirm Dispatches</button>
+    </div>
+  </div>
+
+  <!-- STATION SETUP MODAL -->
+  <div class="modal-overlay" id="stationModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #2980b9;">Station Location & Crew Setup</h2>
+        <button onclick="closeStationModal()" style="background: #555;">Close Window</button>
+      </div>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure stations, GPS base coordinates, and available staffed / on-call crew numbers for response time and cross-staffing logic.</p>
+
+      <input type="text" id="stationNameInput" placeholder="Station Name (e.g., Station 1 - Apex, Station 33)">
+      
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="stationLatInput" placeholder="Latitude">
+        <input type="text" id="stationLngInput" placeholder="Longitude">
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffed In-Station Crews (0m delay):</span>
+          <input type="number" id="stationStaffedCrewsInput" placeholder="Staffed Crews (e.g. 1)" min="0" value="1">
+        </div>
+        <div style="flex: 1;">
+          <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">On-Call Callback Crews (+4m/+2m delay):</span>
+          <input type="number" id="stationOnCallCrewsInput" placeholder="On-Call Crews (e.g. 1)" min="0" value="1">
+        </div>
+      </div>
+
+      <button onclick="saveNewStation()" style="background: #2980b9; width: 100%;">Save Station Location</button>
+
+      <div class="section-title" style="margin-top: 20px;">Existing Configured Stations (Alphabetical)</div>
+      <div id="configuredStationsList" style="max-height: 200px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+        <em>Loading stations...</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- RADIO CHANNELS SETUP MODAL -->
+  <div class="modal-overlay" id="radioChannelsModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #2980b9;">Preset Radio Channels Manager</h2>
+        <button onclick="closeRadioChannelsModal()" style="background: #555;">Close Window</button>
+      </div>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure tactical talkgroups and radio frequencies available for dispatch assignment.</p>
+
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="newRadioChannelInput" placeholder="New Radio Channel (e.g. OPS-1, TAC-2, COMMAND-3)" style="margin-bottom:0;">
+        <button onclick="saveNewRadioChannel()" style="background: #2980b9;">Add Channel</button>
+      </div>
+
+      <div class="section-title" style="margin-top: 20px;">Configured Radio Channels (Alphabetical)</div>
+      <div id="configuredRadioChannelsList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+        <em>Loading radio channels...</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALL TYPES SETUP & RUN CARD BUILDER MODAL -->
+  <div class="modal-overlay" id="callTypesModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #2980b9;">Preset Call Types & Response Run Cards</h2>
+        <button onclick="closeCallTypesModal()" style="background: #555;">Close Window</button>
+      </div>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure incident call types and build priority response order run cards for auto-suggestions.</p>
+
+      <input type="text" id="newCallTypeInput" placeholder="Call Type Name (e.g. Structure Fire, Trench Rescue, MVA)">
+
+      <div class="section-title">Build Priority Response Order (Click tags to append to run card)</div>
+      <div style="margin-bottom: 12px; background: #141414; padding: 12px; border-radius: 4px; border: 1px solid #333;" id="callTypeTagPalette">
+        <em>Loading traits...</em>
+      </div>
+
+      <div style="background: #0a0a0a; padding: 12px; border-radius: 4px; min-height: 40px; margin-bottom: 15px;" id="activeRunCardDisplay">
+        <em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>
+      </div>
+
+      <button onclick="saveNewCallType()" style="background: #2980b9; width: 100%;">Save Call Type Run Card</button>
+
+      <div class="section-title" style="margin-top: 20px;">Configured Call Type Run Cards</div>
+      <div id="configuredCallTypesList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+        <em>Loading call types...</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase & Leaflet Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // --- CAD AUDIO ENGINE ---
+    const CADAudio = {
+      ctx: null,
+      customSounds: JSON.parse(localStorage.getItem('cad_custom_sounds') || '{}'),
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      },
+
+      playCustomOrTone(soundKey, fallbackToneFn) {
+        this.init();
+        if (this.customSounds[soundKey]) {
+          const audio = new Audio(this.customSounds[soundKey]);
+          audio.play().catch(e => console.warn("Audio blocked:", e));
+        } else {
+          fallbackToneFn();
+        }
+      },
+
+      playPendingCallAlert() {
+        this.playCustomOrTone('PENDING_CALL', () => {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.setValueAtTime(440, now + 0.25);
+
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        });
+      },
+
+      playUpgradeAlert() {
+        this.playCustomOrTone('UPGRADE_ALERT', () => {
+          const now = this.ctx.currentTime;
+          [0, 0.12, 0.24, 0.36].forEach(delay => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1100, now + delay);
+            gain.gain.setValueAtTime(0.25, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.08);
+          });
+        });
+      },
+
+      setCustomSound(key, dataUrl) {
+        if (dataUrl) {
+          this.customSounds[key] = dataUrl;
+        } else {
+          delete this.customSounds[key];
+        }
+        localStorage.setItem('cad_custom_sounds', JSON.stringify(this.customSounds));
+      }
+    };
+
+    function uploadAudioFile(soundKey, inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        CADAudio.setCustomSound(soundKey, e.target.result);
+        alert(`Custom sound for ${soundKey} uploaded and saved!`);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetAudio(soundKey) {
+      CADAudio.setCustomSound(soundKey, null);
+      alert(`Reset ${soundKey} to default tone.`);
+    }
+
+    function openSoundSettingsModal() {
+      CADAudio.init();
+      document.getElementById('soundSettingsModal').style.display = 'flex';
+    }
+
+    function closeSoundSettingsModal() {
+      document.getElementById('soundSettingsModal').style.display = 'none';
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-MkETsFciYfRg6293b0E1rRveN9xk8lg",
+      authDomain: "noodle-s-cad.firebaseapp.com",
+      databaseURL: "https://noodle-s-cad-default-rtdb.firebaseio.com",
+      projectId: "noodle-s-cad",
+      storageBucket: "noodle-s-cad.firebasestorage.app",
+      messagingSenderId: "112878923628",
+      appId: "1:112878923628:web:5a58128a4c400220ce4d49"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let map, callTakingMap;
+    let gridOverlay;
+    let incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
+    let callTakingMarker;
+
+    let defaultMapLat = null;
+    let defaultMapLng = null;
+    let defaultMapZoom = 12;
+
+    let selectedLat = null;
+    let selectedLng = null;
+    let detectedBoxArea = "Out of Area";
+    let activeModalIncidentId = null;
+    let debounceTimer;
+
+    let loadedStations = {};
+    let loadedUnits = {};
+    let loadedIncidents = {};
+    let loadedCallTypes = [];
+    let loadedRadioChannels = [];
+    let loadedTraits = [];
+    let loadedBoxAreas = {};
+    let currentBuildingRunCard = [];
+    let editingCallTypeId = null;
+    let currentDispatchSelectionOrder = [];
+    let unitFulfilledTierMap = {};
+
+    const EMERGENCY_RESPONSE_MULTIPLIER = 0.85;
+
+    const CATEGORY_NAMES = {
+      "1": "Engines & Suppression",
+      "2": "Service Companies (Ladders / Rescues)",
+      "3": "Tankers / Tenders",
+      "4": "Brush / Wildland",
+      "5": "Utilities",
+      "6": "Boats",
+      "7": "Air Units",
+      "8": "Ambulances & EMS",
+      "9": "Command & Supervisory",
+      "10": "General / Other"
+    };
+
+    const redActiveIcon = L.divIcon({
+      className: 'custom-pin-red',
+      html: `<div style="background-color:#e63946; width:16px; height:16px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 8px rgba(230,57,70,0.8);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    const yellowPendingIcon = L.divIcon({
+      className: 'custom-pin-yellow',
+      html: `<div style="background-color:#f1c40f; width:16px; height:16px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 8px rgba(241,196,15,0.8);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    function getNormalizedCoords(rawCoords) {
+      if (!rawCoords) return [];
+      let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
+      return arr.map(pt => {
+        if (Array.isArray(pt)) return [parseFloat(pt[0]), parseFloat(pt[1])];
+        if (pt && typeof pt === 'object') {
+          if (pt.lat !== undefined && pt.lng !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lng)];
+          return [parseFloat(pt[0]), parseFloat(pt[1])];
+        }
+        return [0, 0];
+      }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
+    }
+
+    function isPointInPolygon(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function calculateBoxAreaForCoords(lat, lng) {
+      if (!lat || !lng) return "Out of Area";
+      const pt = [parseFloat(lat), parseFloat(lng)];
+
+      const keys = Object.keys(loadedBoxAreas);
+      for (let k of keys) {
+        const box = loadedBoxAreas[k];
+        const coords = getNormalizedCoords(box.coordinates);
+        if (coords.length >= 3) {
+          if (isPointInPolygon(pt, coords)) {
+            return box.name;
+          }
+        }
+      }
+      return "Out of Area";
+    }
+
+    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW ---
+    db.ref('mapSettings/defaultView').on('value', (snapshot) => {
+      const view = snapshot.val();
+      if (view && view.lat && view.lng) {
+        const isFirstLoad = (defaultMapLat === null);
+        defaultMapLat = parseFloat(view.lat);
+        defaultMapLng = parseFloat(view.lng);
+        defaultMapZoom = parseInt(view.zoom) || 12;
+
+        const displayEl = document.getElementById('defaultMapCenterDisplay');
+        if (displayEl) {
+          displayEl.innerText = `${defaultMapLat.toFixed(4)}, ${defaultMapLng.toFixed(4)} (Zoom: ${defaultMapZoom})`;
+        }
+
+        if (isFirstLoad) {
+          if (callTakingMap && !selectedLat) {
+            callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+          }
+          if (map) {
+            map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+          }
+        }
+      } else if (defaultMapLat === null) {
+        defaultMapLat = 35.7327;
+        defaultMapLng = -78.8503;
+        defaultMapZoom = 12;
+      }
+    });
+
+    function saveCurrentViewAsDefault() {
+      if (!map) return;
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      db.ref('mapSettings/defaultView').set({
+        lat: parseFloat(center.lat.toFixed(5)),
+        lng: parseFloat(center.lng.toFixed(5)),
+        zoom: zoom,
+        updatedAt: Date.now()
+      });
+
+      alert(`CAD Default Map View saved!\nCenter: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}\nZoom Level: ${zoom}`);
+    }
+
+    function revertMapToDefault() {
+      if (map && defaultMapLat !== null) {
+        map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+      }
+    }
+
+    function getTraitCategoryTier(traitName) {
+      const match = loadedTraits.find(t => t.name.toLowerCase() === traitName.toLowerCase());
+      if (match && match.category) {
+        return parseInt(match.category);
+      }
+      return 10;
+    }
+
+    function getUnitDefaultCategoryTier(uId) {
+      const unit = loadedUnits[uId];
+      if (!unit || !unit.roles || unit.roles.length === 0) return 999;
+      
+      let bestTier = 999;
+      const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+      roles.forEach(roleName => {
+        const tier = getTraitCategoryTier(roleName);
+        if (tier < bestTier) bestTier = tier;
+      });
+      return bestTier;
+    }
+
+    function getUnitStatusColor(status) {
+      switch (status) {
+        case 'OUT_OF_SERVICE': return '#7f8c8d';
+        case 'ON_CALL': return '#8e44ad';
+        case 'AVAILABLE':
+        case 'IN_QUARTERS': return '#e63946';
+        case 'DISPATCHED':
+        case 'ENROUTE': return '#2ecc71';
+        case 'ONSCENE': return '#2980b9';
+        case 'TRANSPORTING':
+        case 'ARRIVED': return '#f1c40f';
+        default: return '#e63946';
+      }
+    }
+
+    function createUnitBubbleIcon(shortId, status) {
+      const bg = getUnitStatusColor(status);
+      const textColor = (status === 'TRANSPORTING' || status === 'ARRIVED') ? '#000' : '#fff';
+      return L.divIcon({
+        className: 'unit-bubble-icon-container',
+        html: `<div class="unit-bubble-wrapper"><div class="unit-bubble-box" style="background-color:${bg}; color:${textColor};">${shortId}</div></div>`,
+        iconSize: [60, 26],
+        iconAnchor: [30, 13]
+      });
+    }
+
+    function formatAssignedShortIds(assignedUnitsArray) {
+      const arr = Array.isArray(assignedUnitsArray) ? assignedUnitsArray : Object.values(assignedUnitsArray || {});
+      if (!arr || arr.length === 0) return '<em>None (Pending)</em>';
+      return arr.map(uId => {
+        const u = loadedUnits[uId];
+        return (u && u.shortId) ? u.shortId : uId;
+      }).join(', ');
+    }
+
+    function getStationAvailableCrewsPool() {
+      const stationPool = {};
+      
+      Object.keys(loadedStations).forEach(stId => {
+        const st = loadedStations[stId];
+        stationPool[stId] = {
+          staffedRemaining: st.staffedCrews !== undefined ? parseInt(st.staffedCrews) : 1,
+          onCallRemaining: st.onCallCrews !== undefined ? parseInt(st.onCallCrews) : 1,
+          onCallPulledCount: 0
+        };
+      });
+
+      const inServiceActiveStatuses = ['AVAILABLE', 'DISPATCHED', 'ENROUTE', 'ONSCENE', 'TRANSPORTING', 'ARRIVED'];
+
+      Object.keys(loadedUnits).forEach(uId => {
+        const unit = loadedUnits[uId];
+        const stId = unit.assignedStationId;
+        const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+        const currentStatus = unit.status || 'AVAILABLE';
+
+        if (isCrossStaffed && stId && stationPool[stId] && inServiceActiveStatuses.includes(currentStatus)) {
+          const pool = stationPool[stId];
+          if (pool.staffedRemaining > 0) {
+            pool.staffedRemaining--;
+          } else if (pool.onCallRemaining > 0) {
+            pool.onCallRemaining--;
+            pool.onCallPulledCount++;
+          }
+        }
+      });
+
+      return stationPool;
+    }
+
+    const GridLayer = L.GridLayer.extend({
+      createTile: function (coords) {
+        const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+        const size = this.getTileSize();
+        tile.width = size.x;
+        tile.height = size.y;
+
+        const ctx = tile.getContext('2d');
+        ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, size.x, size.y);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '10px monospace';
+        ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+
+        return tile;
+      }
+    });
+
+    function getStraightLineInMiles(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 99999;
+      const R = 3958.8;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    async function calculateRoadRoute(originLat, originLng, destLat, destLng) {
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=false`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const distanceMiles = (route.distance / 1609.34);
+          const timeMinutes = ((route.duration * EMERGENCY_RESPONSE_MULTIPLIER) / 60);
+          return {
+            distanceMiles: distanceMiles,
+            timeMinutes: timeMinutes,
+            isRoadRoute: true
+          };
+        }
+      } catch (err) {
+        console.warn("OSRM fallback", err);
+      }
+
+      const dist = getStraightLineInMiles(originLat, originLng, destLat, destLng);
+      const approxMinutes = (dist / 35) * 60;
+      return {
+        distanceMiles: dist,
+        timeMinutes: approxMinutes,
+        isRoadRoute: false
+      };
+    }
+
+    function initCallTakingMap() {
+      if (callTakingMap) return;
+
+      const initLat = defaultMapLat || 35.7327;
+      const initLng = defaultMapLng || -78.8503;
+
+      callTakingMap = L.map('callTakingMap').setView([initLat, initLng], defaultMapZoom);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(callTakingMap);
+
+      new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
+
+      callTakingMap.on('click', function(e) {
+        updateCallPinPosition(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    function updateCallPinPosition(lat, lng) {
+      selectedLat = parseFloat(lat).toFixed(5);
+      selectedLng = parseFloat(lng).toFixed(5);
+
+      detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
+
+      document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
+      document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
+
+      if (callTakingMarker) {
+        callTakingMap.removeLayer(callTakingMarker);
+      }
+
+      callTakingMarker = L.marker([selectedLat, selectedLng], { draggable: true }).addTo(callTakingMap);
+      callTakingMap.panTo([selectedLat, selectedLng]);
+
+      callTakingMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        selectedLat = pos.lat.toFixed(5);
+        selectedLng = pos.lng.toFixed(5);
+        detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
+        document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
+        document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
+      });
+    }
+
+    window.onload = function() {
+      initCallTakingMap();
+    };
+
+    function initMap() {
+      if (map) return;
+
+      const initLat = defaultMapLat || 35.7327;
+      const initLng = defaultMapLng || -78.8503;
+
+      map = L.map('map').setView([initLat, initLng], defaultMapZoom);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
+
+      incidentMarkersLayer = L.layerGroup().addTo(map);
+      stationMarkersLayer = L.layerGroup().addTo(map);
+      unitAvlMarkersLayer = L.layerGroup().addTo(map);
+      boxAreasLayer = L.layerGroup().addTo(map);
+
+      const overlayControl = {
+        "Tactical Grid": gridOverlay,
+        "Active & Pending Calls": incidentMarkersLayer,
+        "Stations": stationMarkersLayer,
+        "Unit Positions / AVL": unitAvlMarkersLayer,
+        "Box Areas / Districts": boxAreasLayer
+      };
+
+      L.control.layers(null, overlayControl, { collapsed: false }).addTo(map);
+
+      map.pm.addControls({
+        position: 'topleft',
+        drawPolygon: true,
+        drawRectangle: true,
+        drawMarker: false,
+        drawCircleMarker: false,
+        drawPolyline: false,
+        drawCircle: false,
+        editMode: true,
+        dragMode: false,
+        cutPolygon: false,
+        removalMode: true
+      });
+
+      map.on('pm:create', (e) => {
+        const shape = e.layer;
+        const latlngs = shape.getLatLngs()[0];
+        const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
+
+        const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
+        if (boxName && boxName.trim() !== "") {
+          const newBoxRef = db.ref('boxAreas').push();
+          newBoxRef.set({
+            name: boxName.trim(),
+            color: '#8e44ad',
+            coordinates: coordinates,
+            createdAt: Date.now()
+          });
+          alert(`Box Area "${boxName.trim()}" saved!`);
+        }
+        map.removeLayer(shape);
+      });
+
+      refreshMapLayers();
+    }
+
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      btnEl.classList.add('active');
+
+      if (tabId === 'callTakingTab' && callTakingMap) {
+        setTimeout(() => { 
+          callTakingMap.invalidateSize();
+        }, 150);
+      } else if (tabId === 'mapTab') {
+        initMap();
+        setTimeout(() => { 
+          if (map) {
+            map.invalidateSize(); 
+            refreshMapLayers();
+          }
+        }, 150);
+      }
+    }
+
+    function refreshMapLayers() {
+      if (!map) return;
+
+      incidentMarkersLayer.clearLayers();
+      Object.keys(loadedIncidents).forEach(id => {
+        const inc = loadedIncidents[id];
+        if (inc.lat && inc.lng) {
+          const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+          const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
+          
+          let radioInfo = '';
+          const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+          if (radios.length > 0) {
+            radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
+          }
+
+          const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
+
+          const marker = L.marker([inc.lat, inc.lng], { icon: markerIcon })
+            .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
+          incidentMarkersLayer.addLayer(marker);
+        }
+      });
+
+      stationMarkersLayer.clearLayers();
+      Object.keys(loadedStations).forEach(id => {
+        const st = loadedStations[id];
+        if (st.lat && st.lng) {
+          const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
+          const marker = L.marker([st.lat, st.lng])
+            .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
+          stationMarkersLayer.addLayer(marker);
+        }
+      });
+
+      unitAvlMarkersLayer.clearLayers();
+      Object.keys(loadedUnits).forEach(uId => {
+        const unit = loadedUnits[uId];
+        if (unit.location && unit.location.lat && unit.location.lng) {
+          const statusVal = unit.status || 'AVAILABLE';
+          const statusText = statusVal.replace(/_/g, ' ');
+          const shortDisplay = unit.shortId || uId;
+          const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal);
+
+          const marker = L.marker([unit.location.lat, unit.location.lng], { icon: bubbleIcon })
+            .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}`);
+          unitAvlMarkersLayer.addLayer(marker);
+        }
+      });
+
+      boxAreasLayer.clearLayers();
+      Object.keys(loadedBoxAreas).forEach(bId => {
+        const box = loadedBoxAreas[bId];
+        const coords = getNormalizedCoords(box.coordinates);
+        if (coords.length >= 3) {
+          const polygon = L.polygon(coords, {
+            color: box.color || '#8e44ad',
+            weight: 2,
+            fillOpacity: 0.15
+          }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
+          boxAreasLayer.addLayer(polygon);
+        }
+      });
+    }
+
+    // --- LISTEN FOR BOX AREAS ---
+    db.ref('boxAreas').on('value', (snapshot) => {
+      loadedBoxAreas = snapshot.val() || {};
+      renderConfiguredBoxAreasList();
+      refreshMapLayers();
+    });
+
+    function renderConfiguredBoxAreasList() {
+      const container = document.getElementById('configuredBoxAreasList');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const keys = Object.keys(loadedBoxAreas);
+      if (keys.length === 0) {
+        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map.</em>';
+        return;
+      }
+
+      keys.forEach(bId => {
+        const box = loadedBoxAreas[bId];
+        const div = document.createElement('div');
+        div.style.padding = '8px 0';
+        div.style.borderBottom = '1px solid #222';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.innerHTML = `
+          <div>
+            <strong style="color:#8e44ad;">${box.name}</strong>
+            <div style="font-size:11px; color:#aaa;">Vertices: ${getNormalizedCoords(box.coordinates).length} coordinates</div>
+          </div>
+          <div>
+            <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function startDrawingBoxArea() {
+      closeBoxAreasModal();
+      switchTab('mapTab', document.querySelectorAll('.tab-btn')[3]);
+      if (map) {
+        map.pm.enableDraw('Polygon');
+        alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
+      }
+    }
+
+    function deleteBoxArea(id) {
+      if (confirm("Delete this response box area?")) {
+        db.ref(`boxAreas/${id}`).remove();
+      }
+    }
+
+    function openBoxAreasModal() {
+      document.getElementById('boxAreasModal').style.display = 'flex';
+    }
+
+    function closeBoxAreasModal() {
+      document.getElementById('boxAreasModal').style.display = 'none';
+    }
+
+    // --- DYNAMIC TRAIT & CATEGORY MANAGER ---
+    const defaultInitialRoles = [
+      { name: "Engine", category: "1" },
+      { name: "Suppression", category: "1" },
+      { name: "EMS First Responder", category: "1" },
+      { name: "Ladder", category: "2" },
+      { name: "Truck", category: "2" },
+      { name: "Tower", category: "2" },
+      { name: "Rescue", category: "2" },
+      { name: "Extrication", category: "2" },
+      { name: "Technical Rescue", category: "2" },
+      { name: "Technical Rescue Support", category: "2" },
+      { name: "Search Company", category: "2" },
+      { name: "Water Rescue", category: "2" },
+      { name: "Tanker", category: "3" },
+      { name: "Water Tender", category: "3" },
+      { name: "Brush", category: "4" },
+      { name: "Utility", category: "5" },
+      { name: "Boat", category: "6" },
+      { name: "Air", category: "7" },
+      { name: "Ambulance", category: "8" },
+      { name: "ALS", category: "8" },
+      { name: "BLS", category: "8" },
+      { name: "Battalion", category: "9" },
+      { name: "EMS Supervisor", category: "9" },
+      { name: "Safety Officer", category: "9" }
+    ];
+
+    db.ref('customRoles').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        defaultInitialRoles.forEach(r => db.ref('customRoles').push(r));
+        return;
+      }
+
+      loadedTraits = Object.keys(data).map(k => ({
+        id: k,
+        name: data[k].name,
+        category: data[k].category || "10"
+      })).sort((a, b) => {
+        if (a.category !== b.category) return parseInt(a.category) - parseInt(b.category);
+        return a.name.localeCompare(b.name);
+      });
+
+      renderTraitsManagerList();
+      renderAllRoleGrids();
+    });
+
+    function renderTraitsManagerList() {
+      const listContainer = document.getElementById('configuredTraitsList');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = '';
+      if (loadedTraits.length === 0) {
+        listContainer.innerHTML = '<em>No custom trait types configured yet.</em>';
+        return;
+      }
+
+      let currentCat = null;
+      loadedTraits.forEach(trait => {
+        if (trait.category !== currentCat) {
+          currentCat = trait.category;
+          const catHeader = document.createElement('div');
+          catHeader.style.padding = '6px 0 2px 0';
+          catHeader.style.color = '#f1c40f';
+          catHeader.style.fontSize = '12px';
+          catHeader.style.fontWeight = 'bold';
+          catHeader.innerText = `Tier ${currentCat}: ${CATEGORY_NAMES[currentCat] || 'General / Other'}`;
+          listContainer.appendChild(catHeader);
+        }
+
+        const div = document.createElement('div');
+        div.style.padding = '5px 0 5px 10px';
+        div.style.borderBottom = '1px solid #222';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.innerHTML = `
+          <span><strong>${trait.name}</strong></span>
+          <div>
+            <button onclick="editTrait('${trait.id}', '${trait.name.replace(/'/g, "\\'")}', '${trait.category}')" class="btn-action-sm btn-edit-sm">Edit</button>
+            <button onclick="deleteTrait('${trait.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+          </div>
+        `;
+        listContainer.appendChild(div);
+      });
+    }
+
+    function renderAllRoleGrids() {
+      const creatorGrid = document.getElementById('newMgrRoleGrid');
+      if (creatorGrid) {
+        creatorGrid.innerHTML = '';
+        loadedTraits.forEach(t => {
+          creatorGrid.innerHTML += `<label><input type="checkbox" class="mgr-role-tag" value="${t.name}"> ${t.name}</label>`;
+        });
+      }
+
+      const editGrid = document.getElementById('editUnitRoleGrid');
+      if (editGrid) {
+        editGrid.innerHTML = '';
+        loadedTraits.forEach(t => {
+          editGrid.innerHTML += `<label><input type="checkbox" class="edit-role-tag" value="${t.name}"> ${t.name}</label>`;
+        });
+      }
+
+      const palette = document.getElementById('callTypeTagPalette');
+      if (palette) {
+        palette.innerHTML = '';
+        loadedTraits.forEach(t => {
+          palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${t.name.replace(/'/g, "\\'")}')">+ ${t.name}</span>`;
+        });
+      }
+    }
+
+    function saveNewTrait() {
+      const name = document.getElementById('newTraitInput').value.trim();
+      const cat = document.getElementById('newTraitCategorySelect').value;
+      if (!name) return;
+
+      db.ref('customRoles').push({ name: name, category: cat, createdAt: Date.now() });
+      document.getElementById('newTraitInput').value = '';
+    }
+
+    function editTrait(id, currentName, currentCat) {
+      const updated = prompt("Edit Trait Name:", currentName);
+      if (updated === null || updated.trim() === "") return;
+
+      const catPrompt = prompt("Category Tier (1=Engines, 2=Service Co, 3=Tankers, 4=Brush, 5=Utility, 6=Boat, 7=Air, 8=EMS, 9=Command, 10=Other):", currentCat || "10");
+      if (catPrompt === null) return;
+
+      db.ref(`customRoles/${id}`).update({
+        name: updated.trim(),
+        category: catPrompt.trim() || "10",
+        updatedAt: Date.now()
+      });
+    }
+
+    function deleteTrait(id) {
+      if (confirm("Delete trait type?")) {
+        db.ref(`customRoles/${id}`).remove();
+      }
+    }
+
+    function openTraitsModal() {
+      document.getElementById('traitsModal').style.display = 'flex';
+    }
+
+    function closeTraitsModal() {
+      document.getElementById('traitsModal').style.display = 'none';
+    }
+
+    // --- UNIT CREATOR & MANAGER FUNCTIONS ---
+    function toggleUnitCreatorForm() {
+      const form = document.getElementById('unitCreatorFormFields');
+      const btn = document.getElementById('btnToggleCreator');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.innerText = 'Collapse Form';
+      } else {
+        form.style.display = 'none';
+        btn.innerText = 'Expand Form';
+      }
+    }
+
+    function refreshUnitCreatorStationDropdown() {
+      const selects = [
+        document.getElementById('newMgrStationSelect'),
+        document.getElementById('editUnitStationSelect')
+      ];
+
+      const sortedKeys = Object.keys(loadedStations).sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
+      
+      selects.forEach(select => {
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- No Home Station (GPS AVL Only) --</option>';
+        sortedKeys.forEach(stId => {
+          const st = loadedStations[stId];
+          const isSelected = stId === currentVal ? 'selected' : '';
+          select.innerHTML += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
+        });
+      });
+    }
+
+    function saveNewRosterUnit() {
+      const unitId = document.getElementById('newMgrUnitId').value.trim();
+      const shortId = document.getElementById('newMgrShortId').value.trim() || unitId;
+      const password = document.getElementById('newMgrPassword').value.trim();
+      const staffingType = document.getElementById('newMgrStaffingType').value;
+      const initialStatus = document.getElementById('newMgrInitialStatus').value;
+      const stationId = document.getElementById('newMgrStationSelect').value;
+
+      if (!unitId) {
+        alert("Please enter a Unit Identifier.");
+        return;
+      }
+
+      const roles = [];
+      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => {
+        roles.push(cb.value);
+      });
+
+      const unitData = {
+        shortId: shortId,
+        password: password,
+        roles: roles,
+        staffingType: staffingType,
+        status: initialStatus,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        unitData.assignedStationId = stationId;
+        unitData.assignedStationName = st.name;
+        unitData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      }
+
+      db.ref(`units/${unitId}`).set(unitData);
+
+      document.getElementById('newMgrUnitId').value = '';
+      document.getElementById('newMgrShortId').value = '';
+      document.getElementById('newMgrPassword').value = '';
+      document.getElementById('newMgrStationSelect').value = '';
+      document.querySelectorAll('.mgr-role-tag').forEach(cb => cb.checked = false);
+
+      alert(`Unit ${unitId} registered successfully to CAD network!`);
+    }
+
+    // --- UNIT EDIT MODAL FUNCTIONS ---
+    function openEditUnitModal(unitId) {
+      const unit = loadedUnits[unitId];
+      if (!unit) return;
+
+      document.getElementById('editUnitOriginalId').value = unitId;
+      document.getElementById('modalUnitEditTitle').innerText = `Edit: ${unitId}`;
+      document.getElementById('editUnitIdInput').value = unitId;
+      document.getElementById('editUnitShortIdInput').value = unit.shortId || unitId;
+      document.getElementById('editUnitPasswordInput').value = unit.password || '';
+      document.getElementById('editUnitStaffingType').value = unit.staffingType || 'DEDICATED';
+
+      refreshUnitCreatorStationDropdown();
+      document.getElementById('editUnitStationSelect').value = unit.assignedStationId || '';
+
+      const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+      document.querySelectorAll('.edit-role-tag').forEach(cb => {
+        cb.checked = roles.includes(cb.value);
+      });
+
+      document.getElementById('editUnitModal').style.display = 'flex';
+    }
+
+    function closeEditUnitModal() {
+      document.getElementById('editUnitModal').style.display = 'none';
+    }
+
+    function saveEditedUnitDetails() {
+      const originalId = document.getElementById('editUnitOriginalId').value;
+      const newUnitId = document.getElementById('editUnitIdInput').value.trim();
+      const newShortId = document.getElementById('editUnitShortIdInput').value.trim() || newUnitId;
+      const newPassword = document.getElementById('editUnitPasswordInput').value.trim();
+      const staffingType = document.getElementById('editUnitStaffingType').value;
+      const stationId = document.getElementById('editUnitStationSelect').value;
+
+      if (!newUnitId) {
+        alert("Unit identifier cannot be empty.");
+        return;
+      }
+
+      const selectedRoles = [];
+      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => {
+        selectedRoles.push(cb.value);
+      });
+
+      const existingUnit = loadedUnits[originalId] || {};
+      const updatedData = {
+        ...existingUnit,
+        shortId: newShortId,
+        password: newPassword,
+        staffingType: staffingType,
+        roles: selectedRoles,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        updatedData.assignedStationId = stationId;
+        updatedData.assignedStationName = st.name;
+        updatedData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      } else {
+        delete updatedData.assignedStationId;
+        delete updatedData.assignedStationName;
+      }
+
+      if (originalId !== newUnitId) {
+        db.ref(`units/${newUnitId}`).set(updatedData);
+        db.ref(`units/${originalId}`).remove();
+
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(originalId)) {
+            const updatedAssigned = assigned.map(id => id === originalId ? newUnitId : id);
+            db.ref(`incidents/${incId}`).update({ assignedUnits: updatedAssigned });
+          }
+        });
+      } else {
+        db.ref(`units/${originalId}`).update(updatedData);
+      }
+
+      closeEditUnitModal();
+      alert(`Unit ${newUnitId} configuration updated successfully!`);
+    }
+
+    // --- MULTI-RADIO CHANNEL CALL ASSIGNMENT FUNCTIONS ---
+    function renderModalRadioList(radioChannelsArray = []) {
+      const container = document.getElementById('modalAssignedRadiosContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const arr = Array.isArray(radioChannelsArray) ? radioChannelsArray : Object.values(radioChannelsArray || {});
+      if (!arr || arr.length === 0) {
+        container.innerHTML = '<em style="color:#777; font-size:12px;">No radio channels currently assigned to this incident.</em>';
+        return;
+      }
+
+      arr.forEach((rc, idx) => {
+        const row = document.createElement('div');
+        row.className = 'radio-assignment-row';
+        row.innerHTML = `
+          <strong style="color:#16a085; min-width: 100px;">${rc.name}</strong>
+          <span style="color:#ccc; font-size:13px; flex:1;">${rc.desc || '<em>No description</em>'}</span>
+          <button onclick="removeRadioChannelFromCall(${idx})" style="background:#c0392b; font-size:11px; padding:3px 8px;">Remove</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addRadioChannelToCall() {
+      if (!activeModalIncidentId) return;
+
+      const select = document.getElementById('modalAddRadioSelect');
+      const descInput = document.getElementById('modalAddRadioDescInput');
+      const channelName = select.value;
+      const channelDesc = descInput.value.trim();
+
+      if (!channelName) {
+        alert("Please select a radio channel to assign.");
+        return;
+      }
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+
+      if (currentRadios.some(r => r.name === channelName)) {
+        alert(`Radio channel ${channelName} is already assigned to this call.`);
+        return;
+      }
+
+      currentRadios.push({
+        name: channelName,
+        desc: channelDesc
+      });
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `Assigned Radio Channel: ${channelName}${channelDesc ? ' (' + channelDesc + ')' : ''}`,
+        timestamp: Date.now()
+      });
+
+      select.value = '';
+      descInput.value = '';
+    }
+
+    function removeRadioChannelFromCall(index) {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+      const removed = currentRadios.splice(index, 1)[0];
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+
+      if (removed) {
+        db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+          author: 'DISPATCH',
+          text: `Removed Radio Channel: ${removed.name}`,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    // --- ADDRESS AUTOCOMPLETE ---
+    function handleAddressInput(query) {
+      clearTimeout(debounceTimer);
+      const resultsContainer = document.getElementById('autocompleteResults');
+      
+      if (!query || query.length < 3) {
+        resultsContainer.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+          .then(res => res.json())
+          .then(data => {
+            resultsContainer.innerHTML = '';
+            if (data.length === 0) {
+              resultsContainer.style.display = 'none';
+              return;
+            }
+
+            data.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'autocomplete-item';
+              div.innerText = item.display_name;
+              div.onclick = function() {
+                document.getElementById('incidentAddress').value = item.display_name;
+                updateCallPinPosition(item.lat, item.lon);
+                resultsContainer.style.display = 'none';
+              };
+              resultsContainer.appendChild(div);
+            });
+
+            resultsContainer.style.display = 'block';
+          })
+          .catch(err => {
+            console.error("Geocoding lookup error:", err);
+          });
+      }, 300);
+    }
+
+    function handleTypeInput(query) {
+      const container = document.getElementById('typeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'incidentType');
+    }
+
+    function handleTypeInputModal(query) {
+      const container = document.getElementById('modalTypeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'modalTypeInput');
+    }
+
+    function handleUpgradeTypeInput(query) {
+      const container = document.getElementById('modalUpgradeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'modalUpgradeTypeInput');
+    }
+
+    function renderTypeSuggestions(query, containerEl, inputId) {
+      if (!query || query.trim().length === 0) {
+        containerEl.style.display = 'none';
+        return;
+      }
+
+      const q = query.toLowerCase();
+      const matches = loadedCallTypes.filter(t => t.name.toLowerCase().includes(q));
+
+      containerEl.innerHTML = '';
+      if (matches.length === 0) {
+        containerEl.style.display = 'none';
+        return;
+      }
+
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerText = item.name;
+        div.onclick = function() {
+          document.getElementById(inputId).value = item.name;
+          containerEl.style.display = 'none';
+        };
+        containerEl.appendChild(div);
+      });
+
+      containerEl.style.display = 'block';
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.autocomplete-container')) {
+        document.getElementById('autocompleteResults').style.display = 'none';
+        document.getElementById('typeAutocompleteResults').style.display = 'none';
+        document.getElementById('modalTypeAutocompleteResults').style.display = 'none';
+        document.getElementById('modalUpgradeAutocompleteResults').style.display = 'none';
+      }
+    });
+
+    // --- CALL UPGRADE LOGIC ---
+    async function executeCallUpgrade() {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const newTypeName = document.getElementById('modalUpgradeTypeInput').value.trim();
+      if (!newTypeName) {
+        alert("Please select or enter the upgraded call type.");
+        return;
+      }
+
+      const oldTypeName = inc.type;
+      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === newTypeName.toLowerCase());
+      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
+        alert(`No response order / run card found for "${newTypeName}". Please configure it in Call Types Manager.`);
+        return;
+      }
+
+      const fullUpgradedRunCard = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
+      const currentlyAssigned = Array.isArray(inc.assignedUnits) ? [...inc.assignedUnits] : Object.values(inc.assignedUnits || {});
+      const assignedUnitsSet = new Set(currentlyAssigned);
+
+      const remainingNeededTraits = [];
+      const usedAssignedForCoverage = new Set();
+
+      fullUpgradedRunCard.forEach(trait => {
+        const foundUnit = currentlyAssigned.find(uId => {
+          if (usedAssignedForCoverage.has(uId)) return false;
+          const u = loadedUnits[uId];
+          const uRoles = Array.isArray(u?.roles) ? u.roles : Object.values(u?.roles || {});
+          return uRoles.includes(trait);
+        });
+
+        if (foundUnit) {
+          usedAssignedForCoverage.add(foundUnit);
+        } else {
+          remainingNeededTraits.push(trait);
+        }
+      });
+
+      if (remainingNeededTraits.length === 0) {
+        db.ref(`incidents/${activeModalIncidentId}`).update({
+          type: newTypeName,
+          updatedAt: Date.now()
+        });
+
+        db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+          author: 'CAD SYSTEM',
+          text: `Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Existing units satisfy the upgraded run card.`,
+          timestamp: Date.now()
+        });
+
+        CADAudio.playUpgradeAlert();
+
+        document.getElementById('modalTypeInput').value = newTypeName;
+        document.getElementById('modalUpgradeTypeInput').value = '';
+        alert(`Call upgraded to ${newTypeName}! All required capabilities are already covered by assigned units.`);
+        return;
+      }
+
+      const stationCrewCapacity = getStationAvailableCrewsPool();
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      const additionalDispatched = [];
+
+      for (const requiredTrait of remainingNeededTraits) {
+        const slotCategoryTier = getTraitCategoryTier(requiredTrait);
+        let candidatePromises = [];
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+          const status = unit.status || 'AVAILABLE';
+          const isAvailable = status === 'AVAILABLE' || status === 'IN_QUARTERS' || status === 'ON_CALL';
+          const stId = unit.assignedStationId;
+          const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+
+          if (!roles.includes(requiredTrait) || !isAvailable || assignedUnitsSet.has(uId)) {
+            return;
+          }
+
+          let turnoutDelay = 0;
+          if (status === 'ON_CALL') {
+            turnoutDelay = 4.0;
+          } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
+            const cap = stationCrewCapacity[stId];
+            if (status === 'AVAILABLE') {
+              turnoutDelay = 0;
+            } else if (cap.staffedRemaining > 0) {
+              turnoutDelay = 0;
+            } else if (cap.onCallRemaining > 0) {
+              const nextOnCallIndex = cap.onCallPulledCount + 1;
+              turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
+            } else {
+              return;
+            }
+          }
+
+          let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+          let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+
+          if (!uLat && stId && loadedStations[stId]) {
+            uLat = parseFloat(loadedStations[stId].lat);
+            uLng = parseFloat(loadedStations[stId].lng);
+          }
+
+          if (uLat && uLng) {
+            candidatePromises.push((async () => {
+              const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+              const totalTime = routeInfo.timeMinutes + turnoutDelay;
+              return { 
+                id: uId, 
+                unit: unit, 
+                stId: stId,
+                turnoutDelay: turnoutDelay, 
+                totalTime: totalTime,
+                fulfilledTier: slotCategoryTier
+              };
+            })());
+          }
+        });
+
+        const candidates = await Promise.all(candidatePromises);
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => a.totalTime - b.totalTime);
+          const best = candidates[0];
+
+          assignedUnitsSet.add(best.id);
+          additionalDispatched.push(best.id);
+          unitFulfilledTierMap[best.id] = best.fulfilledTier;
+
+          if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
+            const cap = stationCrewCapacity[best.stId];
+            if (cap.staffedRemaining > 0) {
+              cap.staffedRemaining--;
+            } else if (cap.onCallRemaining > 0) {
+              cap.onCallRemaining--;
+              cap.onCallPulledCount++;
+            }
+          }
+        }
+      }
+
+      const combinedUnits = [...currentlyAssigned, ...additionalDispatched];
+
+      const sortedAllUnits = combinedUnits.map((uId, originalIndex) => {
+        const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
+        return {
+          id: uId,
+          tier: assignedTier,
+          pickIndex: originalIndex
+        };
+      }).sort((a, b) => {
+        if (a.tier !== b.tier) return a.tier - b.tier;
+        return a.pickIndex - b.pickIndex;
+      }).map(item => item.id);
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        type: newTypeName,
+        assignedUnits: sortedAllUnits,
+        status: 'DISPATCHED',
+        updatedAt: Date.now()
+      });
+
+      additionalDispatched.forEach(uId => {
+        db.ref(`units/${uId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+      });
+
+      const addDisplay = formatAssignedShortIds(additionalDispatched);
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'CAD SYSTEM',
+        text: `[UPGRADE]: Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Additional units dispatched: [${addDisplay}].`,
+        timestamp: Date.now()
+      });
+
+      CADAudio.playUpgradeAlert();
+
+      document.getElementById('modalTypeInput').value = newTypeName;
+      document.getElementById('modalUpgradeTypeInput').value = '';
+
+      alert(`Incident upgraded to ${newTypeName}!\nAdditional Units Dispatched: ${addDisplay || 'None'}`);
+    }
+
+    // --- LISTEN FOR RADIO CHANNELS ---
+    db.ref('radioChannels').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      loadedRadioChannels = Object.keys(data).map(k => ({ id: k, name: data[k].name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const listContainer = document.getElementById('configuredRadioChannelsList');
+      if (listContainer) {
+        listContainer.innerHTML = '';
+        if (loadedRadioChannels.length === 0) {
+          listContainer.innerHTML = '<em>No radio channels configured yet.</em>';
+        } else {
+          loadedRadioChannels.forEach(rc => {
+            const div = document.createElement('div');
+            div.style.padding = '6px 0';
+            div.style.borderBottom = '1px solid #222';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.innerHTML = `
+              <span><strong>${rc.name}</strong></span>
+              <div>
+                <button onclick="editRadioChannel('${rc.id}', '${rc.name.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
+                <button onclick="deleteRadioChannel('${rc.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+              </div>
+            `;
+            listContainer.appendChild(div);
+          });
+        }
+      }
+
+      refreshModalAddRadioDropdown();
+    });
+
+    function saveNewRadioChannel() {
+      const name = document.getElementById('newRadioChannelInput').value.trim();
+      if (!name) return;
+
+      db.ref('radioChannels').push({ name: name, createdAt: Date.now() });
+      document.getElementById('newRadioChannelInput').value = '';
+    }
+
+    function editRadioChannel(id, currentName) {
+      const updatedName = prompt("Edit Radio Channel Name:", currentName);
+      if (updatedName !== null && updatedName.trim() !== "") {
+        db.ref(`radioChannels/${id}`).update({
+          name: updatedName.trim(),
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    function deleteRadioChannel(id) {
+      if (confirm("Delete radio channel preset?")) {
+        db.ref(`radioChannels/${id}`).remove();
+      }
+    }
+
+    function openRadioChannelsModal() {
+      document.getElementById('radioChannelsModal').style.display = 'flex';
+    }
+
+    function closeRadioChannelsModal() {
+      document.getElementById('radioChannelsModal').style.display = 'none';
+    }
+
+    function refreshModalAddRadioDropdown() {
+      const select = document.getElementById('modalAddRadioSelect');
+      if (!select) return;
+
+      select.innerHTML = '<option value="">-- Add Radio Channel --</option>';
+      loadedRadioChannels.forEach(rc => {
+        select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`;
+      });
+    }
+
+    // --- CALL TYPES & RUN CARD MANAGER ---
+    function appendTagToRunCard(tag) {
+      currentBuildingRunCard.push(tag);
+      renderRunCardDisplay();
+    }
+
+    function removeTagFromRunCard(index) {
+      currentBuildingRunCard.splice(index, 1);
+      renderRunCardDisplay();
+    }
+
+    function renderRunCardDisplay() {
+      const display = document.getElementById('activeRunCardDisplay');
+      display.innerHTML = '';
+      if (currentBuildingRunCard.length === 0) {
+        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>';
+        return;
+      }
+
+      currentBuildingRunCard.forEach((tag, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'run-card-chip';
+        chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
+        display.appendChild(chip);
+      });
+    }
+
+    db.ref('callTypes').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      loadedCallTypes = Object.keys(data).map(k => ({
+        id: k,
+        name: data[k].name,
+        responseOrder: Array.isArray(data[k].responseOrder) ? data[k].responseOrder : Object.values(data[k].responseOrder || {})
+      }));
+
+      const listContainer = document.getElementById('configuredCallTypesList');
+      if (listContainer) {
+        listContainer.innerHTML = '';
+        if (loadedCallTypes.length === 0) {
+          listContainer.innerHTML = '<em>No call types configured yet.</em>';
+        } else {
+          loadedCallTypes.forEach(ct => {
+            const div = document.createElement('div');
+            div.style.padding = '8px 0';
+            div.style.borderBottom = '1px solid #222';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            
+            const cardText = ct.responseOrder.length > 0 ? ct.responseOrder.join(', ') : 'No run card set';
+
+            div.innerHTML = `
+              <div>
+                <strong>${ct.name}</strong>
+                <div style="font-size:11px; color:#aaa; margin-top:2px;">Order: ${cardText}</div>
+              </div>
+              <div>
+                <button onclick="editCallType('${ct.id}')" class="btn-action-sm btn-edit-sm">Edit</button>
+                <button onclick="deleteCallType('${ct.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+              </div>
+            `;
+            listContainer.appendChild(div);
+          });
+        }
+      }
+    });
+
+    function saveNewCallType() {
+      const name = document.getElementById('newCallTypeInput').value.trim();
+      if (!name) {
+        alert("Please enter a call type name.");
+        return;
+      }
+
+      if (editingCallTypeId) {
+        db.ref(`callTypes/${editingCallTypeId}`).update({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          updatedAt: Date.now()
+        });
+        editingCallTypeId = null;
+      } else {
+        db.ref('callTypes').push({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          createdAt: Date.now()
+        });
+      }
+
+      document.getElementById('newCallTypeInput').value = '';
+      currentBuildingRunCard = [];
+      renderRunCardDisplay();
+    }
+
+    function editCallType(id) {
+      const ct = loadedCallTypes.find(t => t.id === id);
+      if (!ct) return;
+
+      editingCallTypeId = id;
+      document.getElementById('newCallTypeInput').value = ct.name;
+      currentBuildingRunCard = [...(ct.responseOrder || [])];
+      renderRunCardDisplay();
+    }
+
+    function deleteCallType(id) {
+      if (confirm("Delete call type preset?")) {
+        db.ref(`callTypes/${id}`).remove();
+      }
+    }
+
+    function openCallTypesModal() {
+      editingCallTypeId = null;
+      currentBuildingRunCard = [];
+      document.getElementById('newCallTypeInput').value = '';
+      renderRunCardDisplay();
+      document.getElementById('callTypesModal').style.display = 'flex';
+    }
+
+    function closeCallTypesModal() {
+      document.getElementById('callTypesModal').style.display = 'none';
+    }
+
+    // --- LISTEN FOR STATIONS & CREW SETTINGS ---
+    db.ref('stations').on('value', (snapshot) => {
+      loadedStations = snapshot.val() || {};
+      const listContainer = document.getElementById('configuredStationsList');
+      listContainer.innerHTML = '';
+
+      const keys = Object.keys(loadedStations);
+      if (keys.length === 0) {
+        listContainer.innerHTML = '<em>No stations setup yet.</em>';
+      } else {
+        const sortedStations = keys.map(k => ({ id: k, ...loadedStations[k] }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedStations.forEach(st => {
+          const div = document.createElement('div');
+          div.style.padding = '6px 0';
+          div.style.borderBottom = '1px solid #222';
+          div.style.display = 'flex';
+          div.style.justifyContent = 'space-between';
+          div.style.alignItems = 'center';
+          div.innerHTML = `
+            <div>
+              <strong>${st.name}</strong> [${st.lat}, ${st.lng}]
+              <div style="font-size:11px; color:#aaa; margin-top:2px;">Staffed Crews: ${st.staffedCrews || 0} | On-Call Crews: ${st.onCallCrews || 0}</div>
+            </div>
+            <div>
+              <button onclick="editStation('${st.id}', '${st.name.replace(/'/g, "\\'")}', '${st.lat}', '${st.lng}', '${st.staffedCrews || 1}', '${st.onCallCrews || 1}')" class="btn-action-sm btn-edit-sm">Edit</button>
+              <button onclick="deleteStation('${st.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+            </div>
+          `;
+          listContainer.appendChild(div);
+        });
+      }
+
+      refreshUnitCreatorStationDropdown();
+      renderUnitRoster();
+      refreshMapLayers();
+    });
+
+    function saveNewStation() {
+      const name = document.getElementById('stationNameInput').value.trim();
+      const lat = document.getElementById('stationLatInput').value.trim();
+      const lng = document.getElementById('stationLngInput').value.trim();
+      const staffedCrews = parseInt(document.getElementById('stationStaffedCrewsInput').value) || 0;
+      const onCallCrews = parseInt(document.getElementById('stationOnCallCrewsInput').value) || 0;
+
+      if (!name || !lat || !lng) {
+        alert("Please enter Station Name, Latitude, and Longitude.");
+        return;
+      }
+
+      db.ref('stations').push({
+        name: name,
+        lat: lat,
+        lng: lng,
+        staffedCrews: staffedCrews,
+        onCallCrews: onCallCrews,
+        createdAt: Date.now()
+      });
+
+      document.getElementById('stationNameInput').value = '';
+      document.getElementById('stationLatInput').value = '';
+      document.getElementById('stationLngInput').value = '';
+      document.getElementById('stationStaffedCrewsInput').value = '1';
+      document.getElementById('stationOnCallCrewsInput').value = '1';
+    }
+
+    function editStation(id, currentName, currentLat, currentLng, currStaffed, currOnCall) {
+      const updatedName = prompt("Edit Station Name:", currentName);
+      if (updatedName === null || updatedName.trim() === "") return;
+
+      const updatedLat = prompt("Edit Latitude:", currentLat);
+      if (updatedLat === null || updatedLat.trim() === "") return;
+
+      const updatedLng = prompt("Edit Longitude:", currentLng);
+      if (updatedLng === null || updatedLng.trim() === "") return;
+
+      const updatedStaffed = prompt("Number of Staffed Crews (0 min delay):", currStaffed || 1);
+      if (updatedStaffed === null || isNaN(parseInt(updatedStaffed))) return;
+
+      const updatedOnCall = prompt("Number of On-Call Crews (+4m/+2m delay):", currOnCall || 1);
+      if (updatedOnCall === null || isNaN(parseInt(updatedOnCall))) return;
+
+      db.ref(`stations/${id}`).update({
+        name: updatedName.trim(),
+        lat: updatedLat.trim(),
+        lng: updatedLng.trim(),
+        staffedCrews: parseInt(updatedStaffed),
+        onCallCrews: parseInt(updatedOnCall),
+        updatedAt: Date.now()
+      });
+
+      Object.keys(loadedUnits).forEach(uId => {
+        const u = loadedUnits[uId];
+        if (u.assignedStationId === id) {
+          db.ref(`units/${uId}`).update({
+            assignedStationName: updatedName.trim(),
+            location: {
+              lat: updatedLat.trim(),
+              lng: updatedLng.trim(),
+              type: 'STATIC_STATION'
+            }
+          });
+        }
+      });
+    }
+
+    function deleteStation(id) {
+      if (confirm("Delete station configuration?")) {
+        db.ref(`stations/${id}`).remove();
+      }
+    }
+
+    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS ---
+    function setAllUnitsStatus(targetStatus) {
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        alert("No active units logged in to update.");
+        return;
+      }
+
+      if (confirm(`Set ALL ${unitKeys.length} unit(s) status to ${targetStatus.replace(/_/g, ' ')}?`)) {
+        unitKeys.forEach(uId => {
+          db.ref(`units/${uId}`).update({
+            status: targetStatus,
+            lastUpdated: Date.now()
+          });
+        });
+
+        alert(`All units updated to ${targetStatus.replace(/_/g, ' ')}!`);
+      }
+    }
+
+    // --- LISTEN FOR UNITS ROSTER ---
+    db.ref('units').on('value', (snapshot) => {
+      loadedUnits = snapshot.val() || {};
+      renderUnitRoster();
+      refreshMapLayers();
+    });
+
+    function renderUnitRoster() {
+      const unitListEl = document.getElementById('unitList');
+      if (!unitListEl) return;
+
+      unitListEl.innerHTML = '';
+      const unitKeys = Object.keys(loadedUnits);
+
+      if (unitKeys.length === 0) {
+        unitListEl.innerHTML = '<em>No active units logged in yet...</em>';
+        return;
+      }
+
+      const availableStatuses = [
+        "DISPATCHED",
+        "ENROUTE",
+        "ONSCENE",
+        "ARRIVED",
+        "TRANSPORTING",
+        "IN_QUARTERS",
+        "AVAILABLE",
+        "ON_CALL",
+        "OUT_OF_SERVICE"
+      ];
+
+      const sortedStationKeys = Object.keys(loadedStations)
+        .sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
+
+      unitKeys.forEach(unitId => {
+        const unit = loadedUnits[unitId];
+        const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+        const currentStatus = unit.status || 'AVAILABLE';
+        const statusText = currentStatus.replace(/_/g, ' ');
+        const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+        const shortBadge = unit.shortId ? ` [${unit.shortId}]` : '';
+        const passBadge = unit.password ? '<span style="font-size:11px; color:#f1c40f; margin-left:4px;">🔒</span>' : '';
+        
+        const div = document.createElement('div');
+        div.className = 'unit-row';
+        
+        const tagsHtml = roles.map(r => `<span class="tag">${r}</span>`).join('');
+        
+        let stationOptions = '<option value="">-- Assign Station (Static Location) --</option>';
+        sortedStationKeys.forEach(stId => {
+          const st = loadedStations[stId];
+          const isSelected = unit.assignedStationId === stId ? 'selected' : '';
+          stationOptions += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
+        });
+
+        let statusOptions = '';
+        availableStatuses.forEach(stVal => {
+          const selectedAttr = stVal === currentStatus ? 'selected' : '';
+          statusOptions += `<option value="${stVal}" ${selectedAttr}>${stVal.replace(/_/g, ' ')}</option>`;
+        });
+
+        div.innerHTML = `
+          <div class="unit-header">
+            <span>
+              <strong>${unitId}${shortBadge}</strong>${passBadge} <span style="font-size:11px; color:${isCrossStaffed ? '#f39c12' : '#2ecc71'};">(${isCrossStaffed ? 'Cross-Staffed' : 'Dedicated Staff'})</span>
+              <button class="btn-edit-unit" onclick="openEditUnitModal('${unitId}')">Edit Unit</button>
+              <button class="btn-remove-unit" onclick="removeUnit('${unitId}')">Remove</button>
+            </span>
+            <span class="status-${currentStatus}">${statusText}</span>
+          </div>
+          <div class="role-badges">${tagsHtml || '<span style="color:#666;">No capability tags set</span>'}</div>
+          
+          <div class="unit-controls-row">
+            <div style="flex: 1; min-width: 150px;">
+              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Change Status:</span>
+              <select onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                ${statusOptions}
+              </select>
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffing Type:</span>
+              <select onchange="changeUnitStaffingType('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                <option value="DEDICATED" ${!isCrossStaffed ? 'selected' : ''}>Dedicated Crew</option>
+                <option value="CROSS_STAFFED" ${isCrossStaffed ? 'selected' : ''}>Cross-Staffed</option>
+              </select>
+            </div>
+            
+            <div style="flex: 1.5; min-width: 200px;">
+              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Assign Home Station:</span>
+              <select onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                ${stationOptions}
+              </select>
+            </div>
+          </div>
+        `;
+        unitListEl.appendChild(div);
+      });
+    }
+
+    function dispatchChangeUnitStatus(unitId, newStatus) {
+      db.ref(`units/${unitId}`).update({
+        status: newStatus,
+        lastUpdated: Date.now()
+      });
+
+      Object.keys(loadedIncidents).forEach(incId => {
+        const inc = loadedIncidents[incId];
+        const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+        if (assigned.includes(unitId)) {
+          const u = loadedUnits[unitId];
+          const displayName = u && u.shortId ? u.shortId : unitId;
+          db.ref(`incidents/${incId}/logs`).push({
+            author: 'DISPATCH',
+            text: `${displayName} status updated to ${newStatus.replace(/_/g, ' ')} by Dispatch.`,
+            timestamp: Date.now()
+          });
+        }
+      });
+    }
+
+    function changeUnitStaffingType(unitId, type) {
+      db.ref(`units/${unitId}`).update({
+        staffingType: type,
+        lastUpdated: Date.now()
+      });
+    }
+
+    function assignUnitStation(unitId, stationId) {
+      if (!stationId) {
+        db.ref(`units/${unitId}/assignedStationId`).remove();
+        db.ref(`units/${unitId}/assignedStationName`).remove();
+        db.ref(`units/${unitId}/location`).remove();
+        return;
+      }
+
+      const st = loadedStations[stationId];
+      if (st) {
+        db.ref(`units/${unitId}`).update({
+          assignedStationId: stationId,
+          assignedStationName: st.name,
+          location: {
+            lat: st.lat,
+            lng: st.lng,
+            type: 'STATIC_STATION'
+          }
+        });
+      }
+    }
+
+    function removeUnit(unitId) {
+      if (confirm(`Remove ${unitId} from the active unit roster?`)) {
+        db.ref('units/' + unitId).remove();
+      }
+    }
+
+    // --- SUBMIT PENDING CALL ---
+    function submitPendingCall() {
+      const address = document.getElementById('incidentAddress').value.trim();
+      const type = document.getElementById('incidentType').value.trim();
+      
+      if (!address || !type) {
+        alert("Please enter both an address and call type.");
+        return;
+      }
+
+      const newIncRef = db.ref('incidents').push();
+      newIncRef.set({
+        address: address,
+        type: type,
+        boxArea: detectedBoxArea,
+        assignedUnits: [],
+        status: 'PENDING',
+        lat: selectedLat,
+        lng: selectedLng,
+        timestamp: Date.now()
+      });
+
+      newIncRef.child('logs').push({
+        author: 'DISPATCH',
+        text: `Pending Call Created: [${type}] at ${address} [${detectedBoxArea}]. Awaiting unit dispatch.`,
+        timestamp: Date.now()
+      });
+
+      CADAudio.playPendingCallAlert();
+
+      document.getElementById('incidentAddress').value = '';
+      document.getElementById('incidentType').value = '';
+      document.getElementById('callCoordsDisplay').innerText = 'Not Set';
+      document.getElementById('callBoxAreaDisplay').innerText = 'Out of Area';
+      if (callTakingMarker) callTakingMap.removeLayer(callTakingMarker);
+      selectedLat = null;
+      selectedLng = null;
+      detectedBoxArea = 'Out of Area';
+
+      alert("Call submitted as PENDING! Switch to the 'Active / Pending Calls' tab to dispatch units.");
+    }
+
+    // --- LISTEN FOR INCIDENTS ---
+    db.ref('incidents').on('value', (snapshot) => {
+      loadedIncidents = snapshot.val() || {};
+      const incidentListEl = document.getElementById('activeIncidentList');
+      incidentListEl.innerHTML = '';
+
+      const keys = Object.keys(loadedIncidents);
+      if (keys.length === 0) {
+        incidentListEl.innerHTML = '<em>No active or pending incidents currently.</em>';
+      } else {
+        keys.forEach(id => {
+          const inc = loadedIncidents[id];
+          const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+          const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
+          
+          let radioInfo = '';
+          const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+          if (radios.length > 0) {
+            radioInfo = '<div style="font-size:12px; margin-top:4px;"><strong>Radios:</strong> ' +
+              radios.map(r => `<span class="radio-badge-tag">${r.name}${r.desc ? ' (' + r.desc + ')' : ''}</span>`).join(' ') + '</div>';
+          }
+
+          const card = document.createElement('div');
+          card.className = `incident-card ${isPending ? 'pending' : ''}`;
+          
+          const statusBadge = isPending ? '<span class="badge-pending">PENDING</span>' : '<span class="badge-dispatched">DISPATCHED</span>';
+
+          card.innerHTML = `
+            <div class="incident-header">
+              <strong style="font-size: 16px;">${inc.type} ${statusBadge} ${boxBadge}</strong>
+              <div>
+                <button class="btn-manage" onclick="openEditModal('${id}')">Open / Dispatch Call</button>
+              </div>
+            </div>
+            <p style="margin: 5px 0;"><strong>Location:</strong> ${inc.address}</p>
+            <p style="margin: 5px 0;"><strong>Assigned Units:</strong> ${formatAssignedShortIds(inc.assignedUnits)}</p>
+            ${radioInfo}
+          `;
+          incidentListEl.appendChild(card);
+        });
+      }
+
+      refreshMapLayers();
+    });
+
+    // --- MANAGE INCIDENT MODAL & SEPARATE UNIT DISPATCH WINDOW ---
+    function openEditModal(incidentId) {
+      activeModalIncidentId = incidentId;
+      document.getElementById('editCallModal').style.display = 'flex';
+
+      db.ref(`incidents/${incidentId}`).on('value', (snapshot) => {
+        const inc = snapshot.val();
+        if (!inc) {
+          closeEditModal();
+          return;
+        }
+
+        const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
+        document.getElementById('modalCallTitle').innerText = `Manage: ${inc.type}${boxText}`;
+        document.getElementById('modalAddressInput').value = inc.address;
+        document.getElementById('modalTypeInput').value = inc.type;
+
+        renderModalRadioList(inc.radioChannels || []);
+
+        document.getElementById('modalAssignedUnitsListDisplay').innerHTML = formatAssignedShortIds(inc.assignedUnits);
+
+        const logs = inc.logs || {};
+        const feed = document.getElementById('modalLogFeed');
+        feed.innerHTML = '';
+
+        Object.keys(logs).reverse().forEach(key => {
+          const entry = logs[key];
+          const timeStr = new Date(entry.timestamp).toLocaleTimeString();
+          const div = document.createElement('div');
+          div.className = 'log-entry';
+          div.innerHTML = `<span class="timestamp">[${timeStr}]</span> <strong>${entry.author}:</strong> ${entry.text}`;
+          feed.appendChild(div);
+        });
+      });
+    }
+
+    function openUnitDispatchModal() {
+      if (!activeModalIncidentId) return;
+
+      document.getElementById('suggestResponseNotice').style.display = 'none';
+      
+      const inc = loadedIncidents[activeModalIncidentId];
+      const assigned = Array.isArray(inc?.assignedUnits) ? inc.assignedUnits : Object.values(inc?.assignedUnits || {});
+      currentDispatchSelectionOrder = [...assigned];
+      unitFulfilledTierMap = {};
+
+      renderUnitDispatchList();
+      document.getElementById('unitDispatchModal').style.display = 'flex';
+    }
+
+    function toggleUnitDispatchSelection(uId, isChecked) {
+      if (isChecked) {
+        if (!currentDispatchSelectionOrder.includes(uId)) {
+          currentDispatchSelectionOrder.push(uId);
+        }
+      } else {
+        currentDispatchSelectionOrder = currentDispatchSelectionOrder.filter(id => id !== uId);
+        delete unitFulfilledTierMap[uId];
+      }
+    }
+
+    // --- RENDER DISPATCH LIST ---
+    async function renderUnitDispatchList() {
+      const container = document.getElementById('unitDispatchScrollList');
+      container.innerHTML = '<em>Calculating driving routes and staffing turnout times...</em>';
+
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        container.innerHTML = '<em>No active units logged in.</em>';
+        return;
+      }
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      const stationCrewTracking = getStationAvailableCrewsPool();
+
+      const unitTravelData = await Promise.all(unitKeys.map(async uId => {
+        const unit = loadedUnits[uId];
+        let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+        let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+        const stId = unit.assignedStationId;
+
+        if (!uLat && stId && loadedStations[stId]) {
+          uLat = parseFloat(loadedStations[stId].lat);
+          uLng = parseFloat(loadedStations[stId].lng);
+        }
+
+        let routeInfo = { distanceMiles: 999, timeMinutes: 999, isRoadRoute: false };
+        if (uLat && uLng) {
+          routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+        }
+
+        return {
+          id: uId,
+          unit: unit,
+          stId: stId,
+          drivingTimeMinutes: routeInfo.timeMinutes,
+          distanceMiles: routeInfo.distanceMiles,
+          isRoadRoute: routeInfo.isRoadRoute
+        };
+      }));
+
+      unitTravelData.sort((a, b) => a.drivingTimeMinutes - b.drivingTimeMinutes);
+
+      unitTravelData.forEach(item => {
+        let turnoutDelay = 0;
+        let staffingTag = "Staffed In-Station";
+        const isCrossStaffed = item.unit.staffingType === 'CROSS_STAFFED';
+        const currentStatus = item.unit.status || 'AVAILABLE';
+
+        if (currentStatus === 'ON_CALL') {
+          turnoutDelay = 4.0;
+          staffingTag = "On-Call Status";
+        } else if (isCrossStaffed && item.stId && stationCrewTracking[item.stId]) {
+          const track = stationCrewTracking[item.stId];
+          
+          if (currentStatus === 'AVAILABLE' || currentStatus === 'DISPATCHED' || currentStatus === 'ENROUTE') {
+            turnoutDelay = 0;
+            staffingTag = "In-Service (Active Crew)";
+          } else if (track.staffedRemaining > 0) {
+            track.staffedRemaining--;
+            turnoutDelay = 0;
+            staffingTag = "In-Station Staffed Crew";
+          } else if (track.onCallRemaining > 0) {
+            track.onCallRemaining--;
+            track.onCallPulledCount++;
+            turnoutDelay = track.onCallPulledCount === 1 ? 4.0 : 4.0 + (track.onCallPulledCount - 1) * 2.0;
+            staffingTag = `On-Call Crew #${track.onCallPulledCount} (+${turnoutDelay}m delay)`;
+          } else {
+            turnoutDelay = 15.0;
+            staffingTag = "Crews Exhausted / Locked";
+          }
+        }
+
+        item.turnoutDelay = turnoutDelay;
+        item.totalEstimatedMinutes = item.drivingTimeMinutes + turnoutDelay;
+        item.staffingTag = staffingTag;
+      });
+
+      unitTravelData.sort((a, b) => a.totalEstimatedMinutes - b.totalEstimatedMinutes);
+
+      container.innerHTML = '';
+
+      unitTravelData.forEach(item => {
+        const uId = item.id;
+        const unit = item.unit;
+        const shortBadge = unit.shortId ? ` (${unit.shortId})` : '';
+        const passIcon = unit.password ? ' 🔒' : '';
+        const isChecked = currentDispatchSelectionOrder.includes(uId);
+        const orderIdx = currentDispatchSelectionOrder.indexOf(uId);
+        const orderBadge = isChecked ? `<span style="background:#e63946; color:#fff; font-size:11px; padding:2px 6px; border-radius:3px; margin-left:6px;">#${orderIdx + 1}</span>` : '';
+        const statusText = unit.status ? unit.status.replace(/_/g, ' ') : 'AVAILABLE';
+        const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+        const rolesText = roles.join(', ') || 'No capability tags';
+        const staffingTypeBadge = unit.staffingType === 'CROSS_STAFFED' ? '[Cross-Staffed]' : '[Dedicated]';
+
+        const delayDisplay = item.turnoutDelay > 0 ? `<span style="color:#f1c40f; font-size:11px;"> [${item.staffingTag}]</span>` : '';
+
+        const travelBadge = item.distanceMiles < 900 
+          ? `<span style="color:#2ecc71; font-weight:bold; margin-left:8px;">~${item.totalEstimatedMinutes.toFixed(1)} mins (${item.distanceMiles.toFixed(1)} mi)</span>${delayDisplay}`
+          : '<span style="color:#888; margin-left:8px;">[No Station/Location Set]</span>';
+
+        const div = document.createElement('div');
+        div.className = 'unit-dispatch-item';
+        div.innerHTML = `
+          <div>
+            <strong>${uId}${shortBadge}${passIcon}</strong> ${orderBadge} <span style="font-size:11px; color:#aaa;">${staffingTypeBadge}</span>
+            ${travelBadge}
+            <span class="status-${unit.status}" style="font-size:12px; margin-left:8px;">[${statusText}]</span>
+            <div style="font-size:11px; color:#aaa; margin-top:2px;">Tags: ${rolesText}</div>
+          </div>
+          <input type="checkbox" class="dispatch-unit-select" value="${uId}" ${isChecked ? 'checked' : ''} onchange="toggleUnitDispatchSelection('${uId}', this.checked); renderUnitDispatchList();">
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function closeUnitDispatchModal() {
+      document.getElementById('unitDispatchModal').style.display = 'none';
+    }
+
+    // --- AUTOMATED RESPONSE SUGGESTION ENGINE ---
+    async function suggestResponseForCall() {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === inc.type.toLowerCase());
+      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
+        alert(`No response order / run card configured for "${inc.type}". Configure it in Call Types Manager.`);
+        return;
+      }
+
+      const runCardOrder = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
+      const suggestedOrder = [];
+      const suggestedSet = new Set();
+      unitFulfilledTierMap = {};
+
+      const stationCrewCapacity = getStationAvailableCrewsPool();
+
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      for (const requiredTrait of runCardOrder) {
+        const slotCategoryTier = getTraitCategoryTier(requiredTrait);
+        let candidatePromises = [];
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+          const status = unit.status || 'AVAILABLE';
+          const isAvailable = status === 'AVAILABLE' || status === 'IN_QUARTERS' || status === 'ON_CALL';
+          const stId = unit.assignedStationId;
+          const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+
+          if (!roles.includes(requiredTrait) || !isAvailable || suggestedSet.has(uId)) {
+            return;
+          }
+
+          let turnoutDelay = 0;
+          if (status === 'ON_CALL') {
+            turnoutDelay = 4.0;
+          } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
+            const cap = stationCrewCapacity[stId];
+            
+            if (status === 'AVAILABLE') {
+              turnoutDelay = 0;
+            } else if (cap.staffedRemaining > 0) {
+              turnoutDelay = 0;
+            } else if (cap.onCallRemaining > 0) {
+              const nextOnCallIndex = cap.onCallPulledCount + 1;
+              turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
+            } else {
+              return;
+            }
+          }
+
+          let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+          let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+
+          if (!uLat && stId && loadedStations[stId]) {
+            uLat = parseFloat(loadedStations[stId].lat);
+            uLng = parseFloat(loadedStations[stId].lng);
+          }
+
+          if (uLat && uLng) {
+            candidatePromises.push((async () => {
+              const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+              const totalTime = routeInfo.timeMinutes + turnoutDelay;
+              return { 
+                id: uId, 
+                unit: unit, 
+                stId: stId,
+                turnoutDelay: turnoutDelay, 
+                totalTime: totalTime,
+                fulfilledTier: slotCategoryTier
+              };
+            })());
+          }
+        });
+
+        const candidates = await Promise.all(candidatePromises);
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => a.totalTime - b.totalTime);
+          const best = candidates[0];
+
+          suggestedSet.add(best.id);
+          suggestedOrder.push(best.id);
+          unitFulfilledTierMap[best.id] = best.fulfilledTier;
+
+          if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
+            const cap = stationCrewCapacity[best.stId];
+            if (cap.staffedRemaining > 0) {
+              cap.staffedRemaining--;
+            } else if (cap.onCallRemaining > 0) {
+              cap.onCallRemaining--;
+              cap.onCallPulledCount++;
+            }
+          }
+        }
+      }
+
+      if (suggestedOrder.length === 0) {
+        alert("No available units matched the required run card or all station crews were exhausted.");
+        return;
+      }
+
+      currentDispatchSelectionOrder = suggestedOrder;
+      renderUnitDispatchList();
+
+      const notice = document.getElementById('suggestResponseNotice');
+      const shortDisplay = formatAssignedShortIds(suggestedOrder);
+      notice.innerText = `Suggested ${suggestedOrder.length} unit(s) based on staffing & travel time: ${shortDisplay}`;
+      notice.style.display = 'block';
+    }
+
+    function confirmUnitDispatchSelection() {
+      if (!activeModalIncidentId) return;
+
+      const newAddress = document.getElementById('modalAddressInput').value.trim();
+      const newType = document.getElementById('modalTypeInput').value.trim();
+
+      const rawSelection = [...currentDispatchSelectionOrder];
+      
+      const sortedSelectedUnits = rawSelection.map((uId, originalIndex) => {
+        const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
+        return {
+          id: uId,
+          tier: assignedTier,
+          pickIndex: originalIndex
+        };
+      }).sort((a, b) => {
+        if (a.tier !== b.tier) {
+          return a.tier - b.tier;
+        }
+        return a.pickIndex - b.pickIndex;
+      }).map(item => item.id);
+
+      const newStatus = sortedSelectedUnits.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        address: newAddress,
+        type: newType,
+        assignedUnits: sortedSelectedUnits,
+        status: newStatus
+      });
+
+      sortedSelectedUnits.forEach(uId => {
+        db.ref(`units/${uId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+      });
+
+      const shortLogDisplay = formatAssignedShortIds(sortedSelectedUnits);
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `Units dispatched in category tier order: [${shortLogDisplay}]. Call status set to ${newStatus}.`,
+        timestamp: Date.now()
+      });
+
+      closeUnitDispatchModal();
+      alert(`Units dispatched in sorted category tier order: ${shortLogDisplay}`);
+    }
+
+    function closeEditModal() {
+      if (activeModalIncidentId) {
+        db.ref(`incidents/${activeModalIncidentId}`).off();
+      }
+      activeModalIncidentId = null;
+      document.getElementById('editCallModal').style.display = 'none';
+    }
+
+    // CLEAR & ARCHIVE CALL
+    function clearCurrentModalCall() {
+      if (!activeModalIncidentId) return;
+      if (confirm("Clear and archive this incident? Assigned units will automatically be set to AVAILABLE.")) {
+        const id = activeModalIncidentId;
+        
+        db.ref(`incidents/${id}`).once('value', (snapshot) => {
+          const callData = snapshot.val();
+          if (callData) {
+            const assignedUnits = Array.isArray(callData.assignedUnits) ? callData.assignedUnits : Object.values(callData.assignedUnits || {});
+
+            assignedUnits.forEach(uId => {
+              db.ref(`units/${uId}`).update({
+                status: 'AVAILABLE',
+                lastUpdated: Date.now()
+              });
+            });
+
+            db.ref(`incidents/${id}/logs`).push({
+              author: 'CAD SYSTEM',
+              text: `Incident cleared and archived by Dispatch. Assigned units (${formatAssignedShortIds(assignedUnits)}) returned to AVAILABLE.`,
+              timestamp: Date.now()
+            });
+
+            db.ref(`incidents/${id}`).once('value', (finalSnap) => {
+              db.ref('pastIncidents').push({
+                ...finalSnap.val(),
+                clearedAt: Date.now()
+              });
+
+              db.ref(`incidents/${id}`).remove();
+              closeEditModal();
+              alert("Incident cleared! Assigned units returned to AVAILABLE.");
+            });
+          } else {
+            closeEditModal();
+          }
+        });
+      }
+    }
+
+    function postModalLog() {
+      const text = document.getElementById('modalLogInput').value.trim();
+      if (!text || !activeModalIncidentId) return;
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'COMMAND',
+        text: text,
+        timestamp: Date.now()
+      });
+
+      document.getElementById('modalLogInput').value = '';
+    }
+
+    function openStationModal() {
+      document.getElementById('stationModal').style.display = 'flex';
+      initMap();
+    }
+
+    function closeStationModal() {
+      document.getElementById('stationModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

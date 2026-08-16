@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CAD - Unit MDT Console</title>
+  
+  <!-- Responsive Scaling & PWA App Mode -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#111111">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #111; color: #fff; margin: 0; padding: 15px; }
+    .container { width: 95%; max-width: 1400px; margin: 0 auto; background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #333; }
+    
+    /* LOGIN SCREEN */
+    #loginScreen { background: #1a1a1a; padding: 30px; border-radius: 8px; border: 1px solid #444; max-width: 650px; margin: 40px auto; }
+    .unit-selector-list { background: #2a2a2a; border: 1px solid #444; max-height: 180px; overflow-y: auto; border-radius: 4px; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
+    .unit-select-item { padding: 12px 16px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .unit-select-item:hover { background: #3a3a3a; }
+    .unit-select-item.selected { background: #e63946; font-weight: bold; }
+    
+    input[type="text"], input[type="password"] { padding: 12px; font-size: 15px; background: #2a2a2a; color: #fff; border: 1px solid #444; width: 100%; border-radius: 4px; margin-bottom: 15px; }
+    .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; background: #2a2a2a; padding: 15px; border-radius: 4px; margin-bottom: 15px; max-height: 180px; overflow-y: auto; border: 1px solid #333; -webkit-overflow-scrolling: touch; }
+    .role-grid label { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .btn-login { background: #e63946; color: #fff; width: 100%; padding: 16px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+    /* STATUS BAR (DESKTOP DEFAULT) */
+    .status-bar { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; background: #141414; padding: 12px; border-radius: 6px; border: 1px solid #333; }
+    .btn-status { flex: 1; padding: 16px 6px; font-size: 13px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; white-space: nowrap; text-align: center; }
+    
+    .btn-oos { background: #7f8c8d; color: #fff; }
+    .btn-oncall { background: #8e44ad; color: #fff; }
+    .btn-quarters { background: #2980b9; color: #fff; }
+    .btn-avail { background: #2ecc71; color: #fff; }
+    .btn-enroute { background: #f1c40f; color: #000; }
+    .btn-onscene { background: #e67e22; color: #fff; }
+    .btn-transporting { background: #e74c3c; color: #fff; }
+    .btn-arrived { background: #16a085; color: #fff; }
+
+    /* NAVIGATION TABS (DESKTOP DEFAULT) */
+    .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 14px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; text-align: center; }
+    .tab-btn.active { background: #e63946; color: #fff; border-color: #e63946; }
+
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+
+    /* CARDS */
+    .call-box { background: #2a2a2a; padding: 18px; border-left: 6px solid #7f8c8d; margin-bottom: 14px; border-radius: 0 6px 6px 0; }
+    .call-box.assigned { border-left-color: #e74c3c; background: #2d1e1e; }
+    .call-box.pending { border-left-color: #f1c40f; }
+    
+    .unit-row { display: flex; flex-direction: column; padding: 12px; margin: 8px 0; background: #2a2a2a; border-radius: 4px; }
+    .unit-header { display: flex; justify-content: space-between; align-items: center; }
+    .tag { background: #333; border: 1px solid #555; padding: 3px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
+
+    /* MAP & TOOLBAR */
+    .map-toolbar { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px 6px 0 0; border: 1px solid #444; border-bottom: none; }
+    #mdtMap { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; background: #1a1a1a; }
+
+    .section-title { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .badge { font-size: 15px; color: #2ecc71; font-weight: bold; float: right; background: #0a0a0a; padding: 6px 12px; border-radius: 4px; border: 1px solid #333; }
+    
+    /* MULTI-RADIO BADGE DISPLAY */
+    .radio-box { background: #16a085; color: #fff; padding: 6px 10px; border-radius: 4px; font-weight: bold; font-size: 13px; margin: 4px 6px 4px 0; display: inline-block; border: 1px solid #1abc9c; }
+    .box-badge { background: #8e44ad; color: #fff; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; margin-left: 6px; display: inline-block; }
+
+    .unit-bubble-icon-container { background: transparent !important; border: none !important; }
+    .unit-bubble-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    .unit-bubble-box { display: flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 16px; font-weight: bold; font-size: 12px; border: 2px solid #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.7); white-space: nowrap; text-align: center; }
+
+    .log-box { background: #0a0a0a; border: 1px solid #333; height: 220px; overflow-y: auto; padding: 12px; font-family: monospace; font-size: 13px; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+    .log-entry { margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+    .timestamp { color: #888; margin-right: 8px; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: #1e1e1e; width: 92%; max-width: 750px; padding: 25px; border-radius: 8px; border: 1px solid #444; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    
+    button { padding: 10px 16px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-self-dispatch { background: #f39c12; color: #000; font-size: 12px; margin-left: 8px; }
+    .btn-self-dispatch:hover { background: #e67e22; color: #fff; }
+    .btn-clear-self { background: #c0392b; color: #fff; font-size: 13px; margin-left: 8px; }
+    .btn-clear-self:hover { background: #e74c3c; }
+
+    .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
+
+    /* ========================================================= */
+    /* MOBILE-ONLY OVERRIDES (< 768px)                           */
+    /* ========================================================= */
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .container { width: 100%; padding: 15px; }
+      #loginScreen { padding: 20px; margin: 15px auto; }
+      .btn-status { flex: 0 0 auto; min-width: 105px; padding: 14px 10px; font-size: 12px; min-height: 48px; }
+      .status-bar { -webkit-overflow-scrolling: touch; padding: 10px; margin-bottom: 12px; }
+      .status-bar::-webkit-scrollbar { display: none; }
+      .nav-tabs { overflow-x: auto; gap: 6px; padding-bottom: 8px; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
+      .nav-tabs::-webkit-scrollbar { display: none; }
+      .tab-btn { flex: 0 0 auto; padding: 12px 14px; font-size: 13px; min-height: 44px; }
+      #mdtMap { height: 60vh; min-height: 380px; }
+      .modal-overlay { padding: 10px; }
+      .modal-content { padding: 20px; width: 100%; }
+      .badge { font-size: 13px; padding: 6px 10px; float: none; display: inline-block; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h2 style="color: #e63946; margin: 0; font-size: 20px;">MDT Terminal Authentication</h2>
+      <button onclick="openSoundSettingsModal()" style="background:#16a085; font-size:12px; padding:6px 12px;">Audio</button>
+    </div>
+    
+    <div class="section-title">Select Existing Unit from Network</div>
+    
+    <!-- SEARCH BAR FOR UNIT LIST -->
+    <input type="text" id="unitSearchInput" placeholder="Search active units by ID or Short ID..." oninput="filterUnitSelectorList(this.value)" style="margin-bottom: 8px; padding: 10px; font-size: 14px; background: #141414;">
+
+    <div class="unit-selector-list" id="existingUnitsList">
+      <div style="padding: 12px; color: #888;">Loading active units...</div>
+    </div>
+
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 180px;">
+        <div class="section-title">Unit Identifier</div>
+        <input type="text" id="unitIdInput" placeholder="Full ID (e.g., Rescue 33, Engine 1)" oninput="fetchUnitTraits(this.value)">
+      </div>
+      <div style="flex: 1; min-width: 90px;">
+        <div class="section-title">Short ID</div>
+        <input type="text" id="unitShortIdInput" placeholder="Short (e.g. R33)">
+      </div>
+      <div style="flex: 1.5; min-width: 130px;">
+        <div class="section-title">Unit Password</div>
+        <input type="password" id="unitLoginPasswordInput" placeholder="Password (if set)">
+      </div>
+    </div>
+
+    <div class="section-title">Staffing Type</div>
+    <div style="background: #2a2a2a; padding: 12px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px;">
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        <input type="checkbox" id="crossStaffedCheckbox" style="width: 18px; height: 18px; accent-color: #e63946;">
+        <strong>Cross-Staffed Unit</strong> (Shares crew with other trucks at assigned station)
+      </label>
+    </div>
+
+    <div class="section-title">Operational Capability Tags</div>
+    <div class="role-grid" id="mdtDynamicRoleGrid">
+      <em>Loading capability traits...</em>
+    </div>
+
+    <button class="btn-login" onclick="loginMDT()">Login / Initialize MDT Console</button>
+  </div>
+
+
+  <!-- MAIN MDT INTERFACE -->
+  <div class="container" id="mdtMainApp" style="display: none;">
+    
+    <!-- TOP STATUS BAR -->
+    <div class="status-bar">
+      <button class="btn-status btn-oos" onclick="setStatus('OUT_OF_SERVICE')">Out of Service</button>
+      <button class="btn-status btn-oncall" onclick="setStatus('ON_CALL')">On Call</button>
+      <button class="btn-status btn-quarters" onclick="setStatus('IN_QUARTERS')">In Quarters</button>
+      <button class="btn-status btn-avail" onclick="setStatus('AVAILABLE')">Available</button>
+      <button class="btn-status btn-enroute" onclick="setStatus('ENROUTE')">Enroute</button>
+      <button class="btn-status btn-onscene" onclick="setStatus('ONSCENE')">Onscene</button>
+      <button class="btn-status btn-transporting" onclick="setStatus('TRANSPORTING')">Transporting</button>
+      <button class="btn-status btn-arrived" onclick="setStatus('ARRIVED')">Arrived</button>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="nav-tabs">
+      <div class="tab-btn active" onclick="switchTab('callInfoTab', this)">Current Call</div>
+      <div class="tab-btn" onclick="switchTab('activeCallsTab', this)">Active / Pending Calls</div>
+      <div class="tab-btn" onclick="switchTab('unitListTab', this)">Unit Roster</div>
+      <div class="tab-btn" onclick="switchTab('mapTab', this)">Live Map</div>
+      <div class="tab-btn" style="background:#16a085; color:#fff;" onclick="openSoundSettingsModal()">Audio</div>
+    </div>
+
+    <!-- PERSISTENT HEADER BADGE & GPS TOGGLE -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+      <span class="badge" id="loggedUnitBadge" style="float: none; margin: 0;">Unit: Unset | Status: AVAILABLE</span>
+      <button onclick="toggleGpsTracking()" id="btnGpsToggle" style="background: #333; font-size: 12px; padding: 6px 12px; min-height: 32px;">GPS AVL: OFF</button>
+    </div>
+
+    <!-- TAB 1: CURRENT ASSIGNED CALL INFO -->
+    <div class="tab-page active" id="callInfoTab">
+      <div class="section-title">Current Assigned Incident Details</div>
+      <div id="assignedCallContent">
+        <div class="call-box">
+          <h3 style="margin: 0 0 6px 0;">No Current Incident Assigned</h3>
+          <p style="margin: 0; color: #aaa;">Unit is currently available or unassigned.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ACTIVE AND PENDING CALLS LIST -->
+    <div class="tab-page" id="activeCallsTab">
+      <div class="section-title">All District Active & Pending Calls</div>
+      <div id="allCallsList"><em>No active or pending calls logged.</em></div>
+    </div>
+
+    <!-- TAB 3: LIST OF UNITS -->
+    <div class="tab-page" id="unitListTab">
+      <div class="section-title">Connected Active Units & Roster</div>
+      <div id="mdtUnitRoster">Loading units...</div>
+    </div>
+
+    <!-- TAB 4: LIVE MAP PAGE -->
+    <div class="tab-page" id="mapTab">
+      <h2>Tactical Map Board</h2>
+      
+      <div class="map-toolbar">
+        <span style="font-size: 13px; color: #ccc;">District Tactical Map Board</span>
+        <button onclick="revertUnitMapToDefault()" style="background:#e67e22; font-size:12px; padding:6px 12px;">Revert to Default View</button>
+      </div>
+      <div id="mdtMap"></div>
+    </div>
+
+  </div>
+
+  <!-- SOUND PREFERENCES MODAL -->
+  <div class="modal-overlay" id="soundSettingsModal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0; color: #16a085; font-size: 18px;">MDT Audio Alert Preferences</h2>
+        <button onclick="closeSoundSettingsModal()" style="background: #555; padding: 6px 12px;">Close</button>
+      </div>
+      
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Customize alert tones using your own audio files (.wav, .mp3, .ogg) or use the built-in emergency synthesizer.</p>
+
+      <div class="sound-setting-row">
+        <strong>Unit Dispatch Alert (2-Tone Pager Alert):</strong>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="file" accept=".wav,.mp3,.ogg" onchange="uploadAudioFile('DISPATCH_ALERT', this)" style="margin-bottom:0; font-size:12px;">
+          <button onclick="CADAudio.playDispatchAlert()" style="background:#27ae60; padding:6px 12px; font-size:12px;">Test</button>
+          <button onclick="resetAudio('DISPATCH_ALERT')" style="background:#c0392b; padding:6px 12px; font-size:12px;">Reset</button>
+        </div>
+      </div>
+
+      <div class="sound-setting-row">
+        <strong>Incident Alarm Upgrade Alert:</strong>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="file" accept=".wav,.mp3,.ogg" onchange="uploadAudioFile('UPGRADE_ALERT', this)" style="margin-bottom:0; font-size:12px;">
+          <button onclick="CADAudio.playUpgradeAlert()" style="background:#27ae60; padding:6px 12px; font-size:12px;">Test</button>
+          <button onclick="resetAudio('UPGRADE_ALERT')" style="background:#c0392b; padding:6px 12px; font-size:12px;">Reset</button>
+        </div>
+      </div>
+
+      <div class="sound-setting-row">
+        <strong>Radio Channel Assignment Change:</strong>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <input type="file" accept=".wav,.mp3,.ogg" onchange="uploadAudioFile('RADIO_ALERT', this)" style="margin-bottom:0; font-size:12px;">
+          <button onclick="CADAudio.playRadioChangeAlert()" style="background:#27ae60; padding:6px 12px; font-size:12px;">Test</button>
+          <button onclick="resetAudio('RADIO_ALERT')" style="background:#c0392b; padding:6px 12px; font-size:12px;">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG POPUP MODAL WINDOW -->
+  <div class="modal-overlay" id="unitLogModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="unitModalCallTitle" style="margin: 0; color: #e63946; font-size: 18px;">Call Activity Log</h2>
+        <button onclick="closeUnitLogModal()" style="background: #555; padding: 6px 12px;">Close Window</button>
+      </div>
+      <p id="unitModalCallSub" style="color: #aaa; margin: 5px 0; font-size: 13px;"></p>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <input type="text" id="unitModalLogInput" placeholder="Add entry to call log..." style="margin-bottom: 0;">
+        <button onclick="postUnitModalLog()" style="white-space: nowrap;">Post Entry</button>
+      </div>
+
+      <div class="log-box" id="unitModalLogFeed"></div>
+    </div>
+  </div>
+
+  <!-- Firebase & Leaflet Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // --- CAD AUDIO ENGINE ---
+    const CADAudio = {
+      ctx: null,
+      customSounds: JSON.parse(localStorage.getItem('cad_custom_sounds') || '{}'),
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      },
+
+      playCustomOrTone(soundKey, fallbackToneFn) {
+        this.init();
+        if (this.customSounds[soundKey]) {
+          const audio = new Audio(this.customSounds[soundKey]);
+          audio.play().catch(e => console.warn("Audio blocked:", e));
+        } else {
+          fallbackToneFn();
+        }
+      },
+
+      playDispatchAlert() {
+        this.playCustomOrTone('DISPATCH_ALERT', () => {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(650, now);
+          osc.frequency.setValueAtTime(850, now + 0.25);
+          osc.frequency.setValueAtTime(650, now + 0.50);
+          osc.frequency.setValueAtTime(850, now + 0.75);
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 1.1);
+        });
+      },
+
+      playUpgradeAlert() {
+        this.playCustomOrTone('UPGRADE_ALERT', () => {
+          const now = this.ctx.currentTime;
+          [0, 0.12, 0.24, 0.36].forEach(delay => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1100, now + delay);
+            gain.gain.setValueAtTime(0.25, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.08);
+          });
+        });
+      },
+
+      playRadioChangeAlert() {
+        this.playCustomOrTone('RADIO_ALERT', () => {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.15);
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        });
+      },
+
+      setCustomSound(key, dataUrl) {
+        if (dataUrl) {
+          this.customSounds[key] = dataUrl;
+        } else {
+          delete this.customSounds[key];
+        }
+        localStorage.setItem('cad_custom_sounds', JSON.stringify(this.customSounds));
+      }
+    };
+
+    function uploadAudioFile(soundKey, inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        CADAudio.setCustomSound(soundKey, e.target.result);
+        alert(`Custom sound for ${soundKey} uploaded and saved!`);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetAudio(soundKey) {
+      CADAudio.setCustomSound(soundKey, null);
+      alert(`Reset ${soundKey} to default tone.`);
+    }
+
+    function openSoundSettingsModal() {
+      CADAudio.init();
+      document.getElementById('soundSettingsModal').style.display = 'flex';
+    }
+
+    function closeSoundSettingsModal() {
+      document.getElementById('soundSettingsModal').style.display = 'none';
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-MkETsFciYfRg6293b0E1rRveN9xk8lg",
+      authDomain: "noodle-s-cad.firebaseapp.com",
+      databaseURL: "https://noodle-s-cad-default-rtdb.firebaseio.com",
+      projectId: "noodle-s-cad",
+      storageBucket: "noodle-s-cad.firebasestorage.app",
+      messagingSenderId: "112878923628",
+      appId: "1:112878923628:web:5a58128a4c400220ce4d49"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let activeUnit = "";
+    let shortUnitId = "";
+    let currentUnitStatus = "AVAILABLE";
+    let currentRoles = [];
+    let currentAssignedCallId = null;
+    let activeModalIncidentId = null;
+    let loadedIncidents = {};
+    let loadedAllUnitsMap = {};
+    let loadedStationsMap = {};
+    let loadedBoxAreas = {};
+    let loadedTraits = [];
+    
+    let defaultMapLat = null;
+    let defaultMapLng = null;
+    let defaultMapZoom = 12;
+
+    let previousAssignedCallId = null;
+    let previousRadioCount = 0;
+    let gpsWatchId = null;
+
+    let map, gridOverlay, incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
+
+    const redActiveIcon = L.divIcon({
+      className: 'custom-pin-red',
+      html: `<div style="background-color:#e63946; width:16px; height:16px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 8px rgba(230,57,70,0.8);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    const yellowPendingIcon = L.divIcon({
+      className: 'custom-pin-yellow',
+      html: `<div style="background-color:#f1c40f; width:16px; height:16px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 8px rgba(241,196,15,0.8);"></div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+
+    function getNormalizedCoords(rawCoords) {
+      if (!rawCoords) return [];
+      let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
+      return arr.map(pt => {
+        if (Array.isArray(pt)) return [parseFloat(pt[0]), parseFloat(pt[1])];
+        if (pt && typeof pt === 'object') {
+          if (pt.lat !== undefined && pt.lng !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lng)];
+          return [parseFloat(pt[0]), parseFloat(pt[1])];
+        }
+        return [0, 0];
+      }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
+    }
+
+    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW ---
+    db.ref('mapSettings/defaultView').on('value', (snapshot) => {
+      const view = snapshot.val();
+      if (view && view.lat && view.lng) {
+        const isFirstLoad = (defaultMapLat === null);
+        defaultMapLat = parseFloat(view.lat);
+        defaultMapLng = parseFloat(view.lng);
+        defaultMapZoom = parseInt(view.zoom) || 12;
+
+        if (isFirstLoad && map) {
+          map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+        }
+      } else if (defaultMapLat === null) {
+        defaultMapLat = 35.7327;
+        defaultMapLng = -78.8503;
+        defaultMapZoom = 12;
+      }
+    });
+
+    function revertUnitMapToDefault() {
+      if (map && defaultMapLat !== null) {
+        map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+      }
+    }
+
+    function getUnitStatusColor(status) {
+      switch (status) {
+        case 'OUT_OF_SERVICE': return '#7f8c8d';
+        case 'ON_CALL': return '#8e44ad';
+        case 'AVAILABLE':
+        case 'IN_QUARTERS': return '#e63946';
+        case 'DISPATCHED':
+        case 'ENROUTE': return '#2ecc71';
+        case 'ONSCENE': return '#2980b9';
+        case 'TRANSPORTING':
+        case 'ARRIVED': return '#f1c40f';
+        default: return '#e63946';
+      }
+    }
+
+    function createUnitBubbleIcon(shortId, status) {
+      const bg = getUnitStatusColor(status);
+      const textColor = (status === 'TRANSPORTING' || status === 'ARRIVED') ? '#000' : '#fff';
+      return L.divIcon({
+        className: 'unit-bubble-icon-container',
+        html: `<div class="unit-bubble-wrapper"><div class="unit-bubble-box" style="background-color:${bg}; color:${textColor};">${shortId}</div></div>`,
+        iconSize: [60, 26],
+        iconAnchor: [30, 13]
+      });
+    }
+
+    function formatAssignedShortIds(assignedUnitsArray) {
+      const arr = Array.isArray(assignedUnitsArray) ? assignedUnitsArray : (assignedUnitsArray ? Object.values(assignedUnitsArray) : []);
+      if (!arr || arr.length === 0) return '<em>None (Pending)</em>';
+      return arr.map(uId => {
+        const u = loadedAllUnitsMap[uId];
+        return (u && u.shortId) ? u.shortId : uId;
+      }).join(', ');
+    }
+
+    // --- DYNAMIC TRAIT TYPES LISTENER ---
+    db.ref('customRoles').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      loadedTraits = Object.keys(data).map(k => ({
+        id: k,
+        name: data[k].name,
+        category: data[k].category || "10"
+      })).sort((a, b) => {
+        if (a.category !== b.category) return parseInt(a.category) - parseInt(b.category);
+        return a.name.localeCompare(b.name);
+      });
+
+      const grid = document.getElementById('mdtDynamicRoleGrid');
+      if (grid) {
+        grid.innerHTML = '';
+        loadedTraits.forEach(t => {
+          grid.innerHTML += `<label><input type="checkbox" class="role-tag" value="${t.name}"> ${t.name}</label>`;
+        });
+      }
+
+      if (activeUnit && loadedAllUnitsMap[activeUnit] && loadedAllUnitsMap[activeUnit].roles) {
+        applyRoleCheckboxes(loadedAllUnitsMap[activeUnit].roles);
+      }
+    });
+
+    db.ref('units').on('value', (snapshot) => {
+      loadedAllUnitsMap = snapshot.val() || {};
+      const filterVal = document.getElementById('unitSearchInput') ? document.getElementById('unitSearchInput').value : '';
+      filterUnitSelectorList(filterVal);
+
+      if (activeUnit && loadedAllUnitsMap[activeUnit]) {
+        currentUnitStatus = loadedAllUnitsMap[activeUnit].status || "AVAILABLE";
+        updateHeaderBadge();
+      }
+
+      renderUnitRoster();
+      renderIncidentViews();
+      refreshMapLayers();
+    });
+
+    // --- SEARCH & FILTER UNIT SELECTOR LIST ---
+    function filterUnitSelectorList(filterQuery = '') {
+      const listEl = document.getElementById('existingUnitsList');
+      if (!listEl) return;
+
+      listEl.innerHTML = '';
+      const keys = Object.keys(loadedAllUnitsMap);
+
+      if (keys.length === 0) {
+        listEl.innerHTML = '<div style="padding:12px; color:#888;">No units registered.</div>';
+        return;
+      }
+
+      const q = filterQuery.toLowerCase().trim();
+      const filteredKeys = keys.filter(unitId => {
+        const u = loadedAllUnitsMap[unitId];
+        const shortId = (u.shortId || '').toLowerCase();
+        return unitId.toLowerCase().includes(q) || shortId.includes(q);
+      });
+
+      if (filteredKeys.length === 0) {
+        listEl.innerHTML = '<div style="padding:12px; color:#888;">No matching units found.</div>';
+        return;
+      }
+
+      filteredKeys.forEach(unitId => {
+        const u = loadedAllUnitsMap[unitId];
+        const item = document.createElement('div');
+        item.className = 'unit-select-item';
+        const displayLabel = u.shortId ? `${unitId} (${u.shortId})` : unitId;
+        const passIcon = u.password ? ' 🔒' : '';
+        item.innerHTML = `<span><strong>${displayLabel}${passIcon}</strong></span> <span style="font-size:12px; color:#aaa;">${u.status || 'AVAILABLE'}</span>`;
+        item.onclick = function() {
+          document.querySelectorAll('.unit-select-item').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+          document.getElementById('unitIdInput').value = unitId;
+          document.getElementById('unitShortIdInput').value = u.shortId || '';
+          document.getElementById('unitLoginPasswordInput').value = '';
+          fetchUnitTraits(unitId);
+        };
+        listEl.appendChild(item);
+      });
+    }
+
+    db.ref('stations').on('value', (snapshot) => {
+      loadedStationsMap = snapshot.val() || {};
+      refreshMapLayers();
+    });
+
+    db.ref('boxAreas').on('value', (snapshot) => {
+      loadedBoxAreas = snapshot.val() || {};
+      refreshMapLayers();
+    });
+
+    function updateHeaderBadge() {
+      const badge = document.getElementById('loggedUnitBadge');
+      if (badge && activeUnit) {
+        const sId = shortUnitId ? ` (${shortUnitId})` : '';
+        badge.innerText = `${activeUnit}${sId} | ${currentUnitStatus.replace(/_/g, ' ')}`;
+      }
+    }
+
+    function fetchUnitTraits(unitId) {
+      if (!unitId.trim()) return;
+      db.ref('units/' + unitId.trim()).once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          if (data.roles) applyRoleCheckboxes(data.roles);
+          document.getElementById('crossStaffedCheckbox').checked = data.staffingType === 'CROSS_STAFFED';
+          if (data.shortId) document.getElementById('unitShortIdInput').value = data.shortId;
+        }
+      });
+    }
+
+    function applyRoleCheckboxes(rolesArray) {
+      const arr = Array.isArray(rolesArray) ? rolesArray : Object.values(rolesArray || {});
+      document.querySelectorAll('.role-tag').forEach(cb => {
+        cb.checked = arr.includes(cb.value);
+      });
+    }
+
+    // --- HARDWARE GPS AVL TRACKING ---
+    function toggleGpsTracking() {
+      const btn = document.getElementById('btnGpsToggle');
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        btn.innerText = "GPS AVL: OFF";
+        btn.style.background = "#333";
+        alert("Live GPS tracking stopped.");
+      } else {
+        if (!navigator.geolocation) {
+          alert("Geolocation is not supported on this device/browser.");
+          return;
+        }
+
+        btn.innerText = "GPS AVL: ACQUIRING...";
+        btn.style.background = "#f39c12";
+
+        gpsWatchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const lat = parseFloat(pos.coords.latitude.toFixed(5));
+            const lng = parseFloat(pos.coords.longitude.toFixed(5));
+
+            btn.innerText = "GPS AVL: ACTIVE";
+            btn.style.background = "#27ae60";
+
+            if (activeUnit) {
+              db.ref(`units/${activeUnit}/location`).set({
+                lat: lat,
+                lng: lng,
+                type: 'LIVE_GPS_AVL',
+                lastUpdated: Date.now()
+              });
+            }
+          },
+          (err) => {
+            console.warn("GPS tracking error:", err);
+            btn.innerText = "GPS AVL: ERROR";
+            btn.style.background = "#c0392b";
+            alert("Unable to access GPS hardware. Ensure location permissions are enabled.");
+            navigator.geolocation.clearWatch(gpsWatchId);
+            gpsWatchId = null;
+          },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+      }
+    }
+
+    window.onload = function() {
+      const savedUnit = localStorage.getItem('cad_last_unit');
+      if (savedUnit) {
+        document.getElementById('unitIdInput').value = savedUnit;
+        fetchUnitTraits(savedUnit);
+      }
+    };
+
+    function loginMDT() {
+      const inputId = document.getElementById('unitIdInput').value.trim();
+      const inputShort = document.getElementById('unitShortIdInput').value.trim() || inputId;
+      const enteredPassword = document.getElementById('unitLoginPasswordInput').value.trim();
+
+      if (!inputId) {
+        alert("Please select or enter a Unit Identifier.");
+        return;
+      }
+
+      const existingUnitRecord = loadedAllUnitsMap[inputId];
+      if (existingUnitRecord && existingUnitRecord.password && existingUnitRecord.password.trim() !== "") {
+        if (enteredPassword !== existingUnitRecord.password.trim()) {
+          alert("Authentication Failed: Incorrect unit password provided.");
+          return;
+        }
+      }
+
+      CADAudio.init();
+
+      activeUnit = inputId;
+      shortUnitId = inputShort;
+      localStorage.setItem('cad_last_unit', activeUnit);
+
+      currentRoles = [];
+      document.querySelectorAll('.role-tag:checked').forEach(cb => {
+        currentRoles.push(cb.value);
+      });
+
+      const isCrossStaffed = document.getElementById('crossStaffedCheckbox').checked;
+
+      db.ref('units/' + activeUnit).update({
+        shortId: shortUnitId,
+        roles: currentRoles,
+        staffingType: isCrossStaffed ? 'CROSS_STAFFED' : 'DEDICATED',
+        lastUpdated: Date.now()
+      });
+
+      db.ref('units/' + activeUnit + '/status').once('value', (snap) => {
+        currentUnitStatus = snap.val() || "AVAILABLE";
+        updateHeaderBadge();
+      });
+
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mdtMainApp').style.display = 'block';
+
+      renderIncidentViews();
+    }
+
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      btnEl.classList.add('active');
+
+      if (tabId === 'mapTab') {
+        setTimeout(() => { 
+          if (!map) {
+            initMap();
+          } else {
+            map.invalidateSize();
+            refreshMapLayers();
+          }
+        }, 100);
+      }
+    }
+
+    function setStatus(status) {
+      if (!activeUnit) return;
+
+      currentUnitStatus = status;
+      updateHeaderBadge();
+      
+      db.ref('units/' + activeUnit).update({
+        status: status,
+        roles: currentRoles,
+        lastUpdated: Date.now()
+      });
+
+      if (currentAssignedCallId) {
+        db.ref(`incidents/${currentAssignedCallId}/logs`).push({
+          author: shortUnitId || activeUnit,
+          text: `Status updated to ${status.replace(/_/g, ' ')}`,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    function initMap() {
+      if (map) return;
+
+      const initLat = defaultMapLat || 35.7327;
+      const initLng = defaultMapLng || -78.8503;
+
+      map = L.map('mdtMap').setView([initLat, initLng], defaultMapZoom);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      const GridLayer = L.GridLayer.extend({
+        createTile: function (coords) {
+          const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+          const size = this.getTileSize();
+          tile.width = size.x;
+          tile.height = size.y;
+          const ctx = tile.getContext('2d');
+          ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0, 0, size.x, size.y);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.font = '10px monospace';
+          ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+          return tile;
+        }
+      });
+
+      gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
+      incidentMarkersLayer = L.layerGroup().addTo(map);
+      stationMarkersLayer = L.layerGroup().addTo(map);
+      unitAvlMarkersLayer = L.layerGroup().addTo(map);
+      boxAreasLayer = L.layerGroup().addTo(map);
+
+      L.control.layers(null, {
+        "Tactical Grid": gridOverlay,
+        "Active Incidents": incidentMarkersLayer,
+        "Stations": stationMarkersLayer,
+        "Unit Positions / AVL": unitAvlMarkersLayer,
+        "Box Areas / Districts": boxAreasLayer
+      }, { collapsed: false }).addTo(map);
+
+      refreshMapLayers();
+    }
+
+    function refreshMapLayers() {
+      if (!map) return;
+
+      // 1. Incidents
+      incidentMarkersLayer.clearLayers();
+      Object.keys(loadedIncidents).forEach(id => {
+        const inc = loadedIncidents[id];
+        if (inc.lat && inc.lng) {
+          const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+          const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
+          
+          let radioInfo = '';
+          const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+          if (radios.length > 0) {
+            radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
+          }
+
+          const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
+
+          const marker = L.marker([inc.lat, inc.lng], { icon: markerIcon })
+            .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
+          incidentMarkersLayer.addLayer(marker);
+        }
+      });
+
+      // 2. Stations
+      stationMarkersLayer.clearLayers();
+      Object.keys(loadedStationsMap).forEach(id => {
+        const st = loadedStationsMap[id];
+        if (st.lat && st.lng) {
+          const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
+          const marker = L.marker([st.lat, st.lng])
+            .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
+          stationMarkersLayer.addLayer(marker);
+        }
+      });
+
+      // 3. Units AVL & Status Bubbles
+      unitAvlMarkersLayer.clearLayers();
+      Object.keys(loadedAllUnitsMap).forEach(uId => {
+        const unit = loadedAllUnitsMap[uId];
+        if (unit.location && unit.location.lat && unit.location.lng) {
+          const statusVal = unit.status || 'AVAILABLE';
+          const statusText = statusVal.replace(/_/g, ' ');
+          const shortDisplay = unit.shortId || uId;
+          const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal);
+
+          const marker = L.marker([unit.location.lat, unit.location.lng], { icon: bubbleIcon })
+            .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}`);
+          unitAvlMarkersLayer.addLayer(marker);
+        }
+      });
+
+      // 4. Box Areas
+      boxAreasLayer.clearLayers();
+      Object.keys(loadedBoxAreas).forEach(bId => {
+        const box = loadedBoxAreas[bId];
+        const coords = getNormalizedCoords(box.coordinates);
+        if (coords.length >= 3) {
+          const polygon = L.polygon(coords, {
+            color: box.color || '#8e44ad',
+            weight: 2,
+            fillOpacity: 0.15
+          }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
+          boxAreasLayer.addLayer(polygon);
+        }
+      });
+    }
+
+    function renderUnitRoster() {
+      const rosterEl = document.getElementById('mdtUnitRoster');
+      if (!rosterEl) return;
+      
+      rosterEl.innerHTML = '';
+      const unitKeys = Object.keys(loadedAllUnitsMap);
+
+      if (unitKeys.length === 0) {
+        rosterEl.innerHTML = '<em>No active units logged in...</em>';
+        return;
+      }
+
+      unitKeys.forEach(unitId => {
+        const u = loadedAllUnitsMap[unitId];
+        const roles = Array.isArray(u.roles) ? u.roles : Object.values(u.roles || {});
+        const tagsHtml = roles.map(r => `<span class="tag">${r}</span>`).join('');
+        const stationText = u.assignedStationName ? `<br><span style="font-size:11px; color:#aaa;">Station: ${u.assignedStationName}</span>` : '';
+        const staffingBadge = u.staffingType === 'CROSS_STAFFED' ? '<span style="font-size:11px; color:#f39c12;"> [Cross-Staffed]</span>' : '';
+        const shortBadge = u.shortId ? ` [${u.shortId}]` : '';
+        const passBadge = u.password ? ' 🔒' : '';
+
+        const div = document.createElement('div');
+        div.className = 'unit-row';
+        div.innerHTML = `
+          <div class="unit-header">
+            <span><strong>${unitId}${shortBadge}${passBadge}</strong>${staffingBadge}${stationText}</span>
+            <span style="font-weight:bold; color:${getUnitStatusColor(u.status || 'AVAILABLE')}">${u.status ? u.status.replace(/_/g, ' ') : 'AVAILABLE'}</span>
+          </div>
+          <div style="margin-top:4px;">${tagsHtml || '<span style="color:#666; font-size:11px;">No capability tags</span>'}</div>
+        `;
+        rosterEl.appendChild(div);
+      });
+    }
+
+    // --- REALTIME INCIDENT LISTENER WITH AUDIO NOTIFICATIONS ---
+    db.ref('incidents').on('value', (snapshot) => {
+      loadedIncidents = snapshot.val() || {};
+      renderIncidentViews();
+      refreshMapLayers();
+    });
+
+    function renderIncidentViews() {
+      const allCallsList = document.getElementById('allCallsList');
+      const assignedCallContent = document.getElementById('assignedCallContent');
+
+      if (!allCallsList || !assignedCallContent) return;
+
+      allCallsList.innerHTML = '';
+
+      const keys = Object.keys(loadedIncidents);
+      let myAssignedCall = null;
+      currentAssignedCallId = null;
+
+      if (keys.length === 0) {
+        allCallsList.innerHTML = '<em>No active or pending calls logged.</em>';
+        assignedCallContent.innerHTML = `
+          <div class="call-box">
+            <h3 style="margin: 0 0 6px 0;">No Current Incident Assigned</h3>
+            <p style="margin: 0; color: #aaa;">Unit is currently available or unassigned.</p>
+          </div>
+        `;
+        previousAssignedCallId = null;
+        previousRadioCount = 0;
+        return;
+      }
+
+      keys.forEach(id => {
+        const inc = loadedIncidents[id];
+        const assignedUnits = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+        const isAssignedToMe = activeUnit && assignedUnits.includes(activeUnit);
+        const isPending = inc.status === 'PENDING' || assignedUnits.length === 0;
+        const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
+
+        if (isAssignedToMe) {
+          myAssignedCall = inc;
+          currentAssignedCallId = id;
+        }
+
+        let radioHTML = '';
+        const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+        if (radios.length > 0) {
+          radioHTML = '<div style="margin-top:6px;"><strong>Radios:</strong> ' +
+            radios.map(r => `<span class="radio-box">${r.name}${r.desc ? ' (' + r.desc + ')' : ''}</span>`).join(' ') + '</div>';
+        }
+
+        const card = document.createElement('div');
+        card.className = `call-box ${isAssignedToMe ? 'assigned' : ''} ${isPending ? 'pending' : ''}`;
+        
+        const selfDispatchBtn = (!isAssignedToMe && activeUnit) ? `<button class="btn-self-dispatch" onclick="selfDispatchToCall('${id}')">Self Dispatch To Call</button>` : '';
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin: 0; color: ${isAssignedToMe ? '#e74c3c' : (isPending ? '#f1c40f' : '#fff')}; font-size: 16px;">
+              ${inc.type} ${isAssignedToMe ? '(YOUR ASSIGNED CALL)' : (isPending ? '[PENDING]' : '')} ${boxBadge}
+            </h3>
+            <div>
+              ${selfDispatchBtn}
+              <button style="background:#34495e; font-size:11px;" onclick="openUnitLogModal('${id}')">View Call Log</button>
+            </div>
+          </div>
+          <p style="margin: 5px 0;"><strong>Location:</strong> ${inc.address}</p>
+          <p style="margin: 5px 0;"><strong>Units Assigned:</strong> ${formatAssignedShortIds(assignedUnits)}</p>
+          ${radioHTML}
+        `;
+        allCallsList.appendChild(card);
+      });
+
+      if (myAssignedCall) {
+        if (currentAssignedCallId !== previousAssignedCallId && activeUnit) {
+          CADAudio.playDispatchAlert();
+          previousAssignedCallId = currentAssignedCallId;
+        }
+
+        const myRadios = Array.isArray(myAssignedCall.radioChannels) ? myAssignedCall.radioChannels : Object.values(myAssignedCall.radioChannels || {});
+        const currentRadioCount = myRadios.length;
+        if (currentRadioCount > previousRadioCount && previousRadioCount > 0) {
+          CADAudio.playRadioChangeAlert();
+        }
+        previousRadioCount = currentRadioCount;
+
+        let multiRadioBanner = '';
+        if (myRadios.length > 0) {
+          multiRadioBanner = '<div style="margin: 10px 0;">' +
+            myRadios.map(r => `<span class="radio-box">Tactical Radio: ${r.name}${r.desc ? ' — ' + r.desc : ''}</span>`).join(' ') + '</div>';
+        }
+
+        const myBoxTag = myAssignedCall.boxArea ? ` <span class="box-badge">${myAssignedCall.boxArea}</span>` : '';
+
+        assignedCallContent.innerHTML = `
+          <div class="call-box assigned">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2 style="color: #e74c3c; margin: 0;">${myAssignedCall.type}${myBoxTag}</h2>
+              <div>
+                <button class="btn-clear-self" onclick="selfClearFromCall('${currentAssignedCallId}')">Clear Self From Call</button>
+                <button style="background:#34495e;" onclick="openUnitLogModal('${currentAssignedCallId}')">Open Activity Log Window</button>
+              </div>
+            </div>
+            ${multiRadioBanner}
+            <p style="font-size: 16px; margin-top: 10px;"><strong>Location / Address:</strong> ${myAssignedCall.address}</p>
+            <p style="font-size: 16px;"><strong>Assigned Units:</strong> ${formatAssignedShortIds(myAssignedCall.assignedUnits)}</p>
+            <p style="font-size: 14px;"><strong>Coordinates:</strong> ${myAssignedCall.lat || 'N/A'}, ${myAssignedCall.lng || 'N/A'}</p>
+          </div>
+        `;
+      } else {
+        assignedCallContent.innerHTML = `
+          <div class="call-box">
+            <h3 style="margin: 0 0 6px 0;">No Current Incident Assigned</h3>
+            <p style="margin: 0; color: #aaa;">Unit is currently available or unassigned.</p>
+          </div>
+        `;
+        previousAssignedCallId = null;
+        previousRadioCount = 0;
+      }
+    }
+
+    // SELF DISPATCH FUNCTION
+    function selfDispatchToCall(incidentId) {
+      if (!activeUnit) return;
+
+      db.ref(`incidents/${incidentId}`).once('value', (snapshot) => {
+        const inc = snapshot.val();
+        if (!inc) return;
+
+        let currentAssigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+        if (!currentAssigned.includes(activeUnit)) {
+          currentAssigned.push(activeUnit);
+        }
+
+        db.ref(`incidents/${incidentId}`).update({
+          assignedUnits: currentAssigned,
+          status: 'DISPATCHED'
+        });
+
+        setStatus('DISPATCHED');
+
+        db.ref(`incidents/${incidentId}/logs`).push({
+          author: shortUnitId || activeUnit,
+          text: `Unit self-dispatched to call.`,
+          timestamp: Date.now()
+        });
+
+        alert(`Successfully self-dispatched to ${inc.type}!`);
+      });
+    }
+
+    // SELF CLEAR FROM CALL FUNCTION
+    function selfClearFromCall(incidentId) {
+      if (!activeUnit || !incidentId) return;
+
+      if (!confirm(`Clear ${activeUnit} from this incident?`)) return;
+
+      db.ref(`incidents/${incidentId}`).once('value', (snapshot) => {
+        const inc = snapshot.val();
+        if (!inc) return;
+
+        let currentAssigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+        const updatedAssigned = currentAssigned.filter(uId => uId !== activeUnit);
+        const newCallStatus = updatedAssigned.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+        db.ref(`incidents/${incidentId}`).update({
+          assignedUnits: updatedAssigned,
+          status: newCallStatus
+        });
+
+        setStatus('AVAILABLE');
+
+        db.ref(`incidents/${incidentId}/logs`).push({
+          author: shortUnitId || activeUnit,
+          text: `Unit cleared themselves from call. Status reset to AVAILABLE.`,
+          timestamp: Date.now()
+        });
+
+        alert(`Cleared from call. Status reset to AVAILABLE.`);
+      });
+    }
+
+    function openUnitLogModal(incidentId) {
+      activeModalIncidentId = incidentId;
+      document.getElementById('unitLogModal').style.display = 'flex';
+
+      db.ref(`incidents/${incidentId}`).on('value', (snapshot) => {
+        const inc = snapshot.val();
+        if (!inc) {
+          closeUnitLogModal();
+          return;
+        }
+
+        const boxInfo = inc.boxArea ? ` [${inc.boxArea}]` : '';
+        document.getElementById('unitModalCallTitle').innerText = `${inc.type}${boxInfo}`;
+        document.getElementById('unitModalCallSub').innerText = `Location: ${inc.address}`;
+
+        const logs = inc.logs || {};
+        const feed = document.getElementById('unitModalLogFeed');
+        feed.innerHTML = '';
+
+        Object.keys(logs).reverse().forEach(key => {
+          const entry = logs[key];
+          const timeStr = new Date(entry.timestamp).toLocaleTimeString();
+          const div = document.createElement('div');
+          div.className = 'log-entry';
+          div.innerHTML = `<span class="timestamp">[${timeStr}]</span> <strong>${entry.author}:</strong> ${entry.text}`;
+          feed.appendChild(div);
+        });
+      });
+    }
+
+    function closeUnitLogModal() {
+      if (activeModalIncidentId) {
+        db.ref(`incidents/${activeModalIncidentId}`).off();
+      }
+      activeModalIncidentId = null;
+      document.getElementById('unitLogModal').style.display = 'none';
+    }
+
+    function postUnitModalLog() {
+      const text = document.getElementById('unitModalLogInput').value;
+      if (!text || !activeModalIncidentId) return;
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: shortUnitId || activeUnit,
+        text: text,
+        timestamp: Date.now()
+      });
+
+      document.getElementById('unitModalLogInput').value = '';
+    }
+  </script>
+</body>
+</html>
