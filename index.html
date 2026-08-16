@@ -2317,17 +2317,20 @@
       refreshMapLayers();
     });
 
+    // IN-PLACE DOM ROSTER UPDATE (PREVENTS DROPDOWNS FROM COLLAPSING ON LIVE SYNC)
     function renderUnitRoster() {
       const unitListEl = document.getElementById('unitList');
       if (!unitListEl) return;
 
-      unitListEl.innerHTML = '';
       const unitKeys = Object.keys(loadedUnits);
 
       if (unitKeys.length === 0) {
         unitListEl.innerHTML = '<em>No active units logged in yet...</em>';
         return;
       }
+
+      const placeholder = unitListEl.querySelector('em');
+      if (placeholder) placeholder.remove();
 
       const availableStatuses = [
         "DISPATCHED",
@@ -2344,6 +2347,15 @@
       const sortedStationKeys = Object.keys(loadedStations)
         .sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
 
+      // Remove rows for deleted units
+      const existingRows = unitListEl.querySelectorAll('.unit-row');
+      existingRows.forEach(row => {
+        const rowUnitId = row.getAttribute('data-unit-id');
+        if (!loadedUnits[rowUnitId]) {
+          row.remove();
+        }
+      });
+
       unitKeys.forEach(unitId => {
         const unit = loadedUnits[unitId];
         const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
@@ -2352,61 +2364,89 @@
         const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
         const shortBadge = unit.shortId ? ` [${unit.shortId}]` : '';
         const passBadge = unit.password ? '<span style="font-size:11px; color:#f1c40f; margin-left:4px;">🔒</span>' : '';
-        
-        const div = document.createElement('div');
-        div.className = 'unit-row';
-        
-        const tagsHtml = roles.map(r => `<span class="tag">${r}</span>`).join('');
-        
-        let stationOptions = '<option value="">-- Assign Station (Static Location) --</option>';
-        sortedStationKeys.forEach(stId => {
-          const st = loadedStations[stId];
-          const isSelected = unit.assignedStationId === stId ? 'selected' : '';
-          stationOptions += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
-        });
+        const tagsHtml = roles.map(r => `<span class="tag">${r}</span>`).join('') || '<span style="color:#666;">No capability tags set</span>';
 
-        let statusOptions = '';
-        availableStatuses.forEach(stVal => {
-          const selectedAttr = stVal === currentStatus ? 'selected' : '';
-          statusOptions += `<option value="${stVal}" ${selectedAttr}>${stVal.replace(/_/g, ' ')}</option>`;
-        });
+        let row = unitListEl.querySelector(`.unit-row[data-unit-id="${CSS.escape(unitId)}"]`);
 
-        div.innerHTML = `
-          <div class="unit-header">
-            <span>
-              <strong>${unitId}${shortBadge}</strong>${passBadge} <span style="font-size:11px; color:${isCrossStaffed ? '#f39c12' : '#2ecc71'};">(${isCrossStaffed ? 'Cross-Staffed' : 'Dedicated Staff'})</span>
-              <button class="btn-edit-unit" onclick="openEditUnitModal('${unitId}')">Edit Unit</button>
-              <button class="btn-remove-unit" onclick="removeUnit('${unitId}')">Remove</button>
-            </span>
-            <span class="status-${currentStatus}">${statusText}</span>
-          </div>
-          <div class="role-badges">${tagsHtml || '<span style="color:#666;">No capability tags set</span>'}</div>
+        if (!row) {
+          row = document.createElement('div');
+          row.className = 'unit-row';
+          row.setAttribute('data-unit-id', unitId);
           
-          <div class="unit-controls-row">
-            <div style="flex: 1; min-width: 150px;">
-              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Change Status:</span>
-              <select onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
-                ${statusOptions}
-              </select>
-            </div>
+          let stationOptions = '<option value="">-- Assign Station (Static Location) --</option>';
+          sortedStationKeys.forEach(stId => {
+            const st = loadedStations[stId];
+            stationOptions += `<option value="${stId}">${st.name}</option>`;
+          });
 
-            <div style="flex: 1; min-width: 150px;">
-              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffing Type:</span>
-              <select onchange="changeUnitStaffingType('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
-                <option value="DEDICATED" ${!isCrossStaffed ? 'selected' : ''}>Dedicated Crew</option>
-                <option value="CROSS_STAFFED" ${isCrossStaffed ? 'selected' : ''}>Cross-Staffed</option>
-              </select>
+          let statusOptions = '';
+          availableStatuses.forEach(stVal => {
+            statusOptions += `<option value="${stVal}">${stVal.replace(/_/g, ' ')}</option>`;
+          });
+
+          row.innerHTML = `
+            <div class="unit-header">
+              <span class="unit-title-area"></span>
+              <span class="unit-status-badge"></span>
             </div>
-            
-            <div style="flex: 1.5; min-width: 200px;">
-              <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Assign Home Station:</span>
-              <select onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
-                ${stationOptions}
-              </select>
+            <div class="role-badges"></div>
+            <div class="unit-controls-row">
+              <div style="flex: 1; min-width: 150px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Change Status:</span>
+                <select class="unit-status-select" onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  ${statusOptions}
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffing Type:</span>
+                <select class="unit-staffing-select" onchange="changeUnitStaffingType('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  <option value="DEDICATED">Dedicated Crew</option>
+                  <option value="CROSS_STAFFED">Cross-Staffed</option>
+                </select>
+              </div>
+              <div style="flex: 1.5; min-width: 200px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Assign Home Station:</span>
+                <select class="unit-station-select" onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  ${stationOptions}
+                </select>
+              </div>
             </div>
-          </div>
+          `;
+          unitListEl.appendChild(row);
+        }
+
+        // Update row text and badges in place without recreating the DOM
+        const titleArea = row.querySelector('.unit-title-area');
+        titleArea.innerHTML = `
+          <strong>${unitId}${shortBadge}</strong>${passBadge} 
+          <span style="font-size:11px; color:${isCrossStaffed ? '#f39c12' : '#2ecc71'};">(${isCrossStaffed ? 'Cross-Staffed' : 'Dedicated Staff'})</span>
+          <button class="btn-edit-unit" onclick="openEditUnitModal('${unitId}')">Edit Unit</button>
+          <button class="btn-remove-unit" onclick="removeUnit('${unitId}')">Remove</button>
         `;
-        unitListEl.appendChild(div);
+
+        const statusBadge = row.querySelector('.unit-status-badge');
+        statusBadge.className = `unit-status-badge status-${currentStatus}`;
+        statusBadge.innerText = statusText;
+
+        row.querySelector('.role-badges').innerHTML = tagsHtml;
+
+        // Preserve focus/open menus during active interaction
+        const statusSelect = row.querySelector('.unit-status-select');
+        if (document.activeElement !== statusSelect && statusSelect.value !== currentStatus) {
+          statusSelect.value = currentStatus;
+        }
+
+        const staffingSelect = row.querySelector('.unit-staffing-select');
+        const targetStaffing = isCrossStaffed ? 'CROSS_STAFFED' : 'DEDICATED';
+        if (document.activeElement !== staffingSelect && staffingSelect.value !== targetStaffing) {
+          staffingSelect.value = targetStaffing;
+        }
+
+        const stationSelect = row.querySelector('.unit-station-select');
+        const targetStation = unit.assignedStationId || '';
+        if (document.activeElement !== stationSelect && stationSelect.value !== targetStation) {
+          stationSelect.value = targetStation;
+        }
       });
     }
 
