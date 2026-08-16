@@ -406,7 +406,7 @@
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -909,12 +909,15 @@
       }
     }
 
-    function createUnitBubbleIcon(shortId, status) {
+    function createUnitBubbleIcon(shortId, status, isStale = false) {
       const bg = getUnitStatusColor(status);
       const textColor = (status === 'TRANSPORTING' || status === 'ARRIVED') ? '#000' : '#fff';
+      const opacity = isStale ? 'opacity: 0.65;' : '';
+      const border = isStale ? 'border: 2px dashed #f1c40f;' : 'border: 2px solid #ffffff;';
+      
       return L.divIcon({
         className: 'unit-bubble-icon-container',
-        html: `<div class="unit-bubble-wrapper"><div class="unit-bubble-box" style="background-color:${bg}; color:${textColor};">${shortId}</div></div>`,
+        html: `<div class="unit-bubble-wrapper"><div class="unit-bubble-box" style="background-color:${bg}; color:${textColor}; ${opacity} ${border}">${shortId}</div></div>`,
         iconSize: [60, 26],
         iconAnchor: [30, 13]
       });
@@ -1198,16 +1201,25 @@
       });
 
       unitAvlMarkersLayer.clearLayers();
+      const now = Date.now();
+
       Object.keys(loadedUnits).forEach(uId => {
         const unit = loadedUnits[uId];
         if (unit.location && unit.location.lat && unit.location.lng) {
           const statusVal = unit.status || 'AVAILABLE';
           const statusText = statusVal.replace(/_/g, ' ');
           const shortDisplay = unit.shortId || uId;
-          const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal);
+          
+          // Stale check (2-5 minutes of silence on GPS AVL)
+          const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
+          const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
+          const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
+
+          const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
+          const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
 
           const marker = L.marker([unit.location.lat, unit.location.lng], { icon: bubbleIcon })
-            .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}`);
+            .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`);
           unitAvlMarkersLayer.addLayer(marker);
         }
       });
@@ -1226,6 +1238,35 @@
         }
       });
     }
+
+    // --- AUTOMATIC STALE AVL GPS TIMEOUT WATCHDOG (5 MINUTE TIMEOUT) ---
+    setInterval(() => {
+      const now = Date.now();
+      const STALE_TIMEOUT_MS = 5 * 60 * 1000; // 5 Minutes
+      const committedStatuses = ['DISPATCHED', 'ENROUTE', 'ONSCENE', 'TRANSPORTING', 'ARRIVED'];
+
+      Object.keys(loadedUnits).forEach(uId => {
+        const unit = loadedUnits[uId];
+        const loc = unit.location;
+        const currentStatus = unit.status || 'AVAILABLE';
+
+        if (loc && loc.type === 'LIVE_GPS_AVL' && !committedStatuses.includes(currentStatus)) {
+          const ageMs = now - (loc.lastUpdated || unit.lastUpdated || 0);
+
+          // If GPS signal timed out and unit has an assigned home station, revert to station
+          if (ageMs > STALE_TIMEOUT_MS && unit.assignedStationId && loadedStations[unit.assignedStationId]) {
+            const st = loadedStations[unit.assignedStationId];
+            db.ref(`units/${uId}/location`).set({
+              lat: st.lat,
+              lng: st.lng,
+              type: 'STATIC_STATION',
+              lastUpdated: Date.now()
+            });
+            console.log(`[AVL TIMEOUT] Unit ${uId} GPS signal lost >5m. Reverted location to ${st.name}.`);
+          }
+        }
+      });
+    }, 30000);
 
     // --- LISTEN FOR BOX AREAS ---
     db.ref('boxAreas').on('value', (snapshot) => {
