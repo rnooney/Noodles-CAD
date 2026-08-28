@@ -278,7 +278,7 @@
       
       <!-- GLOBAL ROSTER STATUS OVERRIDE BUTTONS -->
       <div style="background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #333; margin-bottom: 20px;">
-        <span class="section-title" style="display: block; margin-bottom: 8px;">Global Roster Status Overrides:</span>
+        <span class="section-title" style="display: block; margin-bottom: 8px;">Global Roster Status Overrides (Skips Out of Service Units):</span>
         <button class="btn-global-quarters" onclick="setAllUnitsStatus('IN_QUARTERS')">Set All Units In Quarters</button>
         <button class="btn-global-avail" onclick="setAllUnitsStatus('AVAILABLE')">Set All Units Available</button>
       </div>
@@ -406,7 +406,7 @@
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -1253,7 +1253,6 @@
         if (loc && loc.type === 'LIVE_GPS_AVL' && !committedStatuses.includes(currentStatus)) {
           const ageMs = now - (loc.lastUpdated || unit.lastUpdated || 0);
 
-          // If GPS signal timed out and unit has an assigned home station, revert to station
           if (ageMs > STALE_TIMEOUT_MS && unit.assignedStationId && loadedStations[unit.assignedStationId]) {
             const st = loadedStations[unit.assignedStationId];
             db.ref(`units/${uId}/location`).set({
@@ -2331,7 +2330,7 @@
       }
     }
 
-    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS ---
+    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS (IGNORES OUT_OF_SERVICE) ---
     function setAllUnitsStatus(targetStatus) {
       const unitKeys = Object.keys(loadedUnits);
       if (unitKeys.length === 0) {
@@ -2339,15 +2338,26 @@
         return;
       }
 
-      if (confirm(`Set ALL ${unitKeys.length} unit(s) status to ${targetStatus.replace(/_/g, ' ')}?`)) {
-        unitKeys.forEach(uId => {
+      // Filter out units marked OUT_OF_SERVICE
+      const actionableUnits = unitKeys.filter(uId => {
+        const unit = loadedUnits[uId];
+        return unit && unit.status !== 'OUT_OF_SERVICE';
+      });
+
+      if (actionableUnits.length === 0) {
+        alert("No units available to update (all logged-in units are currently Out of Service).");
+        return;
+      }
+
+      if (confirm(`Set ${actionableUnits.length} in-service unit(s) status to ${targetStatus.replace(/_/g, ' ')}? (Out of service units will be skipped)`)) {
+        actionableUnits.forEach(uId => {
           db.ref(`units/${uId}`).update({
             status: targetStatus,
             lastUpdated: Date.now()
           });
         });
 
-        alert(`All units updated to ${targetStatus.replace(/_/g, ' ')}!`);
+        alert(`${actionableUnits.length} unit(s) updated to ${targetStatus.replace(/_/g, ' ')}!`);
       }
     }
 
