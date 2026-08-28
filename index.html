@@ -302,7 +302,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH JSON IMPORT/EXPORT) -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT & EXPORT) -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 780px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -312,26 +312,24 @@
           <button onclick="closeBoxAreasModal()" style="background: #555; font-size: 12px; padding: 6px 12px; margin-left: 6px;">Close</button>
         </div>
       </div>
-      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import/export standard JSON datasets.</p>
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import KMZ, KML, and GeoJSON boundaries exported from Google Earth, ArcGIS, or CAD systems.</p>
 
       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button onclick="startDrawingBoxArea()" style="background:#8e44ad; flex: 1; font-size:13px; padding:10px;">+ Draw Box on Map</button>
-        <button onclick="toggleJsonImportBox()" style="background:#34495e; flex: 1; font-size:13px; padding:10px;">Import JSON / GeoJSON</button>
+        <button onclick="toggleJsonImportBox()" style="background:#34495e; flex: 1; font-size:13px; padding:10px;">Import KMZ / KML / JSON</button>
       </div>
 
-      <!-- JSON IMPORT PANEL -->
+      <!-- FILE & TEXT IMPORT PANEL -->
       <div id="jsonImportPanel" style="display: none; background: #141414; padding: 15px; border-radius: 4px; border: 1px solid #444; margin-bottom: 15px;">
-        <span class="section-title" style="color:#f1c40f;">Upload JSON File or Paste GeoJSON/JSON Text:</span>
-        <input type="file" id="boxJsonFileInput" accept=".json,.geojson" onchange="handleBoxJsonFileUpload(this)" style="margin-bottom: 10px; font-size: 13px;">
-        <textarea id="boxJsonTextInput" placeholder='Paste JSON data here. Supports:
-[
-  { "name": "Box 3301", "coordinates": [[35.73, -78.85], [35.74, -78.86], [35.72, -78.86]] }
-]
-or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; font-size: 12px; margin-bottom: 10px;"></textarea>
+        <span class="section-title" style="color:#f1c40f;">Upload KMZ, KML, or GeoJSON / JSON File:</span>
+        <input type="file" id="boxJsonFileInput" accept=".kmz,.kml,.json,.geojson" onchange="handleBoxFileUpload(this)" style="margin-bottom: 10px; font-size: 13px;">
+        
+        <span class="section-title" style="color:#aaa; font-size:11px;">Or Paste JSON / KML text:</span>
+        <textarea id="boxJsonTextInput" placeholder='Paste GeoJSON FeatureCollection, JSON array, or raw KML XML text here...' style="height: 100px; font-family: monospace; font-size: 12px; margin-bottom: 10px;"></textarea>
         
         <div style="display: flex; gap: 8px;">
-          <button onclick="processJsonImport(false)" style="background: #27ae60; flex: 1; font-size: 12px; padding: 8px;">Append / Add to Existing</button>
-          <button onclick="processJsonImport(true)" style="background: #c0392b; flex: 1; font-size: 12px; padding: 8px;">Replace / Overwrite All</button>
+          <button onclick="processBoundaryImport(false)" style="background: #27ae60; flex: 1; font-size: 12px; padding: 8px;">Append / Add to Existing</button>
+          <button onclick="processBoundaryImport(true)" style="background: #c0392b; flex: 1; font-size: 12px; padding: 8px;">Replace / Overwrite All</button>
         </div>
       </div>
 
@@ -426,7 +424,7 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -628,9 +626,11 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
     </div>
   </div>
 
-  <!-- Firebase & Leaflet Scripts -->
+  <!-- Firebase, Leaflet, Geoman, JSZip & toGeoJSON Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -1300,7 +1300,7 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
       container.innerHTML = '';
       const keys = Object.keys(loadedBoxAreas);
       if (keys.length === 0) {
-        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map or import JSON.</em>';
+        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map or import KMZ/JSON.</em>';
         return;
       }
 
@@ -1360,54 +1360,102 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
       document.getElementById('jsonImportPanel').style.display = 'none';
     }
 
-    // --- JSON IMPORT & EXPORT SYSTEM FOR BOX AREAS ---
+    // --- KMZ, KML & JSON IMPORT SYSTEM ---
     function toggleJsonImportBox() {
       const panel = document.getElementById('jsonImportPanel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
 
-    function handleBoxJsonFileUpload(inputEl) {
+    async function handleBoxFileUpload(inputEl) {
       const file = inputEl.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('boxJsonTextInput').value = e.target.result;
-      };
-      reader.readAsText(file);
+      const fileName = file.name.toLowerCase();
+
+      // 1. Handle KMZ (Zipped KML)
+      if (fileName.endsWith('.kmz')) {
+        try {
+          const zip = await JSZip.loadAsync(file);
+          let kmlFileName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+          
+          if (!kmlFileName) {
+            alert("No .kml boundary document found inside the uploaded KMZ archive.");
+            return;
+          }
+
+          const kmlText = await zip.file(kmlFileName).async("text");
+          document.getElementById('boxJsonTextInput').value = kmlText;
+          alert(`Extracted KML boundary data from ${file.name}. Click 'Append' or 'Replace' below to process.`);
+        } catch (err) {
+          console.error("KMZ extraction error:", err);
+          alert("Failed to unzip and extract KMZ file. Ensure the file is a valid compressed KML archive.");
+        }
+      }
+      // 2. Handle Plain Text KML, GeoJSON, or JSON
+      else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('boxJsonTextInput').value = e.target.result;
+        };
+        reader.readAsText(file);
+      }
     }
 
     function parseGeoJsonOrArray(rawJson) {
-      const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+      let parsed = rawJson;
+      if (typeof rawJson === 'string') {
+        const trimmed = rawJson.trim();
+        // Check if raw input is KML XML format
+        if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
+          const dom = new DOMParser().parseFromString(trimmed, 'text/xml');
+          parsed = toGeoJSON.kml(dom);
+        } else {
+          parsed = JSON.parse(trimmed);
+        }
+      }
+
       const normalizedBoxes = [];
 
-      // 1. GeoJSON FeatureCollection
+      // 1. GeoJSON FeatureCollection or GeometryCollection
       if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
         parsed.features.forEach((feature, idx) => {
           if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
             const props = feature.properties || {};
-            const name = props.name || props.NAME || props.Box || props.BOX || props.district || `Box ${idx + 1}`;
+            const name = props.name || props.NAME || props.Box || props.BOX || props.district || props.DISTRICT || `Box ${idx + 1}`;
             
-            // GeoJSON coordinates are [lng, lat], convert to Leaflet standard [lat, lng]
-            let ring = [];
+            let rings = [];
             if (feature.geometry.type === 'Polygon') {
-              ring = feature.geometry.coordinates[0];
+              rings = [feature.geometry.coordinates[0]];
             } else if (feature.geometry.type === 'MultiPolygon') {
-              ring = feature.geometry.coordinates[0][0];
+              rings = feature.geometry.coordinates.map(poly => poly[0]);
             }
 
-            const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
-
-            normalizedBoxes.push({
-              name: String(name).trim(),
-              color: props.color || '#8e44ad',
-              coordinates: leafletCoords,
-              createdAt: Date.now()
+            rings.forEach(ring => {
+              const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+              normalizedBoxes.push({
+                name: String(name).trim(),
+                color: props.stroke || props.fill || '#8e44ad',
+                coordinates: leafletCoords,
+                createdAt: Date.now()
+              });
             });
           }
         });
       }
-      // 2. Standard Array of Objects [{ name: "Box 1", coordinates: [[lat, lng], ...] }]
+      // 2. Direct Feature or Geometry
+      else if (parsed.type === 'Feature' && parsed.geometry && (parsed.geometry.type === 'Polygon' || parsed.geometry.type === 'MultiPolygon')) {
+        const props = parsed.properties || {};
+        const name = props.name || props.NAME || props.Box || props.district || 'Box 1';
+        let ring = parsed.geometry.type === 'Polygon' ? parsed.geometry.coordinates[0] : parsed.geometry.coordinates[0][0];
+        const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+        normalizedBoxes.push({
+          name: String(name).trim(),
+          color: '#8e44ad',
+          coordinates: leafletCoords,
+          createdAt: Date.now()
+        });
+      }
+      // 3. Standard Array of Objects [{ name: "Box 1", coordinates: [[lat, lng], ...] }]
       else if (Array.isArray(parsed)) {
         parsed.forEach((item, idx) => {
           if (item.coordinates && item.coordinates.length >= 3) {
@@ -1420,7 +1468,7 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
           }
         });
       }
-      // 3. Object-based map of box areas
+      // 4. Key-Value Map of Objects
       else if (typeof parsed === 'object') {
         Object.keys(parsed).forEach((k, idx) => {
           const item = parsed[k];
@@ -1438,17 +1486,17 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
       return normalizedBoxes;
     }
 
-    function processJsonImport(overwriteAll = false) {
+    function processBoundaryImport(overwriteAll = false) {
       const text = document.getElementById('boxJsonTextInput').value.trim();
       if (!text) {
-        alert("Please select a JSON file or paste JSON/GeoJSON text into the box.");
+        alert("Please select a KMZ/KML/JSON file or paste data into the text box.");
         return;
       }
 
       try {
         const boxes = parseGeoJsonOrArray(text);
         if (boxes.length === 0) {
-          alert("No valid polygon response areas found in provided JSON. Ensure coordinates exist with at least 3 vertices.");
+          alert("No valid polygon boundary areas found. Ensure the dataset contains polygons with at least 3 perimeter coordinates.");
           return;
         }
 
@@ -1469,8 +1517,8 @@ or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; f
 
         alert(`Successfully imported ${boxes.length} response box area(s)!`);
       } catch (err) {
-        console.error("JSON parsing error:", err);
-        alert("Invalid JSON format. Please verify syntax.");
+        console.error("Import parsing error:", err);
+        alert("Invalid file format. Please verify the KMZ, KML, or GeoJSON structure.");
       }
     }
 
