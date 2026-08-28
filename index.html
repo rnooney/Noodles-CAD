@@ -23,7 +23,7 @@
     .tab-page.active { display: block; }
 
     /* FORM STYLES */
-    input[type="text"], input[type="password"], input[type="number"], select { width: 98%; padding: 12px; font-size: 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; margin-bottom: 15px; box-sizing: border-box; }
+    input[type="text"], input[type="password"], input[type="number"], select, textarea { width: 98%; padding: 12px; font-size: 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; margin-bottom: 15px; box-sizing: border-box; }
     .checkbox-group { margin: 10px 0 20px 0; display: flex; flex-wrap: wrap; gap: 12px; background: #2a2a2a; padding: 12px; border-radius: 4px; border: 1px solid #333; }
     .checkbox-group label { font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
@@ -302,21 +302,41 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON IMPORT/EXPORT) -->
   <div class="modal-overlay" id="boxAreasModal">
-    <div class="modal-content" style="max-width: 700px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div class="modal-content" style="max-width: 780px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h2 style="margin: 0; color: #8e44ad;">Response Box Areas & Districts</h2>
-        <button onclick="closeBoxAreasModal()" style="background: #555;">Close Window</button>
+        <div>
+          <button onclick="exportBoxAreasJson()" style="background: #2980b9; font-size: 12px; padding: 6px 12px;">Download JSON</button>
+          <button onclick="closeBoxAreasModal()" style="background: #555; font-size: 12px; padding: 6px 12px; margin-left: 6px;">Close</button>
+        </div>
       </div>
-      <p style="color:#aaa; font-size:13px; margin: 5px 0 15px 0;">Use the polygon drawing tools on the Live Map board to outline districts. Calls placed inside these borders will automatically receive the Box Area tag.</p>
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import/export standard JSON datasets.</p>
 
-      <div style="background:#252525; padding:15px; border-radius:4px; border:1px solid #333; margin-bottom:15px;">
-        <button onclick="startDrawingBoxArea()" style="background:#8e44ad; width:100%; font-size:14px; padding:12px;">+ Draw New Response Box Area on Map</button>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button onclick="startDrawingBoxArea()" style="background:#8e44ad; flex: 1; font-size:13px; padding:10px;">+ Draw Box on Map</button>
+        <button onclick="toggleJsonImportBox()" style="background:#34495e; flex: 1; font-size:13px; padding:10px;">Import JSON / GeoJSON</button>
       </div>
 
-      <div class="section-title">Existing Configured Box Areas</div>
-      <div id="configuredBoxAreasList" style="max-height: 250px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+      <!-- JSON IMPORT PANEL -->
+      <div id="jsonImportPanel" style="display: none; background: #141414; padding: 15px; border-radius: 4px; border: 1px solid #444; margin-bottom: 15px;">
+        <span class="section-title" style="color:#f1c40f;">Upload JSON File or Paste GeoJSON/JSON Text:</span>
+        <input type="file" id="boxJsonFileInput" accept=".json,.geojson" onchange="handleBoxJsonFileUpload(this)" style="margin-bottom: 10px; font-size: 13px;">
+        <textarea id="boxJsonTextInput" placeholder='Paste JSON data here. Supports:
+[
+  { "name": "Box 3301", "coordinates": [[35.73, -78.85], [35.74, -78.86], [35.72, -78.86]] }
+]
+or GeoJSON FeatureCollection...' style="height: 100px; font-family: monospace; font-size: 12px; margin-bottom: 10px;"></textarea>
+        
+        <div style="display: flex; gap: 8px;">
+          <button onclick="processJsonImport(false)" style="background: #27ae60; flex: 1; font-size: 12px; padding: 8px;">Append / Add to Existing</button>
+          <button onclick="processJsonImport(true)" style="background: #c0392b; flex: 1; font-size: 12px; padding: 8px;">Replace / Overwrite All</button>
+        </div>
+      </div>
+
+      <div class="section-title">Configured Box Areas</div>
+      <div id="configuredBoxAreasList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
         <em>Loading box areas...</em>
       </div>
     </div>
@@ -1210,7 +1230,6 @@
           const statusText = statusVal.replace(/_/g, ' ');
           const shortDisplay = unit.shortId || uId;
           
-          // Stale check (2-5 minutes of silence on GPS AVL)
           const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
           const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
           const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
@@ -1242,7 +1261,7 @@
     // --- AUTOMATIC STALE AVL GPS TIMEOUT WATCHDOG (5 MINUTE TIMEOUT) ---
     setInterval(() => {
       const now = Date.now();
-      const STALE_TIMEOUT_MS = 5 * 60 * 1000; // 5 Minutes
+      const STALE_TIMEOUT_MS = 5 * 60 * 1000;
       const committedStatuses = ['DISPATCHED', 'ENROUTE', 'ONSCENE', 'TRANSPORTING', 'ARRIVED'];
 
       Object.keys(loadedUnits).forEach(uId => {
@@ -1281,7 +1300,7 @@
       container.innerHTML = '';
       const keys = Object.keys(loadedBoxAreas);
       if (keys.length === 0) {
-        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map.</em>';
+        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map or import JSON.</em>';
         return;
       }
 
@@ -1299,11 +1318,22 @@
             <div style="font-size:11px; color:#aaa;">Vertices: ${getNormalizedCoords(box.coordinates).length} coordinates</div>
           </div>
           <div>
+            <button onclick="editBoxAreaName('${bId}', '${box.name.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
             <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
           </div>
         `;
         container.appendChild(div);
       });
+    }
+
+    function editBoxAreaName(bId, currentName) {
+      const updated = prompt("Edit Response Box Area Name / Number:", currentName);
+      if (updated !== null && updated.trim() !== "") {
+        db.ref(`boxAreas/${bId}`).update({
+          name: updated.trim(),
+          updatedAt: Date.now()
+        });
+      }
     }
 
     function startDrawingBoxArea() {
@@ -1327,6 +1357,143 @@
 
     function closeBoxAreasModal() {
       document.getElementById('boxAreasModal').style.display = 'none';
+      document.getElementById('jsonImportPanel').style.display = 'none';
+    }
+
+    // --- JSON IMPORT & EXPORT SYSTEM FOR BOX AREAS ---
+    function toggleJsonImportBox() {
+      const panel = document.getElementById('jsonImportPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function handleBoxJsonFileUpload(inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('boxJsonTextInput').value = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    function parseGeoJsonOrArray(rawJson) {
+      const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+      const normalizedBoxes = [];
+
+      // 1. GeoJSON FeatureCollection
+      if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+        parsed.features.forEach((feature, idx) => {
+          if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+            const props = feature.properties || {};
+            const name = props.name || props.NAME || props.Box || props.BOX || props.district || `Box ${idx + 1}`;
+            
+            // GeoJSON coordinates are [lng, lat], convert to Leaflet standard [lat, lng]
+            let ring = [];
+            if (feature.geometry.type === 'Polygon') {
+              ring = feature.geometry.coordinates[0];
+            } else if (feature.geometry.type === 'MultiPolygon') {
+              ring = feature.geometry.coordinates[0][0];
+            }
+
+            const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+
+            normalizedBoxes.push({
+              name: String(name).trim(),
+              color: props.color || '#8e44ad',
+              coordinates: leafletCoords,
+              createdAt: Date.now()
+            });
+          }
+        });
+      }
+      // 2. Standard Array of Objects [{ name: "Box 1", coordinates: [[lat, lng], ...] }]
+      else if (Array.isArray(parsed)) {
+        parsed.forEach((item, idx) => {
+          if (item.coordinates && item.coordinates.length >= 3) {
+            normalizedBoxes.push({
+              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
+              color: item.color || '#8e44ad',
+              coordinates: getNormalizedCoords(item.coordinates),
+              createdAt: Date.now()
+            });
+          }
+        });
+      }
+      // 3. Object-based map of box areas
+      else if (typeof parsed === 'object') {
+        Object.keys(parsed).forEach((k, idx) => {
+          const item = parsed[k];
+          if (item.coordinates) {
+            normalizedBoxes.push({
+              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
+              color: item.color || '#8e44ad',
+              coordinates: getNormalizedCoords(item.coordinates),
+              createdAt: Date.now()
+            });
+          }
+        });
+      }
+
+      return normalizedBoxes;
+    }
+
+    function processJsonImport(overwriteAll = false) {
+      const text = document.getElementById('boxJsonTextInput').value.trim();
+      if (!text) {
+        alert("Please select a JSON file or paste JSON/GeoJSON text into the box.");
+        return;
+      }
+
+      try {
+        const boxes = parseGeoJsonOrArray(text);
+        if (boxes.length === 0) {
+          alert("No valid polygon response areas found in provided JSON. Ensure coordinates exist with at least 3 vertices.");
+          return;
+        }
+
+        if (overwriteAll) {
+          if (!confirm(`Are you sure you want to OVERWRITE and DELETE all existing box areas with these ${boxes.length} imported area(s)?`)) {
+            return;
+          }
+          db.ref('boxAreas').set(null);
+        }
+
+        boxes.forEach(box => {
+          db.ref('boxAreas').push(box);
+        });
+
+        document.getElementById('boxJsonTextInput').value = '';
+        document.getElementById('boxJsonFileInput').value = '';
+        document.getElementById('jsonImportPanel').style.display = 'none';
+
+        alert(`Successfully imported ${boxes.length} response box area(s)!`);
+      } catch (err) {
+        console.error("JSON parsing error:", err);
+        alert("Invalid JSON format. Please verify syntax.");
+      }
+    }
+
+    function exportBoxAreasJson() {
+      const keys = Object.keys(loadedBoxAreas);
+      if (keys.length === 0) {
+        alert("No box areas to export.");
+        return;
+      }
+
+      const exportData = keys.map(k => ({
+        name: loadedBoxAreas[k].name,
+        color: loadedBoxAreas[k].color || '#8e44ad',
+        coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
+      }));
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `cad_box_areas_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
     }
 
     // --- DYNAMIC TRAIT & CATEGORY MANAGER ---
@@ -2338,7 +2505,6 @@
         return;
       }
 
-      // Filter out units marked OUT_OF_SERVICE
       const actionableUnits = unitKeys.filter(uId => {
         const unit = loadedUnits[uId];
         return unit && unit.status !== 'OUT_OF_SERVICE';
@@ -2398,7 +2564,6 @@
       const sortedStationKeys = Object.keys(loadedStations)
         .sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
 
-      // Remove rows for deleted units
       const existingRows = unitListEl.querySelectorAll('.unit-row');
       existingRows.forEach(row => {
         const rowUnitId = row.getAttribute('data-unit-id');
@@ -2466,7 +2631,6 @@
           unitListEl.appendChild(row);
         }
 
-        // Update row text and badges in place without recreating the DOM
         const titleArea = row.querySelector('.unit-title-area');
         titleArea.innerHTML = `
           <strong>${unitId}${shortBadge}</strong>${passBadge} 
@@ -2481,7 +2645,6 @@
 
         row.querySelector('.role-badges').innerHTML = tagsHtml;
 
-        // Preserve focus/open menus during active interaction
         const statusSelect = row.querySelector('.unit-status-select');
         if (document.activeElement !== statusSelect && statusSelect.value !== currentStatus) {
           statusSelect.value = currentStatus;
