@@ -189,13 +189,13 @@
     <div class="tab-page active" id="callTakingTab">
       <h2>Call Entry Form</h2>
       
-      <div class="section-title">Incident Location / Address</div>
+      <div class="section-title">Incident Location (Address, Cross Streets e.g. "Main St & 1st Ave", or click map to plot)</div>
       <div class="autocomplete-container">
-        <input type="text" id="incidentAddress" placeholder="Start typing address or landmark..." oninput="handleAddressInput(this.value)" autocomplete="off">
+        <input type="text" id="incidentAddress" placeholder="Enter address, cross streets (e.g. Hwy 55 & Main St), or click map..." oninput="handleAddressInput(this.value)" autocomplete="off">
         <div class="autocomplete-results" id="autocompleteResults"></div>
       </div>
 
-      <div class="section-title">Call Pin Location (Click map or drag pin to adjust location)</div>
+      <div class="section-title">Call Pin Location (Click map or drag pin to adjust or plot manually without address)</div>
       <div id="callTakingMap"></div>
       <p style="font-size: 13px; color: #ccc; margin-top: -10px; margin-bottom: 15px;">
         Coordinates: <span id="callCoordsDisplay" style="color:#f1c40f;">Not Set</span> | 
@@ -1064,6 +1064,10 @@
 
       callTakingMap.on('click', function(e) {
         updateCallPinPosition(e.latlng.lat, e.latlng.lng);
+        const addrInput = document.getElementById('incidentAddress');
+        if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+          addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
+        }
       });
     }
 
@@ -1090,6 +1094,11 @@
         detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
         document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
         document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
+
+        const addrInput = document.getElementById('incidentAddress');
+        if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+          addrInput.value = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
+        }
       });
     }
 
@@ -1372,7 +1381,6 @@
 
       const fileName = file.name.toLowerCase();
 
-      // 1. Handle KMZ (Zipped KML)
       if (fileName.endsWith('.kmz')) {
         try {
           const zip = await JSZip.loadAsync(file);
@@ -1390,9 +1398,7 @@
           console.error("KMZ extraction error:", err);
           alert("Failed to unzip and extract KMZ file. Ensure the file is a valid compressed KML archive.");
         }
-      }
-      // 2. Handle Plain Text KML, GeoJSON, or JSON
-      else {
+      } else {
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('boxJsonTextInput').value = e.target.result;
@@ -1405,7 +1411,6 @@
       let parsed = rawJson;
       if (typeof rawJson === 'string') {
         const trimmed = rawJson.trim();
-        // Check if raw input is KML XML format
         if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
           const dom = new DOMParser().parseFromString(trimmed, 'text/xml');
           parsed = toGeoJSON.kml(dom);
@@ -1416,7 +1421,6 @@
 
       const normalizedBoxes = [];
 
-      // 1. GeoJSON FeatureCollection or GeometryCollection
       if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
         parsed.features.forEach((feature, idx) => {
           if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
@@ -1441,9 +1445,7 @@
             });
           }
         });
-      }
-      // 2. Direct Feature or Geometry
-      else if (parsed.type === 'Feature' && parsed.geometry && (parsed.geometry.type === 'Polygon' || parsed.geometry.type === 'MultiPolygon')) {
+      } else if (parsed.type === 'Feature' && parsed.geometry && (parsed.geometry.type === 'Polygon' || parsed.geometry.type === 'MultiPolygon')) {
         const props = parsed.properties || {};
         const name = props.name || props.NAME || props.Box || props.district || 'Box 1';
         let ring = parsed.geometry.type === 'Polygon' ? parsed.geometry.coordinates[0] : parsed.geometry.coordinates[0][0];
@@ -1454,9 +1456,7 @@
           coordinates: leafletCoords,
           createdAt: Date.now()
         });
-      }
-      // 3. Standard Array of Objects [{ name: "Box 1", coordinates: [[lat, lng], ...] }]
-      else if (Array.isArray(parsed)) {
+      } else if (Array.isArray(parsed)) {
         parsed.forEach((item, idx) => {
           if (item.coordinates && item.coordinates.length >= 3) {
             normalizedBoxes.push({
@@ -1467,9 +1467,7 @@
             });
           }
         });
-      }
-      // 4. Key-Value Map of Objects
-      else if (typeof parsed === 'object') {
+      } else if (typeof parsed === 'object') {
         Object.keys(parsed).forEach((k, idx) => {
           const item = parsed[k];
           if (item.coordinates) {
@@ -1950,44 +1948,126 @@
       }
     }
 
-    // --- ADDRESS AUTOCOMPLETE ---
+    // --- DISTRICT BOUNDING BOX (25-MILE RADIUS OF STATIONS) ---
+    function getDistrictViewbox() {
+      const stationKeys = Object.keys(loadedStations);
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+
+      if (stationKeys.length > 0) {
+        stationKeys.forEach(k => {
+          const st = loadedStations[k];
+          if (st.lat && st.lng) {
+            const lat = parseFloat(st.lat);
+            const lng = parseFloat(st.lng);
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+          }
+        });
+      }
+
+      // Fallback to default CAD center if no stations configured
+      if (minLat === Infinity) {
+        const cLat = defaultMapLat || 35.7327;
+        const cLng = defaultMapLng || -78.8503;
+        minLat = maxLat = cLat;
+        minLng = maxLng = cLng;
+      }
+
+      // ~25 miles buffer (~0.36 degrees lat, ~0.44 degrees lng)
+      const latBuffer = 0.36;
+      const lngBuffer = 0.44;
+
+      const left = (minLng - lngBuffer).toFixed(5);
+      const bottom = (minLat - latBuffer).toFixed(5);
+      const right = (maxLng + lngBuffer).toFixed(5);
+      const top = (maxLat + latBuffer).toFixed(5);
+
+      return `${left},${top},${right},${bottom}`; // Nominatim viewbox format: <left>,<top>,<right>,<bottom>
+    }
+
+    // Format display string removing Country names/United States/USA and clean up display
+    function cleanAddressDisplayName(displayName) {
+      if (!displayName) return '';
+      let parts = displayName.split(',').map(p => p.trim());
+      
+      // Filter out USA, United States, Postal Codes
+      parts = parts.filter(p => {
+        const lower = p.toLowerCase();
+        if (lower === 'united states' || lower === 'usa' || lower === 'us') return false;
+        if (/^\d{5}(-\d{4})?$/.test(p)) return false; // 5-digit zip
+        return true;
+      });
+
+      // Keep up to 4 significant street/town/state tokens
+      return parts.slice(0, 4).join(', ');
+    }
+
+    // --- ADDRESS & CROSS-STREET AUTOCOMPLETE WITH 25-MILE RADIUS CONSTRAINT ---
     function handleAddressInput(query) {
       clearTimeout(debounceTimer);
       const resultsContainer = document.getElementById('autocompleteResults');
       
-      if (!query || query.length < 3) {
+      if (!query || query.trim().length < 3) {
         resultsContainer.style.display = 'none';
         return;
       }
 
       debounceTimer = setTimeout(() => {
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+        const viewbox = getDistrictViewbox();
+        
+        // Normalize cross street syntax: "/" or "@" or "and" into standard intersection query
+        let cleanQuery = query.replace(/\s*[/@]\s*/g, ' & ').replace(/\s+and\s+/gi, ' & ');
+
+        const lookupUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&bounded=1&addressdetails=1&limit=6`;
+
+        fetch(lookupUrl)
           .then(res => res.json())
           .then(data => {
             resultsContainer.innerHTML = '';
-            if (data.length === 0) {
-              resultsContainer.style.display = 'none';
+            if (!data || data.length === 0) {
+              // Try fallback search without bounded=1 but prioritized near center if nothing found
+              fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&addressdetails=1&limit=4`)
+                .then(r => r.json())
+                .then(fallbackData => {
+                  renderAddressSuggestions(fallbackData, resultsContainer);
+                })
+                .catch(() => { resultsContainer.style.display = 'none'; });
               return;
             }
 
-            data.forEach(item => {
-              const div = document.createElement('div');
-              div.className = 'autocomplete-item';
-              div.innerText = item.display_name;
-              div.onclick = function() {
-                document.getElementById('incidentAddress').value = item.display_name;
-                updateCallPinPosition(item.lat, item.lon);
-                resultsContainer.style.display = 'none';
-              };
-              resultsContainer.appendChild(div);
-            });
-
-            resultsContainer.style.display = 'block';
+            renderAddressSuggestions(data, resultsContainer);
           })
           .catch(err => {
             console.error("Geocoding lookup error:", err);
+            resultsContainer.style.display = 'none';
           });
       }, 300);
+    }
+
+    function renderAddressSuggestions(items, resultsContainer) {
+      resultsContainer.innerHTML = '';
+      if (!items || items.length === 0) {
+        resultsContainer.style.display = 'none';
+        return;
+      }
+
+      items.forEach(item => {
+        const cleanedLabel = cleanAddressDisplayName(item.display_name);
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerHTML = `<strong>${cleanedLabel}</strong>`;
+        
+        div.onclick = function() {
+          document.getElementById('incidentAddress').value = cleanedLabel;
+          updateCallPinPosition(item.lat, item.lon);
+          resultsContainer.style.display = 'none';
+        };
+        resultsContainer.appendChild(div);
+      });
+
+      resultsContainer.style.display = 'block';
     }
 
     function handleTypeInput(query) {
@@ -2582,7 +2662,6 @@
       refreshMapLayers();
     });
 
-    // IN-PLACE DOM ROSTER UPDATE (PREVENTS DROPDOWNS FROM COLLAPSING ON LIVE SYNC)
     function renderUnitRoster() {
       const unitListEl = document.getElementById('unitList');
       if (!unitListEl) return;
@@ -2768,13 +2847,23 @@
       }
     }
 
-    // --- SUBMIT PENDING CALL ---
+    // --- SUBMIT PENDING CALL (ALLOWS PLOTTED CALLS WITHOUT SPECIFIC ADDRESS) ---
     function submitPendingCall() {
-      const address = document.getElementById('incidentAddress').value.trim();
+      let address = document.getElementById('incidentAddress').value.trim();
       const type = document.getElementById('incidentType').value.trim();
       
-      if (!address || !type) {
-        alert("Please enter both an address and call type.");
+      // If address is empty but user clicked/plotted on map, assign coordinates as location
+      if (!address && selectedLat && selectedLng) {
+        address = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
+      }
+
+      if (!address) {
+        alert("Please enter an address / cross streets, or click on the map to plot the incident location.");
+        return;
+      }
+
+      if (!type) {
+        alert("Please select or enter a call type.");
         return;
       }
 
