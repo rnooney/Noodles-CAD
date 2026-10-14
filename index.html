@@ -66,6 +66,30 @@
     .role-badges { font-size: 11px; color: #aaa; margin-top: 6px; }
     .tag { background: #333; border: 1px solid #555; padding: 3px 8px; border-radius: 3px; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
 
+    /* ASSIGNED UNIT QUICK REMOVE CHIPS */
+    .assigned-chip {
+      display: inline-flex;
+      align-items: center;
+      background: #111;
+      border: 1px solid #444;
+      padding: 5px 10px;
+      border-radius: 4px;
+      margin: 3px 6px 3px 0;
+      font-size: 13px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .assigned-chip .remove-x {
+      margin-left: 8px;
+      color: #e63946;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+    }
+    .assigned-chip .remove-x:hover {
+      color: #ff6b6b;
+    }
+
     /* UNIT MANAGER CREATOR PANEL */
     .unit-creator-card { background: #252525; padding: 20px; border-radius: 6px; border: 1px solid #444; margin-bottom: 20px; }
     .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; background: #1a1a1a; padding: 12px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
@@ -500,9 +524,15 @@
           </div>
         </div>
 
+        <!-- ASSIGNED UNITS WITH DIRECT REMOVAL CHIPS -->
         <div style="margin: 18px 0; background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #333;">
-          <button onclick="openUnitDispatchModal()" style="background: #e63946; font-size: 15px; padding: 12px 20px;">Dispatch Units</button>
-          <span style="margin-left: 15px; font-size: 14px; color: #aaa;">Assigned Units: <strong id="modalAssignedUnitsListDisplay" style="color: #fff;">None</strong></span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="section-title" style="margin-bottom: 0;">Currently Assigned Units:</span>
+            <button onclick="openUnitDispatchModal()" style="background: #e63946; font-size: 13px; padding: 8px 16px;">+ Open Dispatch Selector</button>
+          </div>
+          <div id="modalAssignedUnitsChipsContainer" style="display: flex; flex-wrap: wrap; align-items: center; min-height: 38px;">
+            <em style="color: #aaa; font-size: 13px;">No units currently assigned.</em>
+          </div>
         </div>
 
         <div class="section-title">Call Log & Activity History</div>
@@ -950,6 +980,65 @@
         const u = loadedUnits[uId];
         return (u && u.shortId) ? u.shortId : uId;
       }).join(', ');
+    }
+
+    // RENDER INTERACTIVE UNIT CHIPS FOR DIRECT REMOVAL INSIDE MANAGE CALL MODAL
+    function renderModalAssignedUnitsChips(assignedUnitsArray = []) {
+      const container = document.getElementById('modalAssignedUnitsChipsContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const arr = Array.isArray(assignedUnitsArray) ? assignedUnitsArray : Object.values(assignedUnitsArray || {});
+      
+      if (!arr || arr.length === 0) {
+        container.innerHTML = '<em style="color:#aaa; font-size:13px;">No units currently assigned.</em>';
+        return;
+      }
+
+      arr.forEach(uId => {
+        const u = loadedUnits[uId];
+        const displayLabel = u && u.shortId ? u.shortId : uId;
+        const chip = document.createElement('div');
+        chip.className = 'assigned-chip';
+        chip.innerHTML = `
+          <span>${displayLabel}</span>
+          <span class="remove-x" title="Remove unit from call" onclick="quickRemoveUnitFromCall('${uId}')">×</span>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    // FAST ONE-CLICK REMOVE UNIT FUNCTION
+    function quickRemoveUnitFromCall(uIdToRemove) {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const currentAssigned = Array.isArray(inc.assignedUnits) ? [...inc.assignedUnits] : Object.values(inc.assignedUnits || {});
+      const updatedAssigned = currentAssigned.filter(id => id !== uIdToRemove);
+      const newStatus = updatedAssigned.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+      // Update call in Firebase
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        assignedUnits: updatedAssigned,
+        status: newStatus
+      });
+
+      // Release unit back to AVAILABLE
+      db.ref(`units/${uIdToRemove}`).update({
+        status: 'AVAILABLE',
+        lastUpdated: Date.now()
+      });
+
+      const u = loadedUnits[uIdToRemove];
+      const displayName = u && u.shortId ? u.shortId : uIdToRemove;
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `${displayName} removed from incident and returned to AVAILABLE.`,
+        timestamp: Date.now()
+      });
     }
 
     function getStationAvailableCrewsPool() {
@@ -1967,7 +2056,6 @@
         });
       }
 
-      // Fallback to default CAD center if no stations configured
       if (minLat === Infinity) {
         const cLat = defaultMapLat || 35.7327;
         const cLng = defaultMapLng || -78.8503;
@@ -1984,23 +2072,20 @@
       const right = (maxLng + lngBuffer).toFixed(5);
       const top = (maxLat + latBuffer).toFixed(5);
 
-      return `${left},${top},${right},${bottom}`; // Nominatim viewbox format: <left>,<top>,<right>,<bottom>
+      return `${left},${top},${right},${bottom}`;
     }
 
-    // Format display string removing Country names/United States/USA and clean up display
     function cleanAddressDisplayName(displayName) {
       if (!displayName) return '';
       let parts = displayName.split(',').map(p => p.trim());
       
-      // Filter out USA, United States, Postal Codes
       parts = parts.filter(p => {
         const lower = p.toLowerCase();
         if (lower === 'united states' || lower === 'usa' || lower === 'us') return false;
-        if (/^\d{5}(-\d{4})?$/.test(p)) return false; // 5-digit zip
+        if (/^\d{5}(-\d{4})?$/.test(p)) return false;
         return true;
       });
 
-      // Keep up to 4 significant street/town/state tokens
       return parts.slice(0, 4).join(', ');
     }
 
@@ -2016,8 +2101,6 @@
 
       debounceTimer = setTimeout(() => {
         const viewbox = getDistrictViewbox();
-        
-        // Normalize cross street syntax: "/" or "@" or "and" into standard intersection query
         let cleanQuery = query.replace(/\s*[/@]\s*/g, ' & ').replace(/\s+and\s+/gi, ' & ');
 
         const lookupUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&bounded=1&addressdetails=1&limit=6`;
@@ -2027,7 +2110,6 @@
           .then(data => {
             resultsContainer.innerHTML = '';
             if (!data || data.length === 0) {
-              // Try fallback search without bounded=1 but prioritized near center if nothing found
               fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&addressdetails=1&limit=4`)
                 .then(r => r.json())
                 .then(fallbackData => {
@@ -2847,18 +2929,17 @@
       }
     }
 
-    // --- SUBMIT PENDING CALL (ALLOWS PLOTTED CALLS WITHOUT SPECIFIC ADDRESS) ---
+    // --- SUBMIT PENDING CALL ---
     function submitPendingCall() {
       let address = document.getElementById('incidentAddress').value.trim();
       const type = document.getElementById('incidentType').value.trim();
       
-      // If address is empty but user clicked/plotted on map, assign coordinates as location
       if (!address && selectedLat && selectedLng) {
         address = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
       }
 
       if (!address) {
-        alert("Please enter an address / cross streets, or click on the map to plot the incident location.");
+        alert("Please enter an address, cross streets, or click on the map to plot the incident location.");
         return;
       }
 
@@ -2941,6 +3022,11 @@
         });
       }
 
+      // Update active modal chips if currently open
+      if (activeModalIncidentId && loadedIncidents[activeModalIncidentId]) {
+        renderModalAssignedUnitsChips(loadedIncidents[activeModalIncidentId].assignedUnits || []);
+      }
+
       refreshMapLayers();
     });
 
@@ -2962,8 +3048,7 @@
         document.getElementById('modalTypeInput').value = inc.type;
 
         renderModalRadioList(inc.radioChannels || []);
-
-        document.getElementById('modalAssignedUnitsListDisplay').innerHTML = formatAssignedShortIds(inc.assignedUnits);
+        renderModalAssignedUnitsChips(inc.assignedUnits || []);
 
         const logs = inc.logs || {};
         const feed = document.getElementById('modalLogFeed');
@@ -3171,7 +3256,6 @@
             turnoutDelay = 4.0;
           } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
             const cap = stationCrewCapacity[stId];
-            
             if (status === 'AVAILABLE') {
               turnoutDelay = 0;
             } else if (cap.staffedRemaining > 0) {
