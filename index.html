@@ -13,6 +13,63 @@
     .container { width: 95%; max-width: 1400px; margin: 0 auto; background: #1e1e1e; padding: 25px; border-radius: 8px; border: 1px solid #333; }
     h1, h2, h3 { color: #e63946; margin-top: 0; }
 
+    /* CLI TERMINAL BAR */
+    .cli-container {
+      background: #0f141c;
+      border: 1px solid #1f2d3d;
+      border-left: 4px solid #16a085;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .cli-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cli-prompt {
+      font-family: monospace;
+      font-weight: bold;
+      color: #1abc9c;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    #cadCliInput {
+      flex: 1;
+      padding: 10px 14px;
+      font-family: monospace;
+      font-size: 15px;
+      background: #000;
+      color: #2ecc71;
+      border: 1px solid #334;
+      border-radius: 4px;
+      margin-bottom: 0;
+      outline: none;
+      box-sizing: border-box;
+    }
+    #cadCliInput:focus {
+      border-color: #1abc9c;
+      box-shadow: 0 0 8px rgba(26,188,156,0.4);
+    }
+    .cli-hints {
+      font-size: 11px;
+      color: #7f8c8d;
+      font-family: monospace;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cli-feedback {
+      font-size: 12px;
+      font-family: monospace;
+      font-weight: bold;
+      min-height: 16px;
+      transition: color 0.2s;
+    }
+
     /* NAVIGATION TABS */
     .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
     .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; }
@@ -163,6 +220,7 @@
 
     /* BOX AREA BADGE */
     .box-badge { background: #8e44ad; color: #fff; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; margin-left: 6px; display: inline-block; }
+    .call-num-badge { background: #2c3e50; color: #f1c40f; border: 1px solid #f39c12; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 13px; margin-right: 8px; }
 
     /* MODAL WINDOW STYLES */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
@@ -199,6 +257,18 @@
       <button class="btn-header-mgr" onclick="openTraitsModal()">Trait Categories</button>
       <button class="btn-header-mgr" style="background:#8e44ad;" onclick="openBoxAreasModal()">Box Areas</button>
       <button class="btn-header-mgr" style="background:#16a085;" onclick="openSoundSettingsModal()">Sound Settings</button>
+    </div>
+
+    <!-- PERSISTENT COMMAND-LINE INTERFACE (CLI) -->
+    <div class="cli-container">
+      <div class="cli-input-row">
+        <span class="cli-prompt">CAD-CLI &gt;</span>
+        <input type="text" id="cadCliInput" placeholder='Type command e.g. "E1 D", "R33 OS", "DISP E1 1", "CLEAR E1" (Press Ctrl+Space to focus)' autocomplete="off" spellcheck="false">
+      </div>
+      <div class="cli-hints">
+        <span>Commands: <code>&lt;UNIT&gt; &lt;STATUS&gt;</code> (e.g. <code>E1 ER</code>, <code>R33 OS</code>, <code>E2 IQ</code>) | <code>DISP &lt;UNIT&gt; &lt;#&gt;</code> | <code>CLEAR &lt;UNIT&gt;</code> | <code>ALL IQ</code> | <code>HELP</code></span>
+        <span id="cliFeedbackMsg" class="cli-feedback"></span>
+      </div>
     </div>
 
     <!-- NAVIGATION TABS -->
@@ -798,6 +868,7 @@
     let loadedStations = {};
     let loadedUnits = {};
     let loadedIncidents = {};
+    let activeIncidentIdOrder = [];
     let loadedCallTypes = [];
     let loadedRadioChannels = [];
     let loadedTraits = [];
@@ -1041,6 +1112,290 @@
         timestamp: Date.now()
       });
     }
+
+    // ==========================================
+    // --- DISPATCH COMMAND-LINE ENGINE (CLI) ---
+    // ==========================================
+    const STATUS_MAP = {
+      'D': 'DISPATCHED',
+      'DISP': 'DISPATCHED',
+      'DISPATCHED': 'DISPATCHED',
+      'ER': 'ENROUTE',
+      'ENR': 'ENROUTE',
+      'ENROUTE': 'ENROUTE',
+      'OS': 'ONSCENE',
+      'ONS': 'ONSCENE',
+      'ONSCENE': 'ONSCENE',
+      'ARV': 'ARRIVED',
+      'ARRIVED': 'ARRIVED',
+      'TRN': 'TRANSPORTING',
+      'TRANS': 'TRANSPORTING',
+      'TRANSPORTING': 'TRANSPORTING',
+      'IQ': 'IN_QUARTERS',
+      'QTR': 'IN_QUARTERS',
+      'QUARTERS': 'IN_QUARTERS',
+      'IN_QUARTERS': 'IN_QUARTERS',
+      'AV': 'AVAILABLE',
+      'AVAIL': 'AVAILABLE',
+      'AVAILABLE': 'AVAILABLE',
+      'CALL': 'ON_CALL',
+      'ONCALL': 'ON_CALL',
+      'ON_CALL': 'ON_CALL',
+      'OOS': 'OUT_OF_SERVICE',
+      'OUT': 'OUT_OF_SERVICE',
+      'OUT_OF_SERVICE': 'OUT_OF_SERVICE'
+    };
+
+    function findUnitIdByQuery(query) {
+      if (!query) return null;
+      const clean = query.trim().toLowerCase();
+      const keys = Object.keys(loadedUnits);
+      
+      // 1. Exact match on ID or Short ID
+      for (let k of keys) {
+        const u = loadedUnits[k];
+        if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) {
+          return k;
+        }
+      }
+
+      // 2. Starts-with match
+      for (let k of keys) {
+        const u = loadedUnits[k];
+        if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) {
+          return k;
+        }
+      }
+
+      return null;
+    }
+
+    function showCliFeedback(msg, isSuccess = true) {
+      const fb = document.getElementById('cliFeedbackMsg');
+      if (!fb) return;
+      fb.style.color = isSuccess ? '#2ecc71' : '#e74c3c';
+      fb.innerText = msg;
+      setTimeout(() => {
+        if (fb.innerText === msg) fb.innerText = '';
+      }, 4500);
+    }
+
+    function executeCliCommand(rawCmd) {
+      const cmd = rawCmd.trim();
+      if (!cmd) return;
+
+      const tokens = cmd.split(/\s+/);
+      const verb = tokens[0].toUpperCase();
+
+      // Help
+      if (verb === 'HELP' || verb === '?') {
+        alert("CAD CLI Commands:\n\n" +
+              "• Update Unit Status: <UNIT> <STATUS>\n" +
+              "  e.g.: 'E1 D', 'E1 ER', 'R33 OS', 'E1 IQ', 'E1 AV', 'E1 OOS'\n\n" +
+              "• Dispatch Unit to Call: DISP <UNIT> <#>\n" +
+              "  e.g.: 'DISP E1 1' or 'ADD R33 2'\n\n" +
+              "• Clear Unit from Call: CLEAR <UNIT> (or REM <UNIT> <#>)\n" +
+              "  e.g.: 'CLEAR E1'\n\n" +
+              "• Global Quarters / Available: ALL IQ or ALL AV\n\n" +
+              "Shortcut: Press Ctrl+Space anywhere to focus command line.");
+        showCliFeedback("Displayed CLI help manual.");
+        return;
+      }
+
+      // Global status: ALL IQ / ALL AV
+      if (verb === 'ALL' && tokens.length >= 2) {
+        const sub = tokens[1].toUpperCase();
+        if (sub === 'IQ' || sub === 'QUARTERS') {
+          setAllUnitsStatus('IN_QUARTERS');
+          showCliFeedback("Set all in-service units to IN QUARTERS");
+          return;
+        } else if (sub === 'AV' || sub === 'AVAIL' || sub === 'AVAILABLE') {
+          setAllUnitsStatus('AVAILABLE');
+          showCliFeedback("Set all in-service units to AVAILABLE");
+          return;
+        }
+      }
+
+      // Clear / Remove: CLEAR <UNIT>
+      if (verb === 'CLEAR' || verb === 'REM' || verb === 'REMOVE') {
+        if (tokens.length < 2) {
+          showCliFeedback("Syntax: CLEAR <UNIT_ID>", false);
+          return;
+        }
+        const unitTarget = tokens[1];
+        const resolvedUnitId = findUnitIdByQuery(unitTarget);
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitTarget}" not found.`, false);
+          return;
+        }
+
+        // Find which call has this unit
+        let foundCallId = null;
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(resolvedUnitId)) {
+            foundCallId = incId;
+          }
+        });
+
+        if (foundCallId) {
+          const inc = loadedIncidents[foundCallId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          const updated = assigned.filter(id => id !== resolvedUnitId);
+          const newStatus = updated.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+          db.ref(`incidents/${foundCallId}`).update({ assignedUnits: updated, status: newStatus });
+          db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
+
+          db.ref(`incidents/${foundCallId}/logs`).push({
+            author: 'CLI',
+            text: `${resolvedUnitId} cleared via CLI. Status: AVAILABLE.`,
+            timestamp: Date.now()
+          });
+
+          showCliFeedback(`Cleared ${resolvedUnitId} from incident and returned to AVAILABLE.`);
+        } else {
+          db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
+          showCliFeedback(`Unit ${resolvedUnitId} not assigned to active call. Status set to AVAILABLE.`);
+        }
+        return;
+      }
+
+      // Dispatch to call: DISP <UNIT> <CALL_INDEX> or ADD <UNIT> <CALL_INDEX>
+      if (verb === 'DISP' || verb === 'DISPATCH' || verb === 'ADD') {
+        if (tokens.length < 3) {
+          showCliFeedback("Syntax: DISP <UNIT> <CALL_#>", false);
+          return;
+        }
+
+        const unitTarget = tokens[1];
+        const callNum = parseInt(tokens[2]);
+        const resolvedUnitId = findUnitIdByQuery(unitTarget);
+
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitTarget}" not found.`, false);
+          return;
+        }
+
+        if (isNaN(callNum) || callNum < 1 || callNum > activeIncidentIdOrder.length) {
+          showCliFeedback(`Invalid call index #${tokens[2]}. Active range: 1 to ${activeIncidentIdOrder.length}`, false);
+          return;
+        }
+
+        const targetIncId = activeIncidentIdOrder[callNum - 1];
+        const targetInc = loadedIncidents[targetIncId];
+        if (!targetInc) {
+          showCliFeedback(`Call #${callNum} not found.`, false);
+          return;
+        }
+
+        const currentAssigned = Array.isArray(targetInc.assignedUnits) ? [...targetInc.assignedUnits] : Object.values(targetInc.assignedUnits || {});
+        if (!currentAssigned.includes(resolvedUnitId)) {
+          currentAssigned.push(resolvedUnitId);
+        }
+
+        db.ref(`incidents/${targetIncId}`).update({
+          assignedUnits: currentAssigned,
+          status: 'DISPATCHED'
+        });
+
+        db.ref(`units/${resolvedUnitId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+
+        db.ref(`incidents/${targetIncId}/logs`).push({
+          author: 'CLI',
+          text: `Unit ${resolvedUnitId} dispatched to call via CLI.`,
+          timestamp: Date.now()
+        });
+
+        showCliFeedback(`Dispatched ${resolvedUnitId} to Call #${callNum} (${targetInc.type}).`);
+        return;
+      }
+
+      // Status updates: <UNIT> <STATUS> (e.g. E1 D, R33 OS) or STATUS <UNIT> <STATUS>
+      let unitQuery = null;
+      let statusQuery = null;
+
+      if (verb === 'STATUS' && tokens.length >= 3) {
+        unitQuery = tokens[1];
+        statusQuery = tokens[2].toUpperCase();
+      } else if (tokens.length === 2) {
+        unitQuery = tokens[0];
+        statusQuery = tokens[1].toUpperCase();
+      }
+
+      if (unitQuery && statusQuery) {
+        const resolvedUnitId = findUnitIdByQuery(unitQuery);
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitQuery}" not found.`, false);
+          return;
+        }
+
+        const targetStatus = STATUS_MAP[statusQuery];
+        if (!targetStatus) {
+          showCliFeedback(`Unknown status "${statusQuery}". Valid: D, ER, OS, ARV, TRN, IQ, AV, CALL, OOS`, false);
+          return;
+        }
+
+        db.ref(`units/${resolvedUnitId}`).update({
+          status: targetStatus,
+          lastUpdated: Date.now()
+        });
+
+        // Log to any call unit is currently assigned to
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(resolvedUnitId)) {
+            db.ref(`incidents/${incId}/logs`).push({
+              author: 'CLI',
+              text: `${resolvedUnitId} status updated to ${targetStatus.replace(/_/g, ' ')} via CLI.`,
+              timestamp: Date.now()
+            });
+          }
+        });
+
+        showCliFeedback(`Updated ${resolvedUnitId} to ${targetStatus.replace(/_/g, ' ')}.`);
+        return;
+      }
+
+      showCliFeedback(`Unrecognized command: "${cmd}". Type HELP for syntax.`, false);
+    }
+
+    // Keyboard shortcut (Ctrl+Space or Cmd+Space) to focus CLI prompt
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+        e.preventDefault();
+        const cliInput = document.getElementById('cadCliInput');
+        if (cliInput) {
+          cliInput.focus();
+          cliInput.select();
+        }
+      } else if (e.key === 'Escape') {
+        const cliInput = document.getElementById('cadCliInput');
+        if (document.activeElement === cliInput) {
+          cliInput.value = '';
+          cliInput.blur();
+        }
+      }
+    });
+
+    // Enter key handler on CLI input
+    window.addEventListener('DOMContentLoaded', () => {
+      const cliInput = document.getElementById('cadCliInput');
+      if (cliInput) {
+        cliInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            executeCliCommand(cliInput.value);
+            cliInput.value = '';
+          }
+        });
+      }
+    });
 
     function getStationAvailableCrewsPool() {
       const stationPool = {};
@@ -2064,7 +2419,6 @@
         minLng = maxLng = cLng;
       }
 
-      // ~25 miles buffer (~0.36 degrees lat, ~0.44 degrees lng)
       const latBuffer = 0.36;
       const lngBuffer = 0.44;
 
@@ -2890,7 +3244,6 @@
           stationSelect.value = targetStation;
         }
 
-        // Apply active search filter state
         if (currentSearchQuery) {
           const matchText = (unitId + ' ' + (unit.shortId || '') + ' ' + (unit.assignedStationName || '') + ' ' + roles.join(' ')).toLowerCase();
           row.style.display = matchText.includes(currentSearchQuery) ? 'flex' : 'none';
@@ -3014,13 +3367,16 @@
       incidentListEl.innerHTML = '';
 
       const keys = Object.keys(loadedIncidents);
+      activeIncidentIdOrder = keys;
+
       if (keys.length === 0) {
         incidentListEl.innerHTML = '<em>No active or pending incidents currently.</em>';
       } else {
-        keys.forEach(id => {
+        keys.forEach((id, index) => {
           const inc = loadedIncidents[id];
           const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
           const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
+          const callNumBadge = `<span class="call-num-badge">#${index + 1}</span>`;
           
           let radioInfo = '';
           const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
@@ -3036,7 +3392,7 @@
 
           card.innerHTML = `
             <div class="incident-header">
-              <strong style="font-size: 16px;">${inc.type} ${statusBadge} ${boxBadge}</strong>
+              <strong style="font-size: 16px;">${callNumBadge}${inc.type} ${statusBadge} ${boxBadge}</strong>
               <div>
                 <button class="btn-manage" onclick="openEditModal('${id}')">Open / Dispatch Call</button>
               </div>
@@ -3068,8 +3424,10 @@
           return;
         }
 
+        const callIdx = activeIncidentIdOrder.indexOf(incidentId) + 1;
+        const callNumText = callIdx > 0 ? `[Call #${callIdx}] ` : '';
         const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
-        document.getElementById('modalCallTitle').innerText = `Manage: ${inc.type}${boxText}`;
+        document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type}${boxText}`;
         document.getElementById('modalAddressInput').value = inc.address;
         document.getElementById('modalTypeInput').value = inc.type;
 
