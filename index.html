@@ -307,6 +307,11 @@
         <button class="btn-global-avail" onclick="setAllUnitsStatus('AVAILABLE')">Set All Units Available</button>
       </div>
 
+      <!-- LIVE SEARCH FILTER BAR FOR UNIT ROSTER -->
+      <div style="margin-bottom: 15px;">
+        <input type="text" id="rosterSearchInput" placeholder="Filter roster by Unit ID, Short ID, Station, or Role..." oninput="handleRosterSearchInput(this.value)" style="margin-bottom:0; background:#141414; border:1px solid #444; font-size:14px;">
+      </div>
+
       <div id="unitList">Loading active units...</div>
     </div>
 
@@ -982,7 +987,6 @@
       }).join(', ');
     }
 
-    // RENDER INTERACTIVE UNIT CHIPS FOR DIRECT REMOVAL INSIDE MANAGE CALL MODAL
     function renderModalAssignedUnitsChips(assignedUnitsArray = []) {
       const container = document.getElementById('modalAssignedUnitsChipsContainer');
       if (!container) return;
@@ -1008,7 +1012,6 @@
       });
     }
 
-    // FAST ONE-CLICK REMOVE UNIT FUNCTION
     function quickRemoveUnitFromCall(uIdToRemove) {
       if (!activeModalIncidentId) return;
 
@@ -1019,13 +1022,11 @@
       const updatedAssigned = currentAssigned.filter(id => id !== uIdToRemove);
       const newStatus = updatedAssigned.length > 0 ? 'DISPATCHED' : 'PENDING';
 
-      // Update call in Firebase
       db.ref(`incidents/${activeModalIncidentId}`).update({
         assignedUnits: updatedAssigned,
         status: newStatus
       });
 
-      // Release unit back to AVAILABLE
       db.ref(`units/${uIdToRemove}`).update({
         status: 'AVAILABLE',
         lastUpdated: Date.now()
@@ -2744,6 +2745,22 @@
       refreshMapLayers();
     });
 
+    // --- LIVE FILTER SEARCH ON ROSTER ---
+    function handleRosterSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#unitList .unit-row');
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // IN-PLACE DOM ROSTER UPDATE (PREVENTS DROPDOWNS FROM COLLAPSING ON LIVE SYNC)
     function renderUnitRoster() {
       const unitListEl = document.getElementById('unitList');
       if (!unitListEl) return;
@@ -2780,6 +2797,8 @@
           row.remove();
         }
       });
+
+      const currentSearchQuery = document.getElementById('rosterSearchInput') ? document.getElementById('rosterSearchInput').value.toLowerCase().trim() : '';
 
       unitKeys.forEach(unitId => {
         const unit = loadedUnits[unitId];
@@ -2869,6 +2888,14 @@
         const targetStation = unit.assignedStationId || '';
         if (document.activeElement !== stationSelect && stationSelect.value !== targetStation) {
           stationSelect.value = targetStation;
+        }
+
+        // Apply active search filter state
+        if (currentSearchQuery) {
+          const matchText = (unitId + ' ' + (unit.shortId || '') + ' ' + (unit.assignedStationName || '') + ' ' + roles.join(' ')).toLowerCase();
+          row.style.display = matchText.includes(currentSearchQuery) ? 'flex' : 'none';
+        } else {
+          row.style.display = 'flex';
         }
       });
     }
@@ -3022,7 +3049,6 @@
         });
       }
 
-      // Update active modal chips if currently open
       if (activeModalIncidentId && loadedIncidents[activeModalIncidentId]) {
         renderModalAssignedUnitsChips(loadedIncidents[activeModalIncidentId].assignedUnits || []);
       }
