@@ -91,9 +91,7 @@
 
     .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
 
-    /* ========================================================= */
-    /* MOBILE-ONLY OVERRIDES (< 768px)                           */
-    /* ========================================================= */
+    /* MOBILE-ONLY OVERRIDES (< 768px) */
     @media (max-width: 768px) {
       body { padding: 10px; }
       .container { width: 100%; padding: 15px; }
@@ -208,9 +206,12 @@
       <div id="allCallsList"><em>No active or pending calls logged.</em></div>
     </div>
 
-    <!-- TAB 3: LIST OF UNITS -->
+    <!-- TAB 3: LIST OF UNITS (WITH LIVE SEARCH FILTER) -->
     <div class="tab-page" id="unitListTab">
       <div class="section-title">Connected Active Units & Roster</div>
+      <div style="margin-bottom: 12px;">
+        <input type="text" id="mdtRosterSearchInput" placeholder="Filter units by ID, Short ID, Station, or Role..." oninput="handleMdtRosterSearch(this.value)" style="margin-bottom:0; background:#141414; border:1px solid #444; font-size:14px;">
+      </div>
       <div id="mdtUnitRoster">Loading units...</div>
     </div>
 
@@ -390,14 +391,14 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         CADAudio.setCustomSound(soundKey, e.target.result);
-        alert(`Custom sound for ${soundKey} uploaded and saved!`);
+        alert(`Custom sound saved!`);
       };
       reader.readAsDataURL(file);
     }
 
     function resetAudio(soundKey) {
       CADAudio.setCustomSound(soundKey, null);
-      alert(`Reset ${soundKey} to default tone.`);
+      alert(`Reset to default tone.`);
     }
 
     function openSoundSettingsModal() {
@@ -571,7 +572,7 @@
       refreshMapLayers();
     });
 
-    // --- SEARCH & FILTER UNIT SELECTOR LIST ---
+    // --- SEARCH & FILTER LOGIN SELECTOR LIST ---
     function filterUnitSelectorList(filterQuery = '') {
       const listEl = document.getElementById('existingUnitsList');
       if (!listEl) return;
@@ -848,7 +849,6 @@
     function refreshMapLayers() {
       if (!map) return;
 
-      // 1. Incidents
       incidentMarkersLayer.clearLayers();
       Object.keys(loadedIncidents).forEach(id => {
         const inc = loadedIncidents[id];
@@ -870,7 +870,6 @@
         }
       });
 
-      // 2. Stations
       stationMarkersLayer.clearLayers();
       Object.keys(loadedStationsMap).forEach(id => {
         const st = loadedStationsMap[id];
@@ -882,7 +881,6 @@
         }
       });
 
-      // 3. Units AVL & Status Bubbles
       unitAvlMarkersLayer.clearLayers();
       Object.keys(loadedAllUnitsMap).forEach(uId => {
         const unit = loadedAllUnitsMap[uId];
@@ -898,7 +896,6 @@
         }
       });
 
-      // 4. Box Areas
       boxAreasLayer.clearLayers();
       Object.keys(loadedBoxAreas).forEach(bId => {
         const box = loadedBoxAreas[bId];
@@ -914,6 +911,21 @@
       });
     }
 
+    // --- LIVE SEARCH FILTER FOR MDT UNIT ROSTER ---
+    function handleMdtRosterSearch(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#mdtUnitRoster .unit-row');
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function renderUnitRoster() {
       const rosterEl = document.getElementById('mdtUnitRoster');
       if (!rosterEl) return;
@@ -925,6 +937,8 @@
         rosterEl.innerHTML = '<em>No active units logged in...</em>';
         return;
       }
+
+      const currentSearch = document.getElementById('mdtRosterSearchInput') ? document.getElementById('mdtRosterSearchInput').value.toLowerCase().trim() : '';
 
       unitKeys.forEach(unitId => {
         const u = loadedAllUnitsMap[unitId];
@@ -944,6 +958,14 @@
           </div>
           <div style="margin-top:4px;">${tagsHtml || '<span style="color:#666; font-size:11px;">No capability tags</span>'}</div>
         `;
+
+        if (currentSearch) {
+          const matchText = (unitId + ' ' + (u.shortId || '') + ' ' + (u.assignedStationName || '') + ' ' + roles.join(' ')).toLowerCase();
+          div.style.display = matchText.includes(currentSearch) ? 'flex' : 'none';
+        } else {
+          div.style.display = 'flex';
+        }
+
         rosterEl.appendChild(div);
       });
     }
@@ -1036,7 +1058,7 @@
 
         let multiRadioBanner = '';
         if (myRadios.length > 0) {
-          multiRadioBanner = '<div style="margin: 10px 0;">' +
+          multiRadioBanner = '<div style="margin: 8px 0;">' +
             myRadios.map(r => `<span class="radio-box">Tactical Radio: ${r.name}${r.desc ? ' — ' + r.desc : ''}</span>`).join(' ') + '</div>';
         }
 
