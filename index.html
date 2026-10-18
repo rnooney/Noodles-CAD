@@ -737,11 +737,10 @@
     </div>
   </div>
 
-  <!-- Firebase, Leaflet, Geoman, JSZip & toGeoJSON Libraries -->
+  <!-- Firebase, Leaflet, Geoman & JSZip Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -913,17 +912,30 @@
       iconAnchor: [11, 11]
     });
 
+    // ROBUST COORDINATE NORMALIZER (HANDLES NESTED, 3D, OR OBJECT TUPLES)
     function getNormalizedCoords(rawCoords) {
       if (!rawCoords) return [];
       let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
+      
+      // Unwrap single-nested outer ring e.g. [[[lat, lng], ...]]
+      if (arr.length === 1 && (Array.isArray(arr[0]) || typeof arr[0] === 'object')) {
+        arr = Array.isArray(arr[0]) ? arr[0] : Object.values(arr[0]);
+      }
+
       return arr.map(pt => {
-        if (Array.isArray(pt)) return [parseFloat(pt[0]), parseFloat(pt[1])];
-        if (pt && typeof pt === 'object') {
-          if (pt.lat !== undefined && pt.lng !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lng)];
-          return [parseFloat(pt[0]), parseFloat(pt[1])];
+        if (!pt) return null;
+        if (Array.isArray(pt)) {
+          const lat = parseFloat(pt[0]);
+          const lng = parseFloat(pt[1]);
+          return (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : null;
         }
-        return [0, 0];
-      }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
+        if (typeof pt === 'object') {
+          const lat = pt.lat !== undefined ? parseFloat(pt.lat) : parseFloat(pt[0]);
+          const lng = pt.lng !== undefined ? parseFloat(pt.lng) : parseFloat(pt[1]);
+          return (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : null;
+        }
+        return null;
+      }).filter(Boolean);
     }
 
     function isPointInPolygon(point, vs) {
@@ -1500,7 +1512,7 @@
       document.getElementById('jsonImportPanel').style.display = 'none';
     }
 
-    // --- KMZ, KML & JSON IMPORT SYSTEM ---
+    // --- KMZ, KML & JSON IMPORT SYSTEM WITH NATIVE KML PARSER FALLBACK ---
     function toggleJsonImportBox() {
       const panel = document.getElementById('jsonImportPanel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -1538,18 +1550,55 @@
       }
     }
 
+    // Built-in XML KML Parser (no dependency needed)
+    function parseRawKmlXml(kmlString) {
+      const dom = new DOMParser().parseFromString(kmlString, 'text/xml');
+      const placemarks = dom.getElementsByTagName('Placemark');
+      const boxes = [];
+
+      for (let i = 0; i < placemarks.length; i++) {
+        const pm = placemarks[i];
+        const nameEl = pm.getElementsByTagName('name')[0];
+        const name = nameEl ? nameEl.textContent.trim() : `Box ${boxes.length + 1}`;
+        
+        // Find coordinates within Polygon or LinearRing
+        const coordEls = pm.getElementsByTagName('coordinates');
+        for (let j = 0; j < coordEls.length; j++) {
+          const rawCoords = coordEls[j].textContent.trim();
+          const points = rawCoords.split(/\s+/).map(pair => {
+            const parts = pair.split(',');
+            if (parts.length >= 2) {
+              const lng = parseFloat(parts[0]);
+              const lat = parseFloat(parts[1]);
+              if (!isNaN(lat) && !isNaN(lng)) return [parseFloat(lat.toFixed(5)), parseFloat(lng.toFixed(5))];
+            }
+            return null;
+          }).filter(Boolean);
+
+          if (points.length >= 3) {
+            boxes.push({
+              name: name,
+              color: '#8e44ad',
+              coordinates: points,
+              createdAt: Date.now()
+            });
+            break;
+          }
+        }
+      }
+      return boxes;
+    }
+
     function parseGeoJsonOrArray(rawJson) {
-      let parsed = rawJson;
       if (typeof rawJson === 'string') {
         const trimmed = rawJson.trim();
+        // Native KML detection
         if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
-          const dom = new DOMParser().parseFromString(trimmed, 'text/xml');
-          parsed = toGeoJSON.kml(dom);
-        } else {
-          parsed = JSON.parse(trimmed);
+          return parseRawKmlXml(trimmed);
         }
       }
 
+      const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson.trim()) : rawJson;
       const normalizedBoxes = [];
 
       if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
@@ -1566,7 +1615,7 @@
             }
 
             rings.forEach(ring => {
-              const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+              const leafletCoords = ring.map(pt => [parseFloat(parseFloat(pt[1]).toFixed(5)), parseFloat(parseFloat(pt[0]).toFixed(5))]);
               normalizedBoxes.push({
                 name: String(name).trim(),
                 color: '#8e44ad',
@@ -1575,17 +1624,6 @@
               });
             });
           }
-        });
-      } else if (parsed.type === 'Feature' && parsed.geometry && (parsed.geometry.type === 'Polygon' || parsed.geometry.type === 'MultiPolygon')) {
-        const props = parsed.properties || {};
-        const name = props.name || props.NAME || props.Box || props.district || 'Box 1';
-        let ring = parsed.geometry.type === 'Polygon' ? parsed.geometry.coordinates[0] : parsed.geometry.coordinates[0][0];
-        const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
-        normalizedBoxes.push({
-          name: String(name).trim(),
-          color: '#8e44ad',
-          coordinates: leafletCoords,
-          createdAt: Date.now()
         });
       } else if (Array.isArray(parsed)) {
         parsed.forEach((item, idx) => {
