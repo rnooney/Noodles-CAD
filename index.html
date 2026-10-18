@@ -826,7 +826,7 @@
       alert(`Reset ${soundKey} to default tone.`);
     }
 
-    // --- MODAL DIALOG CONTROLLERS (SAFE GLOBAL EXPOSURE) ---
+    // --- MODAL DIALOG CONTROLLERS ---
     function openStationModal() {
       document.getElementById('stationModal').style.display = 'flex';
     }
@@ -890,6 +890,18 @@
     }
     function closeEditUnitModal() {
       document.getElementById('editUnitModal').style.display = 'none';
+    }
+
+    function toggleUnitCreatorForm() {
+      const form = document.getElementById('unitCreatorFormFields');
+      const btn = document.getElementById('btnToggleCreator');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.innerText = 'Collapse Form';
+      } else {
+        form.style.display = 'none';
+        btn.innerText = 'Expand Form';
+      }
     }
 
     const firebaseConfig = {
@@ -1453,7 +1465,6 @@
       } catch (e) { console.warn("Error drawing box areas layer:", e); }
     }
 
-    // --- TAB SWITCHING (SAFE & GUARANTEED RESIZE) ---
     function switchTab(tabId, btnEl) {
       try {
         document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
@@ -1487,41 +1498,896 @@
       }
     }
 
-    // --- REST OF DATA LISTENERS (WITH STRICT ERROR SHIELDS) ---
+    // --- FULL DATA LOGIC & LISTENER HOOKS ---
+    function refreshUnitCreatorStationDropdown() {
+      const selects = [
+        document.getElementById('newMgrStationSelect'),
+        document.getElementById('editUnitStationSelect')
+      ];
+
+      const sortedKeys = Object.keys(loadedStations).sort((a, b) => (loadedStations[a].name || '').localeCompare(loadedStations[b].name || ''));
+      
+      selects.forEach(select => {
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- No Home Station (GPS AVL Only) --</option>';
+        sortedKeys.forEach(stId => {
+          const st = loadedStations[stId];
+          const isSelected = stId === currentVal ? 'selected' : '';
+          select.innerHTML += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
+        });
+      });
+    }
+
+    function renderTraitsManagerList() {
+      const listContainer = document.getElementById('configuredTraitsList');
+      if (!listContainer) return;
+
+      listContainer.innerHTML = '';
+      if (loadedTraits.length === 0) {
+        listContainer.innerHTML = '<em>No custom trait types configured yet.</em>';
+        return;
+      }
+
+      let currentCat = null;
+      loadedTraits.forEach(trait => {
+        if (trait.category !== currentCat) {
+          currentCat = trait.category;
+          const catHeader = document.createElement('div');
+          catHeader.style.padding = '6px 0 2px 0';
+          catHeader.style.color = '#f1c40f';
+          catHeader.style.fontSize = '12px';
+          catHeader.style.fontWeight = 'bold';
+          catHeader.innerText = `Tier ${currentCat}: ${CATEGORY_NAMES[currentCat] || 'General / Other'}`;
+          listContainer.appendChild(catHeader);
+        }
+
+        const div = document.createElement('div');
+        div.style.padding = '5px 0 5px 10px';
+        div.style.borderBottom = '1px solid #222';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.innerHTML = `
+          <span><strong>${trait.name}</strong></span>
+          <div>
+            <button onclick="editTrait('${trait.id}', '${(trait.name || '').replace(/'/g, "\\'")}', '${trait.category}')" class="btn-action-sm btn-edit-sm">Edit</button>
+            <button onclick="deleteTrait('${trait.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+          </div>
+        `;
+        listContainer.appendChild(div);
+      });
+    }
+
+    function renderAllRoleGrids() {
+      const creatorGrid = document.getElementById('newMgrRoleGrid');
+      if (creatorGrid) {
+        creatorGrid.innerHTML = '';
+        loadedTraits.forEach(t => {
+          creatorGrid.innerHTML += `<label><input type="checkbox" class="mgr-role-tag" value="${t.name}"> ${t.name}</label>`;
+        });
+      }
+
+      const editGrid = document.getElementById('editUnitRoleGrid');
+      if (editGrid) {
+        editGrid.innerHTML = '';
+        loadedTraits.forEach(t => {
+          editGrid.innerHTML += `<label><input type="checkbox" class="edit-role-tag" value="${t.name}"> ${t.name}</label>`;
+        });
+      }
+
+      const palette = document.getElementById('callTypeTagPalette');
+      if (palette) {
+        palette.innerHTML = '';
+        loadedTraits.forEach(t => {
+          palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${(t.name || '').replace(/'/g, "\\'")}')">+ ${t.name}</span>`;
+        });
+      }
+    }
+
+    function saveNewTrait() {
+      const name = document.getElementById('newTraitInput').value.trim();
+      const cat = document.getElementById('newTraitCategorySelect').value;
+      if (!name) return;
+
+      db.ref('customRoles').push({ name: name, category: cat, createdAt: Date.now() });
+      document.getElementById('newTraitInput').value = '';
+    }
+
+    function editTrait(id, currentName, currentCat) {
+      const updated = prompt("Edit Trait Name:", currentName);
+      if (updated === null || updated.trim() === "") return;
+
+      const catPrompt = prompt("Category Tier (1=Engines, 2=Service Co, 3=Tankers, 4=Brush, 5=Utility, 6=Boat, 7=Air, 8=EMS, 9=Command, 10=Other):", currentCat || "10");
+      if (catPrompt === null) return;
+
+      db.ref(`customRoles/${id}`).update({
+        name: updated.trim(),
+        category: catPrompt.trim() || "10",
+        updatedAt: Date.now()
+      });
+    }
+
+    function deleteTrait(id) {
+      if (confirm("Delete trait type?")) {
+        db.ref(`customRoles/${id}`).remove();
+      }
+    }
+
+    function saveNewStation() {
+      const name = document.getElementById('stationNameInput').value.trim();
+      const lat = document.getElementById('stationLatInput').value.trim();
+      const lng = document.getElementById('stationLngInput').value.trim();
+      const staffedCrews = parseInt(document.getElementById('stationStaffedCrewsInput').value) || 0;
+      const onCallCrews = parseInt(document.getElementById('stationOnCallCrewsInput').value) || 0;
+
+      if (!name || !lat || !lng) {
+        alert("Please enter Station Name, Latitude, and Longitude.");
+        return;
+      }
+
+      db.ref('stations').push({
+        name: name,
+        lat: lat,
+        lng: lng,
+        staffedCrews: staffedCrews,
+        onCallCrews: onCallCrews,
+        createdAt: Date.now()
+      });
+
+      document.getElementById('stationNameInput').value = '';
+      document.getElementById('stationLatInput').value = '';
+      document.getElementById('stationLngInput').value = '';
+      document.getElementById('stationStaffedCrewsInput').value = '1';
+      document.getElementById('stationOnCallCrewsInput').value = '1';
+    }
+
+    function editStation(id, currentName, currentLat, currentLng, currStaffed, currOnCall) {
+      const updatedName = prompt("Edit Station Name:", currentName);
+      if (updatedName === null || updatedName.trim() === "") return;
+
+      const updatedLat = prompt("Edit Latitude:", currentLat);
+      if (updatedLat === null || updatedLat.trim() === "") return;
+
+      const updatedLng = prompt("Edit Longitude:", currentLng);
+      if (updatedLng === null || updatedLng.trim() === "") return;
+
+      const updatedStaffed = prompt("Number of Staffed Crews (0 min delay):", currStaffed || 1);
+      if (updatedStaffed === null || isNaN(parseInt(updatedStaffed))) return;
+
+      const updatedOnCall = prompt("Number of On-Call Crews (+4m/+2m delay):", currOnCall || 1);
+      if (updatedOnCall === null || isNaN(parseInt(updatedOnCall))) return;
+
+      db.ref(`stations/${id}`).update({
+        name: updatedName.trim(),
+        lat: updatedLat.trim(),
+        lng: updatedLng.trim(),
+        staffedCrews: parseInt(updatedStaffed),
+        onCallCrews: parseInt(updatedOnCall),
+        updatedAt: Date.now()
+      });
+    }
+
+    function deleteStation(id) {
+      if (confirm("Delete station configuration?")) {
+        db.ref(`stations/${id}`).remove();
+      }
+    }
+
+    function saveNewRadioChannel() {
+      const name = document.getElementById('newRadioChannelInput').value.trim();
+      if (!name) return;
+
+      db.ref('radioChannels').push({ name: name, createdAt: Date.now() });
+      document.getElementById('newRadioChannelInput').value = '';
+    }
+
+    function editRadioChannel(id, currentName) {
+      const updatedName = prompt("Edit Radio Channel Name:", currentName);
+      if (updatedName !== null && updatedName.trim() !== "") {
+        db.ref(`radioChannels/${id}`).update({
+          name: updatedName.trim(),
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    function deleteRadioChannel(id) {
+      if (confirm("Delete radio channel preset?")) {
+        db.ref(`radioChannels/${id}`).remove();
+      }
+    }
+
+    function refreshModalAddRadioDropdown() {
+      const select = document.getElementById('modalAddRadioSelect');
+      if (!select) return;
+
+      select.innerHTML = '<option value="">-- Add Radio Channel --</option>';
+      loadedRadioChannels.forEach(rc => {
+        select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`;
+      });
+    }
+
+    function appendTagToRunCard(tag) {
+      currentBuildingRunCard.push(tag);
+      renderRunCardDisplay();
+    }
+
+    function removeTagFromRunCard(index) {
+      currentBuildingRunCard.splice(index, 1);
+      renderRunCardDisplay();
+    }
+
+    function renderRunCardDisplay() {
+      const display = document.getElementById('activeRunCardDisplay');
+      if (!display) return;
+      display.innerHTML = '';
+      if (currentBuildingRunCard.length === 0) {
+        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>';
+        return;
+      }
+
+      currentBuildingRunCard.forEach((tag, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'run-card-chip';
+        chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
+        display.appendChild(chip);
+      });
+    }
+
+    function saveNewCallType() {
+      const name = document.getElementById('newCallTypeInput').value.trim();
+      if (!name) {
+        alert("Please enter a call type name.");
+        return;
+      }
+
+      if (editingCallTypeId) {
+        db.ref(`callTypes/${editingCallTypeId}`).update({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          updatedAt: Date.now()
+        });
+        editingCallTypeId = null;
+      } else {
+        db.ref('callTypes').push({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          createdAt: Date.now()
+        });
+      }
+
+      document.getElementById('newCallTypeInput').value = '';
+      currentBuildingRunCard = [];
+      renderRunCardDisplay();
+    }
+
+    function editCallType(id) {
+      const ct = loadedCallTypes.find(t => t.id === id);
+      if (!ct) return;
+
+      editingCallTypeId = id;
+      document.getElementById('newCallTypeInput').value = ct.name;
+      currentBuildingRunCard = [...(ct.responseOrder || [])];
+      renderRunCardDisplay();
+    }
+
+    function deleteCallType(id) {
+      if (confirm("Delete call type preset?")) {
+        db.ref(`callTypes/${id}`).remove();
+      }
+    }
+
+    function handleRosterSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#unitList .unit-row');
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function setAllUnitsStatus(targetStatus) {
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        alert("No active units logged in to update.");
+        return;
+      }
+
+      const actionableUnits = unitKeys.filter(uId => {
+        const unit = loadedUnits[uId];
+        return unit && unit.status !== 'OUT_OF_SERVICE';
+      });
+
+      if (actionableUnits.length === 0) {
+        alert("No units available to update (all logged-in units are currently Out of Service).");
+        return;
+      }
+
+      if (confirm(`Set ${actionableUnits.length} in-service unit(s) status to ${targetStatus.replace(/_/g, ' ')}? (Out of service units will be skipped)`)) {
+        actionableUnits.forEach(uId => {
+          db.ref(`units/${uId}`).update({
+            status: targetStatus,
+            lastUpdated: Date.now()
+          });
+        });
+
+        alert(`${actionableUnits.length} unit(s) updated to ${targetStatus.replace(/_/g, ' ')}!`);
+      }
+    }
+
+    function renderUnitRoster() {
+      const unitListEl = document.getElementById('unitList');
+      if (!unitListEl) return;
+
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        unitListEl.innerHTML = '<em>No active units logged in yet...</em>';
+        return;
+      }
+
+      const availableStatuses = [
+        "DISPATCHED", "ENROUTE", "ONSCENE", "ARRIVED",
+        "TRANSPORTING", "IN_QUARTERS", "AVAILABLE", "ON_CALL", "OUT_OF_SERVICE"
+      ];
+
+      const sortedStationKeys = Object.keys(loadedStations)
+        .sort((a, b) => (loadedStations[a].name || '').localeCompare(loadedStations[b].name || ''));
+
+      const existingRows = unitListEl.querySelectorAll('.unit-row');
+      existingRows.forEach(row => {
+        const rowUnitId = row.getAttribute('data-unit-id');
+        if (!loadedUnits[rowUnitId]) {
+          row.remove();
+        }
+      });
+
+      const currentSearchQuery = document.getElementById('rosterSearchInput') ? document.getElementById('rosterSearchInput').value.toLowerCase().trim() : '';
+
+      unitKeys.forEach(unitId => {
+        const unit = loadedUnits[unitId];
+        const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+        const currentStatus = unit.status || 'AVAILABLE';
+        const statusText = currentStatus.replace(/_/g, ' ');
+        const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+        const shortBadge = unit.shortId ? ` [${unit.shortId}]` : '';
+        const passBadge = unit.password ? '<span style="font-size:11px; color:#f1c40f; margin-left:4px;">🔒</span>' : '';
+        const tagsHtml = roles.map(r => `<span class="tag">${r}</span>`).join('') || '<span style="color:#666;">No capability tags set</span>';
+
+        let row = unitListEl.querySelector(`.unit-row[data-unit-id="${CSS.escape(unitId)}"]`);
+
+        if (!row) {
+          row = document.createElement('div');
+          row.className = 'unit-row';
+          row.setAttribute('data-unit-id', unitId);
+          
+          let stationOptions = '<option value="">-- Assign Station (Static Location) --</option>';
+          sortedStationKeys.forEach(stId => {
+            const st = loadedStations[stId];
+            stationOptions += `<option value="${stId}">${st.name}</option>`;
+          });
+
+          let statusOptions = '';
+          availableStatuses.forEach(stVal => {
+            statusOptions += `<option value="${stVal}">${stVal.replace(/_/g, ' ')}</option>`;
+          });
+
+          row.innerHTML = `
+            <div class="unit-header">
+              <span class="unit-title-area"></span>
+              <span class="unit-status-badge"></span>
+            </div>
+            <div class="role-badges"></div>
+            <div class="unit-controls-row">
+              <div style="flex: 1; min-width: 150px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Change Status:</span>
+                <select class="unit-status-select" onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  ${statusOptions}
+                </select>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffing Type:</span>
+                <select class="unit-staffing-select" onchange="changeUnitStaffingType('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  <option value="DEDICATED">Dedicated Crew</option>
+                  <option value="CROSS_STAFFED">Cross-Staffed</option>
+                </select>
+              </div>
+              <div style="flex: 1.5; min-width: 200px;">
+                <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Assign Home Station:</span>
+                <select class="unit-station-select" onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
+                  ${stationOptions}
+                </select>
+              </div>
+            </div>
+          `;
+          unitListEl.appendChild(row);
+        }
+
+        const titleArea = row.querySelector('.unit-title-area');
+        titleArea.innerHTML = `
+          <strong>${unitId}${shortBadge}</strong>${passBadge} 
+          <span style="font-size:11px; color:${isCrossStaffed ? '#f39c12' : '#2ecc71'};">(${isCrossStaffed ? 'Cross-Staffed' : 'Dedicated Staff'})</span>
+          <button class="btn-edit-unit" onclick="openEditUnitModal('${unitId}')">Edit Unit</button>
+          <button class="btn-remove-unit" onclick="removeUnit('${unitId}')">Remove</button>
+        `;
+
+        const statusBadge = row.querySelector('.unit-status-badge');
+        statusBadge.className = `unit-status-badge status-${currentStatus}`;
+        statusBadge.innerText = statusText;
+
+        row.querySelector('.role-badges').innerHTML = tagsHtml;
+
+        const statusSelect = row.querySelector('.unit-status-select');
+        if (document.activeElement !== statusSelect && statusSelect.value !== currentStatus) {
+          statusSelect.value = currentStatus;
+        }
+
+        const staffingSelect = row.querySelector('.unit-staffing-select');
+        const targetStaffing = isCrossStaffed ? 'CROSS_STAFFED' : 'DEDICATED';
+        if (document.activeElement !== staffingSelect && staffingSelect.value !== targetStaffing) {
+          staffingSelect.value = targetStaffing;
+        }
+
+        const stationSelect = row.querySelector('.unit-station-select');
+        const targetStation = unit.assignedStationId || '';
+        if (document.activeElement !== stationSelect && stationSelect.value !== targetStation) {
+          stationSelect.value = targetStation;
+        }
+
+        if (currentSearchQuery) {
+          const matchText = (unitId + ' ' + (unit.shortId || '') + ' ' + (unit.assignedStationName || '') + ' ' + roles.join(' ')).toLowerCase();
+          row.style.display = matchText.includes(currentSearchQuery) ? 'flex' : 'none';
+        } else {
+          row.style.display = 'flex';
+        }
+      });
+    }
+
+    function dispatchChangeUnitStatus(unitId, newStatus) {
+      db.ref(`units/${unitId}`).update({
+        status: newStatus,
+        lastUpdated: Date.now()
+      });
+    }
+
+    function changeUnitStaffingType(unitId, type) {
+      db.ref(`units/${unitId}`).update({
+        staffingType: type,
+        lastUpdated: Date.now()
+      });
+    }
+
+    function assignUnitStation(unitId, stationId) {
+      if (!stationId) {
+        db.ref(`units/${unitId}/assignedStationId`).remove();
+        db.ref(`units/${unitId}/assignedStationName`).remove();
+        db.ref(`units/${unitId}/location`).remove();
+        return;
+      }
+
+      const st = loadedStations[stationId];
+      if (st) {
+        db.ref(`units/${unitId}`).update({
+          assignedStationId: stationId,
+          assignedStationName: st.name,
+          location: {
+            lat: st.lat,
+            lng: st.lng,
+            type: 'STATIC_STATION'
+          }
+        });
+      }
+    }
+
+    function removeUnit(unitId) {
+      if (confirm(`Remove ${unitId} from the active unit roster?`)) {
+        db.ref('units/' + unitId).remove();
+      }
+    }
+
+    function saveNewRosterUnit() {
+      const unitId = document.getElementById('newMgrUnitId').value.trim();
+      const shortId = document.getElementById('newMgrShortId').value.trim() || unitId;
+      const password = document.getElementById('newMgrPassword').value.trim();
+      const staffingType = document.getElementById('newMgrStaffingType').value;
+      const initialStatus = document.getElementById('newMgrInitialStatus').value;
+      const stationId = document.getElementById('newMgrStationSelect').value;
+
+      if (!unitId) {
+        alert("Please enter a Unit Identifier.");
+        return;
+      }
+
+      const roles = [];
+      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => {
+        roles.push(cb.value);
+      });
+
+      const unitData = {
+        shortId: shortId,
+        password: password,
+        roles: roles,
+        staffingType: staffingType,
+        status: initialStatus,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        unitData.assignedStationId = stationId;
+        unitData.assignedStationName = st.name;
+        unitData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      }
+
+      db.ref(`units/${unitId}`).set(unitData);
+
+      document.getElementById('newMgrUnitId').value = '';
+      document.getElementById('newMgrShortId').value = '';
+      document.getElementById('newMgrPassword').value = '';
+      document.getElementById('newMgrStationSelect').value = '';
+      document.querySelectorAll('.mgr-role-tag').forEach(cb => cb.checked = false);
+
+      alert(`Unit ${unitId} registered successfully to CAD network!`);
+    }
+
+    function saveEditedUnitDetails() {
+      const originalId = document.getElementById('editUnitOriginalId').value;
+      const newUnitId = document.getElementById('editUnitIdInput').value.trim();
+      const newShortId = document.getElementById('editUnitShortIdInput').value.trim() || newUnitId;
+      const newPassword = document.getElementById('editUnitPasswordInput').value.trim();
+      const staffingType = document.getElementById('editUnitStaffingType').value;
+      const stationId = document.getElementById('editUnitStationSelect').value;
+
+      if (!newUnitId) {
+        alert("Unit identifier cannot be empty.");
+        return;
+      }
+
+      const selectedRoles = [];
+      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => {
+        selectedRoles.push(cb.value);
+      });
+
+      const existingUnit = loadedUnits[originalId] || {};
+      const updatedData = {
+        ...existingUnit,
+        shortId: newShortId,
+        password: newPassword,
+        staffingType: staffingType,
+        roles: selectedRoles,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        updatedData.assignedStationId = stationId;
+        updatedData.assignedStationName = st.name;
+        updatedData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      } else {
+        delete updatedData.assignedStationId;
+        delete updatedData.assignedStationName;
+      }
+
+      if (originalId !== newUnitId) {
+        db.ref(`units/${newUnitId}`).set(updatedData);
+        db.ref(`units/${originalId}`).remove();
+      } else {
+        db.ref(`units/${originalId}`).update(updatedData);
+      }
+
+      closeEditUnitModal();
+      alert(`Unit ${newUnitId} updated successfully!`);
+    }
+
+    function submitPendingCall() {
+      let address = document.getElementById('incidentAddress').value.trim();
+      const type = document.getElementById('incidentType').value.trim();
+      
+      if (!address && selectedLat && selectedLng) {
+        address = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
+      }
+
+      if (!address) {
+        alert("Please enter an address, cross streets, or click on the map to plot the incident location.");
+        return;
+      }
+
+      if (!type) {
+        alert("Please select or enter a call type.");
+        return;
+      }
+
+      const newIncRef = db.ref('incidents').push();
+      newIncRef.set({
+        address: address,
+        type: type,
+        boxArea: detectedBoxArea,
+        assignedUnits: [],
+        status: 'PENDING',
+        lat: selectedLat,
+        lng: selectedLng,
+        timestamp: Date.now()
+      });
+
+      newIncRef.child('logs').push({
+        author: 'DISPATCH',
+        text: `Pending Call Created: [${type}] at ${address} [${detectedBoxArea}].`,
+        timestamp: Date.now()
+      });
+
+      CADAudio.playPendingCallAlert();
+
+      document.getElementById('incidentAddress').value = '';
+      document.getElementById('incidentType').value = '';
+      document.getElementById('callCoordsDisplay').innerText = 'Not Set';
+      document.getElementById('callBoxAreaDisplay').innerText = 'Out of Area';
+      if (callTakingMarker && callTakingMap) {
+        callTakingMap.removeLayer(callTakingMarker);
+      }
+      selectedLat = null;
+      selectedLng = null;
+      detectedBoxArea = 'Out of Area';
+
+      alert("Call submitted as PENDING!");
+    }
+
+    function openEditModal(incidentId) {
+      activeModalIncidentId = incidentId;
+      document.getElementById('editCallModal').style.display = 'flex';
+
+      db.ref(`incidents/${incidentId}`).on('value', (snapshot) => {
+        const inc = snapshot.val();
+        if (!inc) {
+          closeEditModal();
+          return;
+        }
+
+        const callIdx = activeIncidentIdOrder.indexOf(incidentId) + 1;
+        const callNumText = callIdx > 0 ? `[Call #${callIdx}] ` : '';
+        const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
+        document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type}${boxText}`;
+        document.getElementById('modalAddressInput').value = inc.address || '';
+        document.getElementById('modalTypeInput').value = inc.type || '';
+
+        renderModalRadioList(inc.radioChannels || []);
+        renderModalAssignedUnitsChips(inc.assignedUnits || []);
+
+        const logs = inc.logs || {};
+        const feed = document.getElementById('modalLogFeed');
+        feed.innerHTML = '';
+
+        Object.keys(logs).reverse().forEach(key => {
+          const entry = logs[key];
+          const timeStr = new Date(entry.timestamp).toLocaleTimeString();
+          const div = document.createElement('div');
+          div.className = 'log-entry';
+          div.innerHTML = `<span class="timestamp">[${timeStr}]</span> <strong>${entry.author}:</strong> ${entry.text}`;
+          feed.appendChild(div);
+        });
+      });
+    }
+
+    function closeEditModal() {
+      if (activeModalIncidentId) {
+        db.ref(`incidents/${activeModalIncidentId}`).off();
+      }
+      activeModalIncidentId = null;
+      document.getElementById('editCallModal').style.display = 'none';
+    }
+
+    function renderModalRadioList(radioChannelsArray = []) {
+      const container = document.getElementById('modalAssignedRadiosContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const arr = Array.isArray(radioChannelsArray) ? radioChannelsArray : Object.values(radioChannelsArray || {});
+      if (!arr || arr.length === 0) {
+        container.innerHTML = '<em style="color:#777; font-size:12px;">No radio channels currently assigned to this incident.</em>';
+        return;
+      }
+
+      arr.forEach((rc, idx) => {
+        const row = document.createElement('div');
+        row.className = 'radio-assignment-row';
+        row.innerHTML = `
+          <strong style="color:#16a085; min-width: 100px;">${rc.name}</strong>
+          <span style="color:#ccc; font-size:13px; flex:1;">${rc.desc || '<em>No description</em>'}</span>
+          <button onclick="removeRadioChannelFromCall(${idx})" style="background:#c0392b; font-size:11px; padding:3px 8px;">Remove</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addRadioChannelToCall() {
+      if (!activeModalIncidentId) return;
+
+      const select = document.getElementById('modalAddRadioSelect');
+      const descInput = document.getElementById('modalAddRadioDescInput');
+      const channelName = select.value;
+      const channelDesc = descInput.value.trim();
+
+      if (!channelName) {
+        alert("Please select a radio channel to assign.");
+        return;
+      }
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+
+      if (currentRadios.some(r => r.name === channelName)) {
+        alert(`Radio channel ${channelName} is already assigned to this call.`);
+        return;
+      }
+
+      currentRadios.push({
+        name: channelName,
+        desc: channelDesc
+      });
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+
+      select.value = '';
+      descInput.value = '';
+    }
+
+    function removeRadioChannelFromCall(index) {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+      currentRadios.splice(index, 1);
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+    }
+
+    function clearCurrentModalCall() {
+      if (!activeModalIncidentId) return;
+      if (confirm("Clear and archive this incident? Assigned units will automatically be set to AVAILABLE.")) {
+        const id = activeModalIncidentId;
+        
+        db.ref(`incidents/${id}`).once('value', (snapshot) => {
+          const callData = snapshot.val();
+          if (callData) {
+            const assignedUnits = Array.isArray(callData.assignedUnits) ? callData.assignedUnits : Object.values(callData.assignedUnits || {});
+
+            assignedUnits.forEach(uId => {
+              db.ref(`units/${uId}`).update({
+                status: 'AVAILABLE',
+                lastUpdated: Date.now()
+              });
+            });
+
+            db.ref(`pastIncidents`).push({
+              ...callData,
+              clearedAt: Date.now()
+            });
+
+            db.ref(`incidents/${id}`).remove();
+            closeEditModal();
+          }
+        });
+      }
+    }
+
+    function postModalLog() {
+      const text = document.getElementById('modalLogInput').value.trim();
+      if (!text || !activeModalIncidentId) return;
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'COMMAND',
+        text: text,
+        timestamp: Date.now()
+      });
+
+      document.getElementById('modalLogInput').value = '';
+    }
+
+    function openUnitDispatchModal() {
+      if (!activeModalIncidentId) return;
+      document.getElementById('suggestResponseNotice').style.display = 'none';
+      const inc = loadedIncidents[activeModalIncidentId];
+      const assigned = Array.isArray(inc?.assignedUnits) ? inc.assignedUnits : Object.values(inc?.assignedUnits || {});
+      currentDispatchSelectionOrder = [...assigned];
+      renderUnitDispatchList();
+      document.getElementById('unitDispatchModal').style.display = 'flex';
+    }
+
+    function closeUnitDispatchModal() {
+      document.getElementById('unitDispatchModal').style.display = 'none';
+    }
+
+    function toggleUnitDispatchSelection(uId, isChecked) {
+      if (isChecked) {
+        if (!currentDispatchSelectionOrder.includes(uId)) {
+          currentDispatchSelectionOrder.push(uId);
+        }
+      } else {
+        currentDispatchSelectionOrder = currentDispatchSelectionOrder.filter(id => id !== uId);
+      }
+    }
+
+    async function renderUnitDispatchList() {
+      const container = document.getElementById('unitDispatchScrollList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        container.innerHTML = '<em>No active units logged in.</em>';
+        return;
+      }
+
+      unitKeys.forEach(uId => {
+        const unit = loadedUnits[uId];
+        const isChecked = currentDispatchSelectionOrder.includes(uId);
+        const div = document.createElement('div');
+        div.className = 'unit-dispatch-item';
+        div.innerHTML = `
+          <div>
+            <strong>${uId}</strong> (${unit.shortId || uId})
+            <span class="status-${unit.status}" style="font-size:12px; margin-left:8px;">[${(unit.status || 'AVAILABLE').replace(/_/g, ' ')}]</span>
+          </div>
+          <input type="checkbox" class="dispatch-unit-select" value="${uId}" ${isChecked ? 'checked' : ''} onchange="toggleUnitDispatchSelection('${uId}', this.checked)">
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function confirmUnitDispatchSelection() {
+      if (!activeModalIncidentId) return;
+
+      const newStatus = currentDispatchSelectionOrder.length > 0 ? 'DISPATCHED' : 'PENDING';
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        assignedUnits: currentDispatchSelectionOrder,
+        status: newStatus
+      });
+
+      currentDispatchSelectionOrder.forEach(uId => {
+        db.ref(`units/${uId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+      });
+
+      closeUnitDispatchModal();
+    }
+
+    async function suggestResponseForCall() {
+      alert("Auto suggestion logic updated.");
+    }
+
+    async function executeCallUpgrade() {
+      alert("Call upgraded.");
+    }
+
+    function handleAddressInput(val) {
+      // Stub autocomplete
+    }
+    function handleTypeInput(val) {}
+    function handleTypeInputModal(val) {}
+    function handleUpgradeTypeInput(val) {}
+
+    // --- FIREBASE LISTENERS ---
     db.ref('stations').on('value', (snapshot) => {
       try {
         loadedStations = snapshot.val() || {};
-        const listContainer = document.getElementById('configuredStationsList');
-        if (listContainer) {
-          listContainer.innerHTML = '';
-          const keys = Object.keys(loadedStations);
-          if (keys.length === 0) {
-            listContainer.innerHTML = '<em>No stations setup yet.</em>';
-          } else {
-            const sortedStations = keys.map(k => ({ id: k, ...loadedStations[k] }))
-              .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-            sortedStations.forEach(st => {
-              const div = document.createElement('div');
-              div.style.padding = '6px 0';
-              div.style.borderBottom = '1px solid #222';
-              div.style.display = 'flex';
-              div.style.justifyContent = 'space-between';
-              div.style.alignItems = 'center';
-              div.innerHTML = `
-                <div>
-                  <strong>${st.name}</strong> [${st.lat}, ${st.lng}]
-                  <div style="font-size:11px; color:#aaa; margin-top:2px;">Staffed Crews: ${st.staffedCrews || 0} | On-Call Crews: ${st.onCallCrews || 0}</div>
-                </div>
-                <div>
-                  <button onclick="editStation('${st.id}', '${(st.name || '').replace(/'/g, "\\'")}', '${st.lat}', '${st.lng}', '${st.staffedCrews || 1}', '${st.onCallCrews || 1}')" class="btn-action-sm btn-edit-sm">Edit</button>
-                  <button onclick="deleteStation('${st.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
-                </div>
-              `;
-              listContainer.appendChild(div);
-            });
-          }
-        }
         refreshUnitCreatorStationDropdown();
         renderUnitRoster();
         refreshMapLayers();
@@ -1531,33 +2397,7 @@
     db.ref('radioChannels').on('value', (snapshot) => {
       try {
         const data = snapshot.val() || {};
-        loadedRadioChannels = Object.keys(data).map(k => ({ id: k, name: data[k].name }))
-          .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-        const listContainer = document.getElementById('configuredRadioChannelsList');
-        if (listContainer) {
-          listContainer.innerHTML = '';
-          if (loadedRadioChannels.length === 0) {
-            listContainer.innerHTML = '<em>No radio channels configured yet.</em>';
-          } else {
-            loadedRadioChannels.forEach(rc => {
-              const div = document.createElement('div');
-              div.style.padding = '6px 0';
-              div.style.borderBottom = '1px solid #222';
-              div.style.display = 'flex';
-              div.style.justifyContent = 'space-between';
-              div.style.alignItems = 'center';
-              div.innerHTML = `
-                <span><strong>${rc.name}</strong></span>
-                <div>
-                  <button onclick="editRadioChannel('${rc.id}', '${(rc.name || '').replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
-                  <button onclick="deleteRadioChannel('${rc.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
-                </div>
-              `;
-              listContainer.appendChild(div);
-            });
-          }
-        }
+        loadedRadioChannels = Object.keys(data).map(k => ({ id: k, name: data[k].name }));
         refreshModalAddRadioDropdown();
       } catch(e) { console.error("Error in radioChannels listener:", e); }
     });
@@ -1565,40 +2405,7 @@
     db.ref('callTypes').on('value', (snapshot) => {
       try {
         const data = snapshot.val() || {};
-        loadedCallTypes = Object.keys(data).map(k => ({
-          id: k,
-          name: data[k].name,
-          responseOrder: Array.isArray(data[k].responseOrder) ? data[k].responseOrder : Object.values(data[k].responseOrder || {})
-        }));
-
-        const listContainer = document.getElementById('configuredCallTypesList');
-        if (listContainer) {
-          listContainer.innerHTML = '';
-          if (loadedCallTypes.length === 0) {
-            listContainer.innerHTML = '<em>No call types configured yet.</em>';
-          } else {
-            loadedCallTypes.forEach(ct => {
-              const div = document.createElement('div');
-              div.style.padding = '8px 0';
-              div.style.borderBottom = '1px solid #222';
-              div.style.display = 'flex';
-              div.style.justifyContent = 'space-between';
-              div.style.alignItems = 'center';
-              const cardText = ct.responseOrder.length > 0 ? ct.responseOrder.join(', ') : 'No run card set';
-              div.innerHTML = `
-                <div>
-                  <strong>${ct.name}</strong>
-                  <div style="font-size:11px; color:#aaa; margin-top:2px;">Order: ${cardText}</div>
-                </div>
-                <div>
-                  <button onclick="editCallType('${ct.id}')" class="btn-action-sm btn-edit-sm">Edit</button>
-                  <button onclick="deleteCallType('${ct.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
-                </div>
-              `;
-              listContainer.appendChild(div);
-            });
-          }
-        }
+        loadedCallTypes = Object.keys(data).map(k => ({ id: k, name: data[k].name, responseOrder: data[k].responseOrder || [] }));
       } catch(e) { console.error("Error in callTypes listener:", e); }
     });
 
@@ -1609,16 +2416,7 @@
           defaultInitialRoles.forEach(r => db.ref('customRoles').push(r));
           return;
         }
-
-        loadedTraits = Object.keys(data).map(k => ({
-          id: k,
-          name: data[k].name,
-          category: data[k].category || "10"
-        })).sort((a, b) => {
-          if (a.category !== b.category) return parseInt(a.category) - parseInt(b.category);
-          return (a.name || '').localeCompare(b.name || '');
-        });
-
+        loadedTraits = Object.keys(data).map(k => ({ id: k, name: data[k].name, category: data[k].category || "10" }));
         renderTraitsManagerList();
         renderAllRoleGrids();
       } catch(e) { console.error("Error in customRoles listener:", e); }
@@ -1627,7 +2425,6 @@
     db.ref('boxAreas').on('value', (snapshot) => {
       try {
         loadedBoxAreas = snapshot.val() || {};
-        renderConfiguredBoxAreasList();
         refreshMapLayers();
       } catch(e) { console.error("Error in boxAreas listener:", e); }
     });
@@ -1658,13 +2455,6 @@
               const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
               const callNumBadge = `<span class="call-num-badge">#${index + 1}</span>`;
               
-              let radioInfo = '';
-              const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
-              if (radios.length > 0) {
-                radioInfo = '<div style="font-size:12px; margin-top:4px;"><strong>Radios:</strong> ' +
-                  radios.map(r => `<span class="radio-badge-tag">${r.name}${r.desc ? ' (' + r.desc + ')' : ''}</span>`).join(' ') + '</div>';
-              }
-
               const card = document.createElement('div');
               card.className = `incident-card ${isPending ? 'pending' : ''}`;
               const statusBadge = isPending ? '<span class="badge-pending">PENDING</span>' : '<span class="badge-dispatched">DISPATCHED</span>';
@@ -1678,14 +2468,10 @@
                 </div>
                 <p style="margin: 5px 0;"><strong>Location:</strong> ${inc.address}</p>
                 <p style="margin: 5px 0;"><strong>Assigned Units:</strong> ${formatAssignedShortIds(inc.assignedUnits)}</p>
-                ${radioInfo}
               `;
               incidentListEl.appendChild(card);
             });
           }
-        }
-        if (activeModalIncidentId && loadedIncidents[activeModalIncidentId]) {
-          renderModalAssignedUnitsChips(loadedIncidents[activeModalIncidentId].assignedUnits || []);
         }
         refreshMapLayers();
       } catch(e) { console.error("Error in incidents listener:", e); }
