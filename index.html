@@ -73,7 +73,7 @@
     /* NAVIGATION TABS */
     .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
     .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; user-select: none; }
-    .tab-btn:hover { background: #353535; }
+    .tab-btn:hover { background: #333; }
     .tab-btn.active { background: #e63946; color: #fff; border-color: #e63946; }
 
     /* TAB PAGES */
@@ -153,60 +153,8 @@
     .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; background: #1a1a1a; padding: 12px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
     .role-grid label { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
-    /* MAP TOOLBAR */
+    /* MAP TOOLBAR & CANVAS */
     .map-toolbar { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px 6px 0 0; border: 1px solid #444; border-bottom: none; }
-
-    /* STATUS COLORS */
-    .status-DISPATCHED { color: #2ecc71; font-weight: bold; }
-    .status-OUT_OF_SERVICE { color: #7f8c8d; font-weight: bold; }
-    .status-ON_CALL { color: #8e44ad; font-weight: bold; }
-    .status-IN_QUARTERS { color: #e63946; font-weight: bold; }
-    .status-AVAILABLE { color: #e63946; font-weight: bold; }
-    .status-ENROUTE { color: #2ecc71; font-weight: bold; }
-    .status-ONSCENE { color: #2980b9; font-weight: bold; }
-    .status-TRANSPORTING { color: #f1c40f; font-weight: bold; }
-    .status-ARRIVED { color: #f1c40f; font-weight: bold; }
-
-    /* BUTTONS */
-    button { padding: 10px 18px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
-    button:hover { background: #c1121f; }
-    
-    .btn-manage { background: #f39c12; font-size: 13px; margin-right: 6px; color: #000; }
-    .btn-manage:hover { background: #d35400; color: #fff; }
-
-    .btn-clear { background: #27ae60; font-size: 13px; }
-    .btn-clear:hover { background: #1e8449; }
-    
-    .btn-upgrade { background: #d35400; color: #fff; font-size: 14px; }
-    .btn-upgrade:hover { background: #e67e22; }
-
-    .btn-edit-unit { background: #f39c12; color: #000; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 10px; }
-    .btn-edit-unit:hover { background: #d35400; color: #fff; }
-
-    .btn-remove-unit { background: #c0392b; color: #fff; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 6px; }
-    .btn-remove-unit:hover { background: #e74c3c; }
-
-    .btn-header-mgr { background: #2980b9; float: right; margin-top: -10px; margin-left: 8px; }
-    .btn-header-mgr:hover { background: #3498db; }
-
-    .btn-action-sm { font-size: 11px; padding: 4px 10px; margin-left: 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
-    .btn-edit-sm { background: #f39c12; color: #000; }
-    .btn-edit-sm:hover { background: #d35400; color: #fff; }
-    .btn-delete-sm { background: #c0392b; }
-    .btn-delete-sm:hover { background: #e74c3c; }
-
-    .btn-suggest { background: #f39c12; color: #000; font-size: 14px; margin-right: 10px; }
-    .btn-suggest:hover { background: #d35400; color: #fff; }
-
-    .btn-global-quarters { background: #2980b9; color: #fff; margin-right: 10px; }
-    .btn-global-quarters:hover { background: #3498db; }
-
-    .btn-global-avail { background: #27ae60; color: #fff; }
-    .btn-global-avail:hover { background: #2ea043; }
-
-    .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
-    .btn-map-control:hover { background: #2c3e50; }
-
     #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; background: #1a1a1a; }
     #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; background: #1a1a1a; }
 
@@ -738,7 +686,7 @@
     </div>
   </div>
 
-  <!-- Firebase, Leaflet, Geoman & JSZip Libraries -->
+  <!-- External Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -861,8 +809,8 @@
     let incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
     let callTakingMarker;
 
-    let defaultMapLat = null;
-    let defaultMapLng = null;
+    let defaultMapLat = 35.7327;
+    let defaultMapLng = -78.8503;
     let defaultMapZoom = 12;
 
     let selectedLat = null;
@@ -939,6 +887,7 @@
     }
 
     function isPointInPolygon(point, vs) {
+      if (!vs || vs.length < 3) return false;
       const x = point[0], y = point[1];
       let inside = false;
       for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -953,14 +902,16 @@
     function calculateBoxAreaForCoords(lat, lng) {
       if (!lat || !lng) return "Out of Area";
       const pt = [parseFloat(lat), parseFloat(lng)];
+      if (isNaN(pt[0]) || isNaN(pt[1])) return "Out of Area";
 
       const keys = Object.keys(loadedBoxAreas);
       for (let k of keys) {
         const box = loadedBoxAreas[k];
+        if (!box) continue;
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
           if (isPointInPolygon(pt, coords)) {
-            return box.name;
+            return box.name || "District";
           }
         }
       }
@@ -971,7 +922,6 @@
     db.ref('mapSettings/defaultView').on('value', (snapshot) => {
       const view = snapshot.val();
       if (view && view.lat && view.lng) {
-        const isFirstLoad = (defaultMapLat === null);
         defaultMapLat = parseFloat(view.lat);
         defaultMapLng = parseFloat(view.lng);
         defaultMapZoom = parseInt(view.zoom) || 12;
@@ -980,19 +930,6 @@
         if (displayEl) {
           displayEl.innerText = `${defaultMapLat.toFixed(4)}, ${defaultMapLng.toFixed(4)} (Zoom: ${defaultMapZoom})`;
         }
-
-        if (isFirstLoad) {
-          if (callTakingMap && !selectedLat) {
-            callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-          }
-          if (map) {
-            map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-          }
-        }
-      } else if (defaultMapLat === null) {
-        defaultMapLat = 35.7327;
-        defaultMapLng = -78.8503;
-        defaultMapZoom = 12;
       }
     });
 
@@ -1012,7 +949,7 @@
     }
 
     function revertMapToDefault() {
-      if (map && defaultMapLat !== null) {
+      if (map) {
         map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
       }
     }
@@ -1477,7 +1414,7 @@
       const mapTabBtn = document.querySelectorAll('.tab-btn')[3];
       switchTab('mapTab', mapTabBtn);
       setTimeout(() => {
-        if (map && map.pm) {
+        if (map && map.pm && typeof map.pm.enableDraw === 'function') {
           map.pm.enableDraw('Polygon');
           alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
         }
@@ -1515,7 +1452,7 @@
       document.getElementById('jsonImportPanel').style.display = 'none';
     }
 
-    // --- KMZ, KML & JSON IMPORT SYSTEM WITH NATIVE KML PARSER FALLBACK ---
+    // --- KMZ, KML & JSON IMPORT SYSTEM WITH NATIVE KML PARSER ---
     function toggleJsonImportBox() {
       const panel = document.getElementById('jsonImportPanel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -3560,38 +3497,279 @@
       document.getElementById('stationModal').style.display = 'none';
     }
 
-    // --- BULLETPROOF TAB SWITCHING ---
-    function switchTab(tabId, btnEl) {
+    // --- LEAFLET MAP ENGINE INITIALIZATION ---
+    function initCallTakingMap() {
+      if (callTakingMap) return;
+      const el = document.getElementById('callTakingMap');
+      if (!el || el._leaflet_id) return;
+
       try {
-        document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        callTakingMap = L.map('callTakingMap').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
 
-        const targetPage = document.getElementById(tabId);
-        if (targetPage) targetPage.classList.add('active');
-        if (btnEl) btnEl.classList.add('active');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(callTakingMap);
 
-        if (tabId === 'callTakingTab') {
-          setTimeout(() => {
-            try {
-              if (callTakingMap) callTakingMap.invalidateSize();
-            } catch(e) { console.warn("CallTakingMap resize error", e); }
-          }, 150);
-        } else if (tabId === 'mapTab') {
-          setTimeout(() => {
-            try {
-              if (!map) {
-                initMap();
-              } else {
-                map.invalidateSize();
-                refreshMapLayers();
-              }
-            } catch(e) { console.warn("Map resize error", e); }
-          }, 150);
-        }
-      } catch(err) {
-        console.error("switchTab critical error:", err);
+        const GridLayer = L.GridLayer.extend({
+          createTile: function (coords) {
+            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+            const size = this.getTileSize();
+            tile.width = size.x;
+            tile.height = size.y;
+            const ctx = tile.getContext('2d');
+            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, size.x, size.y);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px monospace';
+            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+            return tile;
+          }
+        });
+
+        new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
+
+        callTakingMap.on('click', function(e) {
+          updateCallPinPosition(e.latlng.lat, e.latlng.lng);
+          const addrInput = document.getElementById('incidentAddress');
+          if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+            addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
+          }
+        });
+      } catch (err) {
+        console.error("Error initializing Call Taking Map:", err);
       }
     }
+
+    function initMap() {
+      if (map) return;
+      const el = document.getElementById('map');
+      if (!el || el._leaflet_id) return;
+
+      try {
+        map = L.map('map').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const GridLayer = L.GridLayer.extend({
+          createTile: function (coords) {
+            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+            const size = this.getTileSize();
+            tile.width = size.x;
+            tile.height = size.y;
+            const ctx = tile.getContext('2d');
+            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, size.x, size.y);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px monospace';
+            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+            return tile;
+          }
+        });
+
+        gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
+
+        incidentMarkersLayer = L.layerGroup().addTo(map);
+        stationMarkersLayer = L.layerGroup().addTo(map);
+        unitAvlMarkersLayer = L.layerGroup().addTo(map);
+        boxAreasLayer = L.layerGroup().addTo(map);
+
+        const overlayControl = {
+          "Tactical Grid": gridOverlay,
+          "Active & Pending Calls": incidentMarkersLayer,
+          "Stations": stationMarkersLayer,
+          "Unit Positions / AVL": unitAvlMarkersLayer,
+          "Box Areas / Districts": boxAreasLayer
+        };
+
+        L.control.layers(null, overlayControl, { collapsed: false }).addTo(map);
+
+        // Safe Geoman Toolbar Attachment
+        if (map.pm && typeof map.pm.addControls === 'function') {
+          try {
+            map.pm.addControls({
+              position: 'topleft',
+              drawPolygon: true,
+              drawRectangle: true,
+              drawMarker: false,
+              drawCircleMarker: false,
+              drawPolyline: false,
+              drawCircle: false,
+              editMode: true,
+              dragMode: false,
+              cutPolygon: false,
+              removalMode: true
+            });
+          } catch(e) { console.warn("Geoman addControls failed:", e); }
+        }
+
+        map.on('pm:create', (e) => {
+          try {
+            const shape = e.layer;
+            const latlngs = shape.getLatLngs()[0];
+            const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
+
+            const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
+            if (boxName && boxName.trim() !== "") {
+              const newBoxRef = db.ref('boxAreas').push();
+              newBoxRef.set({
+                name: boxName.trim(),
+                color: '#8e44ad',
+                coordinates: coordinates,
+                createdAt: Date.now()
+              });
+              alert(`Box Area "${boxName.trim()}" saved!`);
+            }
+            map.removeLayer(shape);
+          } catch(err) { console.error("Error creating polygon box area:", err); }
+        });
+
+        refreshMapLayers();
+      } catch (err) {
+        console.error("Critical error in initMap:", err);
+      }
+    }
+
+    function refreshMapLayers() {
+      if (!map) return;
+
+      // 1. Incidents
+      try {
+        incidentMarkersLayer.clearLayers();
+        Object.keys(loadedIncidents).forEach(id => {
+          const inc = loadedIncidents[id];
+          if (inc && inc.lat && inc.lng) {
+            const lat = parseFloat(inc.lat);
+            const lng = parseFloat(inc.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+              const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
+              
+              let radioInfo = '';
+              const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+              if (radios.length > 0) {
+                radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
+              }
+
+              const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
+              const marker = L.marker([lat, lng], { icon: markerIcon })
+                .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
+              incidentMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing incidents layer:", e); }
+
+      // 2. Stations
+      try {
+        stationMarkersLayer.clearLayers();
+        Object.keys(loadedStations).forEach(id => {
+          const st = loadedStations[id];
+          if (st && st.lat && st.lng) {
+            const lat = parseFloat(st.lat);
+            const lng = parseFloat(st.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
+              const marker = L.marker([lat, lng])
+                .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
+              stationMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing stations layer:", e); }
+
+      // 3. Units AVL
+      try {
+        unitAvlMarkersLayer.clearLayers();
+        const now = Date.now();
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          if (unit && unit.location && unit.location.lat && unit.location.lng) {
+            const lat = parseFloat(unit.location.lat);
+            const lng = parseFloat(unit.location.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const statusVal = unit.status || 'AVAILABLE';
+              const statusText = statusVal.replace(/_/g, ' ');
+              const shortDisplay = unit.shortId || uId;
+              
+              const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
+              const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
+              const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
+
+              const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
+              const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
+
+              const marker = L.marker([lat, lng], { icon: bubbleIcon })
+                .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`);
+              unitAvlMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing unit AVL layer:", e); }
+
+      // 4. Box Areas
+      try {
+        boxAreasLayer.clearLayers();
+        Object.keys(loadedBoxAreas).forEach(bId => {
+          const box = loadedBoxAreas[bId];
+          if (!box) return;
+          const coords = getNormalizedCoords(box.coordinates);
+          if (coords && coords.length >= 3) {
+            const polygon = L.polygon(coords, {
+              color: '#8e44ad',
+              fillColor: '#8e44ad',
+              weight: 2,
+              fillOpacity: 0.18
+            }).bindPopup(`<b>Response Zone: ${box.name || bId}</b>`);
+            boxAreasLayer.addLayer(polygon);
+          }
+        });
+      } catch (e) { console.warn("Error drawing box areas layer:", e); }
+    }
+
+    // --- TAB SWITCHING (SAFE & GUARANTEED RESIZE) ---
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      const targetPage = document.getElementById(tabId);
+      if (targetPage) targetPage.classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
+
+      if (tabId === 'callTakingTab') {
+        setTimeout(() => {
+          if (!callTakingMap) {
+            initCallTakingMap();
+          }
+          if (callTakingMap) {
+            callTakingMap.invalidateSize();
+          }
+        }, 120);
+      } else if (tabId === 'mapTab') {
+        setTimeout(() => {
+          if (!map) {
+            initMap();
+          }
+          if (map) {
+            map.invalidateSize();
+            refreshMapLayers();
+          }
+        }, 120);
+      }
+    }
+
+    window.onload = function() {
+      initCallTakingMap();
+      setTimeout(() => {
+        if (callTakingMap) callTakingMap.invalidateSize();
+      }, 200);
+    };
   </script>
 </body>
 </html>
