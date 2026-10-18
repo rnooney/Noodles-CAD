@@ -72,7 +72,8 @@
 
     /* NAVIGATION TABS */
     .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; }
+    .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; user-select: none; }
+    .tab-btn:hover { background: #353535; }
     .tab-btn.active { background: #e63946; color: #fff; border-color: #e63946; }
 
     /* TAB PAGES */
@@ -206,8 +207,8 @@
     .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
     .btn-map-control:hover { background: #2c3e50; }
 
-    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; }
-    #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; }
+    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; background: #1a1a1a; }
+    #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; background: #1a1a1a; }
 
     /* LEAFLET UNIT BUBBLE MARKER CSS */
     .unit-bubble-icon-container { background: transparent !important; border: none !important; }
@@ -917,7 +918,6 @@
       if (!rawCoords) return [];
       let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
       
-      // Unwrap single-nested outer ring e.g. [[[lat, lng], ...]]
       if (arr.length === 1 && (Array.isArray(arr[0]) || typeof arr[0] === 'object')) {
         arr = Array.isArray(arr[0]) ? arr[0] : Object.values(arr[0]);
       }
@@ -1474,11 +1474,14 @@
 
     function startDrawingBoxArea() {
       closeBoxAreasModal();
-      switchTab('mapTab', document.querySelectorAll('.tab-btn')[3]);
-      if (map) {
-        map.pm.enableDraw('Polygon');
-        alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
-      }
+      const mapTabBtn = document.querySelectorAll('.tab-btn')[3];
+      switchTab('mapTab', mapTabBtn);
+      setTimeout(() => {
+        if (map && map.pm) {
+          map.pm.enableDraw('Polygon');
+          alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
+        }
+      }, 200);
     }
 
     function deleteBoxArea(id) {
@@ -1550,7 +1553,7 @@
       }
     }
 
-    // Built-in XML KML Parser (no dependency needed)
+    // Built-in XML KML Parser
     function parseRawKmlXml(kmlString) {
       const dom = new DOMParser().parseFromString(kmlString, 'text/xml');
       const placemarks = dom.getElementsByTagName('Placemark');
@@ -1561,7 +1564,6 @@
         const nameEl = pm.getElementsByTagName('name')[0];
         const name = nameEl ? nameEl.textContent.trim() : `Box ${boxes.length + 1}`;
         
-        // Find coordinates within Polygon or LinearRing
         const coordEls = pm.getElementsByTagName('coordinates');
         for (let j = 0; j < coordEls.length; j++) {
           const rawCoords = coordEls[j].textContent.trim();
@@ -1592,7 +1594,6 @@
     function parseGeoJsonOrArray(rawJson) {
       if (typeof rawJson === 'string') {
         const trimmed = rawJson.trim();
-        // Native KML detection
         if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
           return parseRawKmlXml(trimmed);
         }
@@ -3076,7 +3077,9 @@
       document.getElementById('incidentType').value = '';
       document.getElementById('callCoordsDisplay').innerText = 'Not Set';
       document.getElementById('callBoxAreaDisplay').innerText = 'Out of Area';
-      if (callTakingMarker) callTakingMap.removeLayer(callTakingMarker);
+      if (callTakingMarker && callTakingMap) {
+        callTakingMap.removeLayer(callTakingMarker);
+      }
       selectedLat = null;
       selectedLng = null;
       detectedBoxArea = 'Out of Area';
@@ -3555,6 +3558,39 @@
 
     function closeStationModal() {
       document.getElementById('stationModal').style.display = 'none';
+    }
+
+    // --- BULLETPROOF TAB SWITCHING ---
+    function switchTab(tabId, btnEl) {
+      try {
+        document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        const targetPage = document.getElementById(tabId);
+        if (targetPage) targetPage.classList.add('active');
+        if (btnEl) btnEl.classList.add('active');
+
+        if (tabId === 'callTakingTab') {
+          setTimeout(() => {
+            try {
+              if (callTakingMap) callTakingMap.invalidateSize();
+            } catch(e) { console.warn("CallTakingMap resize error", e); }
+          }, 150);
+        } else if (tabId === 'mapTab') {
+          setTimeout(() => {
+            try {
+              if (!map) {
+                initMap();
+              } else {
+                map.invalidateSize();
+                refreshMapLayers();
+              }
+            } catch(e) { console.warn("Map resize error", e); }
+          }, 150);
+        }
+      } catch(err) {
+        console.error("switchTab critical error:", err);
+      }
     }
   </script>
 </body>
