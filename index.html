@@ -432,6 +432,17 @@
         </div>
       </div>
 
+      <!-- BOX AREA SEARCH FILTER -->
+      <div style="margin-bottom: 12px;">
+        <input 
+          type="text" 
+          id="boxAreaSearchInput" 
+          placeholder="Filter box areas by name or number (e.g. 3301, District 2)..." 
+          oninput="handleBoxAreaSearchInput(this.value)" 
+          style="margin-bottom: 0; background: #141414; border: 1px solid #444; font-size: 13px;"
+        >
+      </div>
+
       <div class="section-title">Configured Box Areas</div>
       <div id="configuredBoxAreasList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
         <em>Loading box areas...</em>
@@ -1747,6 +1758,17 @@
       refreshMapLayers();
     });
 
+    // --- LIVE FILTER SEARCH ON CONFIGURED BOX AREAS ---
+    function handleBoxAreaSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const items = document.querySelectorAll('#configuredBoxAreasList .box-area-item');
+      
+      items.forEach(item => {
+        const name = (item.getAttribute('data-box-name') || '').toLowerCase();
+        item.style.display = (!filter || name.includes(filter)) ? 'flex' : 'none';
+      });
+    }
+
     function renderConfiguredBoxAreasList() {
       const container = document.getElementById('configuredBoxAreasList');
       if (!container) return;
@@ -1758,21 +1780,30 @@
         return;
       }
 
+      const currentQuery = document.getElementById('boxAreaSearchInput') 
+        ? document.getElementById('boxAreaSearchInput').value.toLowerCase().trim() 
+        : '';
+
       keys.forEach(bId => {
         const box = loadedBoxAreas[bId];
+        const boxName = box.name || 'Unnamed Box';
+        const verticesCount = getNormalizedCoords(box.coordinates).length;
+
         const div = document.createElement('div');
+        div.className = 'box-area-item';
+        div.setAttribute('data-box-name', boxName);
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid #222';
-        div.style.display = 'flex';
+        div.style.display = (!currentQuery || boxName.toLowerCase().includes(currentQuery)) ? 'flex' : 'none';
         div.style.justifyContent = 'space-between';
         div.style.alignItems = 'center';
         div.innerHTML = `
           <div>
-            <strong style="color:#8e44ad;">${box.name}</strong>
-            <div style="font-size:11px; color:#aaa;">Vertices: ${getNormalizedCoords(box.coordinates).length} coordinates</div>
+            <strong style="color:#8e44ad;">${boxName}</strong>
+            <div style="font-size:11px; color:#aaa;">Vertices: ${verticesCount} coordinates</div>
           </div>
           <div>
-            <button onclick="editBoxAreaName('${bId}', '${box.name.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
+            <button onclick="editBoxAreaName('${bId}', '${boxName.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
             <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
           </div>
         `;
@@ -1812,6 +1843,12 @@
     function closeBoxAreasModal() {
       document.getElementById('boxAreasModal').style.display = 'none';
       document.getElementById('jsonImportPanel').style.display = 'none';
+
+      const searchInput = document.getElementById('boxAreaSearchInput');
+      if (searchInput) {
+        searchInput.value = '';
+        handleBoxAreaSearchInput('');
+      }
     }
 
     // --- KMZ, KML & JSON IMPORT SYSTEM ---
