@@ -244,6 +244,24 @@
     .run-card-chip span { cursor: pointer; color: #f1c40f; font-weight: bold; }
 
     .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
+
+    /* BOX COLOR PICKER STYLES */
+    .box-color-picker {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    .box-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
+    .box-color-picker::-webkit-color-swatch { border: none; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -401,7 +419,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT & EXPORT) -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON, KMZ/KML & COLOR PICKER CONTROLS) -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 780px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -411,9 +429,13 @@
           <button onclick="closeBoxAreasModal()" style="background: #555; font-size: 12px; padding: 6px 12px; margin-left: 6px;">Close</button>
         </div>
       </div>
-      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import KMZ, KML, and GeoJSON boundaries exported from Google Earth, ArcGIS, or CAD systems.</p>
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, set custom zone colors, or import KMZ, KML, and GeoJSON boundaries.</p>
 
-      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+      <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+        <div style="display: flex; align-items: center; background: #2a2a2a; padding: 4px 10px; border-radius: 4px; border: 1px solid #444;">
+          <span style="font-size: 12px; color: #ccc; margin-right: 8px;">New Box Color:</span>
+          <input type="color" id="newBoxColorPicker" value="#8e44ad" class="box-color-picker" title="Select color for new drawn polygons">
+        </div>
         <button onclick="startDrawingBoxArea()" style="background:#8e44ad; flex: 1; font-size:13px; padding:10px;">+ Draw Box on Map</button>
         <button onclick="toggleJsonImportBox()" style="background:#34495e; flex: 1; font-size:13px; padding:10px;">Import KMZ / KML / JSON</button>
       </div>
@@ -1613,14 +1635,15 @@
 
         const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
         if (boxName && boxName.trim() !== "") {
+          const chosenColor = document.getElementById('newBoxColorPicker') ? document.getElementById('newBoxColorPicker').value : '#8e44ad';
           const newBoxRef = db.ref('boxAreas').push();
           newBoxRef.set({
             name: boxName.trim(),
-            color: '#8e44ad',
+            color: chosenColor,
             coordinates: coordinates,
             createdAt: Date.now()
           });
-          alert(`Box Area "${boxName.trim()}" saved!`);
+          alert(`Box Area "${boxName.trim()}" saved with color ${chosenColor}!`);
         }
         map.removeLayer(shape);
       });
@@ -1713,11 +1736,13 @@
         const box = loadedBoxAreas[bId];
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
+          const polygonColor = box.color || '#8e44ad';
           const polygon = L.polygon(coords, {
-            color: box.color || '#8e44ad',
+            color: polygonColor,
+            fillColor: polygonColor,
             weight: 2,
-            fillOpacity: 0.15
-          }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
+            fillOpacity: 0.18
+          }).bindPopup(`<b>Response Zone: ${box.name}</b><br><small style="color:${polygonColor};">Color: ${polygonColor}</small>`);
           boxAreasLayer.addLayer(polygon);
         }
       });
@@ -1787,6 +1812,7 @@
       keys.forEach(bId => {
         const box = loadedBoxAreas[bId];
         const boxName = box.name || 'Unnamed Box';
+        const boxColor = box.color || '#8e44ad';
         const verticesCount = getNormalizedCoords(box.coordinates).length;
 
         const div = document.createElement('div');
@@ -1798,9 +1824,18 @@
         div.style.justifyContent = 'space-between';
         div.style.alignItems = 'center';
         div.innerHTML = `
-          <div>
-            <strong style="color:#8e44ad;">${boxName}</strong>
-            <div style="font-size:11px; color:#aaa;">Vertices: ${verticesCount} coordinates</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input 
+              type="color" 
+              class="box-color-picker" 
+              value="${boxColor}" 
+              title="Change color for ${boxName}"
+              onchange="updateBoxAreaColor('${bId}', this.value)"
+            >
+            <div>
+              <strong style="color:${boxColor};">${boxName}</strong>
+              <div style="font-size:11px; color:#aaa;">Vertices: ${verticesCount} coordinates</div>
+            </div>
           </div>
           <div>
             <button onclick="editBoxAreaName('${bId}', '${boxName.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
@@ -1808,6 +1843,14 @@
           </div>
         `;
         container.appendChild(div);
+      });
+    }
+
+    function updateBoxAreaColor(bId, newColorHex) {
+      if (!bId || !newColorHex) return;
+      db.ref(`boxAreas/${bId}`).update({
+        color: newColorHex,
+        updatedAt: Date.now()
       });
     }
 
