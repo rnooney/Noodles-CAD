@@ -72,8 +72,7 @@
 
     /* NAVIGATION TABS */
     .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; user-select: none; }
-    .tab-btn:hover { background: #333; }
+    .tab-btn { flex: 1; padding: 16px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; text-align: center; }
     .tab-btn.active { background: #e63946; color: #fff; border-color: #e63946; }
 
     /* TAB PAGES */
@@ -130,7 +129,7 @@
       align-items: center;
       background: #111;
       border: 1px solid #444;
-      padding: 4px 8px;
+      padding: 5px 10px;
       border-radius: 4px;
       margin: 3px 6px 3px 0;
       font-size: 13px;
@@ -141,7 +140,7 @@
       margin-left: 8px;
       color: #e63946;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold;
     }
     .assigned-chip .remove-x:hover {
@@ -153,10 +152,62 @@
     .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; background: #1a1a1a; padding: 12px; border-radius: 4px; border: 1px solid #333; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
     .role-grid label { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
-    /* MAP TOOLBAR & CANVAS */
+    /* MAP TOOLBAR */
     .map-toolbar { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px 6px 0 0; border: 1px solid #444; border-bottom: none; }
-    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; background: #1a1a1a; }
-    #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; background: #1a1a1a; }
+
+    /* STATUS COLORS */
+    .status-DISPATCHED { color: #2ecc71; font-weight: bold; }
+    .status-OUT_OF_SERVICE { color: #7f8c8d; font-weight: bold; }
+    .status-ON_CALL { color: #8e44ad; font-weight: bold; }
+    .status-IN_QUARTERS { color: #e63946; font-weight: bold; }
+    .status-AVAILABLE { color: #e63946; font-weight: bold; }
+    .status-ENROUTE { color: #2ecc71; font-weight: bold; }
+    .status-ONSCENE { color: #2980b9; font-weight: bold; }
+    .status-TRANSPORTING { color: #f1c40f; font-weight: bold; }
+    .status-ARRIVED { color: #f1c40f; font-weight: bold; }
+
+    /* BUTTONS */
+    button { padding: 10px 18px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    button:hover { background: #c1121f; }
+    
+    .btn-manage { background: #f39c12; font-size: 13px; margin-right: 6px; color: #000; }
+    .btn-manage:hover { background: #d35400; color: #fff; }
+
+    .btn-clear { background: #27ae60; font-size: 13px; }
+    .btn-clear:hover { background: #1e8449; }
+    
+    .btn-upgrade { background: #d35400; color: #fff; font-size: 14px; }
+    .btn-upgrade:hover { background: #e67e22; }
+
+    .btn-edit-unit { background: #f39c12; color: #000; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 10px; }
+    .btn-edit-unit:hover { background: #d35400; color: #fff; }
+
+    .btn-remove-unit { background: #c0392b; color: #fff; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 6px; }
+    .btn-remove-unit:hover { background: #e74c3c; }
+
+    .btn-header-mgr { background: #2980b9; float: right; margin-top: -10px; margin-left: 8px; }
+    .btn-header-mgr:hover { background: #3498db; }
+
+    .btn-action-sm { font-size: 11px; padding: 4px 10px; margin-left: 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
+    .btn-edit-sm { background: #f39c12; color: #000; }
+    .btn-edit-sm:hover { background: #d35400; color: #fff; }
+    .btn-delete-sm { background: #c0392b; }
+    .btn-delete-sm:hover { background: #e74c3c; }
+
+    .btn-suggest { background: #f39c12; color: #000; font-size: 14px; margin-right: 10px; }
+    .btn-suggest:hover { background: #d35400; color: #fff; }
+
+    .btn-global-quarters { background: #2980b9; color: #fff; margin-right: 10px; }
+    .btn-global-quarters:hover { background: #3498db; }
+
+    .btn-global-avail { background: #27ae60; color: #fff; }
+    .btn-global-avail:hover { background: #2ea043; }
+
+    .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
+    .btn-map-control:hover { background: #2c3e50; }
+
+    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; }
+    #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; }
 
     /* LEAFLET UNIT BUBBLE MARKER CSS */
     .unit-bubble-icon-container { background: transparent !important; border: none !important; }
@@ -186,57 +237,6 @@
     .unit-dispatch-item { padding: 12px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
     .unit-dispatch-item:hover { background: #222; }
     .dispatch-unit-select { width: 18px; height: 18px; cursor: pointer; accent-color: #e63946; }
-
-    /* STATUS COLORS */
-    .status-DISPATCHED { color: #2ecc71; font-weight: bold; }
-    .status-OUT_OF_SERVICE { color: #7f8c8d; font-weight: bold; }
-    .status-ON_CALL { color: #8e44ad; font-weight: bold; }
-    .status-IN_QUARTERS { color: #e63946; font-weight: bold; }
-    .status-AVAILABLE { color: #e63946; font-weight: bold; }
-    .status-ENROUTE { color: #2ecc71; font-weight: bold; }
-    .status-ONSCENE { color: #2980b9; font-weight: bold; }
-    .status-TRANSPORTING { color: #f1c40f; font-weight: bold; }
-    .status-ARRIVED { color: #f1c40f; font-weight: bold; }
-
-    /* BUTTON SYSTEM */
-    button { padding: 10px 18px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
-    button:hover { background: #c1121f; }
-    
-    .btn-header-mgr { background: #2980b9; float: right; margin-top: -10px; margin-left: 8px; padding: 10px 14px; font-size: 13px; }
-    .btn-header-mgr:hover { background: #3498db; }
-
-    .btn-manage { background: #f39c12; font-size: 13px; margin-right: 6px; color: #000; padding: 8px 14px; }
-    .btn-manage:hover { background: #d35400; color: #fff; }
-
-    .btn-clear { background: #27ae60; font-size: 13px; padding: 10px 18px; }
-    .btn-clear:hover { background: #1e8449; }
-    
-    .btn-upgrade { background: #d35400; color: #fff; font-size: 14px; padding: 10px 16px; }
-    .btn-upgrade:hover { background: #e67e22; }
-
-    .btn-edit-unit { background: #f39c12; color: #000; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 10px; }
-    .btn-edit-unit:hover { background: #d35400; color: #fff; }
-
-    .btn-remove-unit { background: #c0392b; color: #fff; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 6px; }
-    .btn-remove-unit:hover { background: #e74c3c; }
-
-    .btn-action-sm { font-size: 11px; padding: 4px 10px; margin-left: 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
-    .btn-edit-sm { background: #f39c12; color: #000; }
-    .btn-edit-sm:hover { background: #d35400; color: #fff; }
-    .btn-delete-sm { background: #c0392b; }
-    .btn-delete-sm:hover { background: #e74c3c; }
-
-    .btn-suggest { background: #f39c12; color: #000; font-size: 14px; margin-right: 10px; padding: 10px 18px; }
-    .btn-suggest:hover { background: #d35400; color: #fff; }
-
-    .btn-global-quarters { background: #2980b9; color: #fff; margin-right: 10px; padding: 10px 18px; }
-    .btn-global-quarters:hover { background: #3498db; }
-
-    .btn-global-avail { background: #27ae60; color: #fff; padding: 10px 18px; }
-    .btn-global-avail:hover { background: #2ea043; }
-
-    .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
-    .btn-map-control:hover { background: #2c3e50; }
 
     .tag-builder-btn { background: #2a2a2a; border: 1px solid #555; color: #fff; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; margin-right: 6px; margin-bottom: 6px; display: inline-block; }
     .tag-builder-btn:hover { background: #e63946; border-color: #e63946; }
@@ -401,7 +401,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT, EXPORT, SEARCH & PURGE) -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 780px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -450,7 +450,7 @@
     <div class="modal-content" style="max-width: 650px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h2 style="margin: 0; color: #16a085;">CAD Audio Alert Preferences</h2>
-        <button onclick="closeSoundSettingsModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close</button>
+        <button onclick="closeSoundSettingsModal()" style="background: #555;">Close</button>
       </div>
       
       <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Customize alert tones using your own audio files (.wav, .mp3, .ogg) or use the built-in emergency synthesizer.</p>
@@ -480,7 +480,7 @@
     <div class="modal-content" style="max-width: 700px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 id="modalUnitEditTitle" style="margin: 0; color: #f39c12;">Edit Unit Configuration</h2>
-        <button onclick="closeEditUnitModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeEditUnitModal()" style="background: #555;">Close Window</button>
       </div>
       
       <div style="margin-top: 15px;">
@@ -530,7 +530,7 @@
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
-        <button onclick="closeTraitsModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
 
@@ -548,7 +548,7 @@
           <option value="9">Command & Supervisory</option>
           <option value="10">General / Other</option>
         </select>
-        <button onclick="saveNewTrait()" style="background: #2980b9; flex: 1; padding: 10px 14px;">Add Trait</button>
+        <button onclick="saveNewTrait()" style="background: #2980b9; flex: 1;">Add Trait</button>
       </div>
 
       <div class="section-title">Configured Traits by Priority Category</div>
@@ -563,7 +563,7 @@
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 id="modalCallTitle" style="margin: 0; color: #e63946;">Manage Incident</h2>
-        <button onclick="closeEditModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeEditModal()" style="background: #555;">Close Window</button>
       </div>
       
       <div style="margin-top: 15px;">
@@ -637,7 +637,7 @@
         <h2 style="margin: 0; color: #e63946;">Select Units to Dispatch</h2>
         <div>
           <button class="btn-suggest" onclick="suggestResponseForCall()">Suggest Response</button>
-          <button onclick="closeUnitDispatchModal()" style="background: #555; padding: 10px 14px; font-size: 14px;">Close</button>
+          <button onclick="closeUnitDispatchModal()" style="background: #555;">Close</button>
         </div>
       </div>
       <p id="suggestResponseNotice" style="font-size: 12px; color: #f1c40f; margin: 0 0 10px 0; display: none;"></p>
@@ -656,7 +656,7 @@
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0; color: #2980b9;">Station Location & Crew Setup</h2>
-        <button onclick="closeStationModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeStationModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure stations, GPS base coordinates, and available staffed / on-call crew numbers for response time and cross-staffing logic.</p>
 
@@ -692,13 +692,13 @@
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0; color: #2980b9;">Preset Radio Channels Manager</h2>
-        <button onclick="closeRadioChannelsModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeRadioChannelsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure tactical talkgroups and radio frequencies available for dispatch assignment.</p>
 
       <div style="display: flex; gap: 10px;">
         <input type="text" id="newRadioChannelInput" placeholder="New Radio Channel (e.g. OPS-1, TAC-2, COMMAND-3)" style="margin-bottom:0;">
-        <button onclick="saveNewRadioChannel()" style="background: #2980b9; padding: 10px 14px;">Add Channel</button>
+        <button onclick="saveNewRadioChannel()" style="background: #2980b9;">Add Channel</button>
       </div>
 
       <div class="section-title" style="margin-top: 20px;">Configured Radio Channels (Alphabetical)</div>
@@ -713,7 +713,7 @@
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 style="margin: 0; color: #2980b9;">Preset Call Types & Response Run Cards</h2>
-        <button onclick="closeCallTypesModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
+        <button onclick="closeCallTypesModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure incident call types and build priority response order run cards for auto-suggestions.</p>
 
@@ -737,10 +737,11 @@
     </div>
   </div>
 
-  <!-- External Libraries -->
+  <!-- Firebase, Leaflet, Geoman, JSZip & toGeoJSON Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -860,8 +861,8 @@
     let incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
     let callTakingMarker;
 
-    let defaultMapLat = 35.7327;
-    let defaultMapLng = -78.8503;
+    let defaultMapLat = null;
+    let defaultMapLng = null;
     let defaultMapZoom = 12;
 
     let selectedLat = null;
@@ -912,33 +913,20 @@
       iconAnchor: [11, 11]
     });
 
-    // ROBUST COORDINATE NORMALIZER (HANDLES NESTED, 3D, OR OBJECT TUPLES)
     function getNormalizedCoords(rawCoords) {
       if (!rawCoords) return [];
       let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
-      
-      if (arr.length === 1 && (Array.isArray(arr[0]) || typeof arr[0] === 'object')) {
-        arr = Array.isArray(arr[0]) ? arr[0] : Object.values(arr[0]);
-      }
-
       return arr.map(pt => {
-        if (!pt) return null;
-        if (Array.isArray(pt)) {
-          const lat = parseFloat(pt[0]);
-          const lng = parseFloat(pt[1]);
-          return (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : null;
+        if (Array.isArray(pt)) return [parseFloat(pt[0]), parseFloat(pt[1])];
+        if (pt && typeof pt === 'object') {
+          if (pt.lat !== undefined && pt.lng !== undefined) return [parseFloat(pt.lat), parseFloat(pt.lng)];
+          return [parseFloat(pt[0]), parseFloat(pt[1])];
         }
-        if (typeof pt === 'object') {
-          const lat = pt.lat !== undefined ? parseFloat(pt.lat) : parseFloat(pt[0]);
-          const lng = pt.lng !== undefined ? parseFloat(pt.lng) : parseFloat(pt[1]);
-          return (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : null;
-        }
-        return null;
-      }).filter(Boolean);
+        return [0, 0];
+      }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
     }
 
     function isPointInPolygon(point, vs) {
-      if (!vs || vs.length < 3) return false;
       const x = point[0], y = point[1];
       let inside = false;
       for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -953,26 +941,25 @@
     function calculateBoxAreaForCoords(lat, lng) {
       if (!lat || !lng) return "Out of Area";
       const pt = [parseFloat(lat), parseFloat(lng)];
-      if (isNaN(pt[0]) || isNaN(pt[1])) return "Out of Area";
 
       const keys = Object.keys(loadedBoxAreas);
       for (let k of keys) {
         const box = loadedBoxAreas[k];
-        if (!box) continue;
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
           if (isPointInPolygon(pt, coords)) {
-            return box.name || "District";
+            return box.name;
           }
         }
       }
       return "Out of Area";
     }
 
-    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW (SYNCS BOTH LIVE MAP & CALL TAKING MAP) ---
+    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW ---
     db.ref('mapSettings/defaultView').on('value', (snapshot) => {
       const view = snapshot.val();
       if (view && view.lat && view.lng) {
+        const isFirstLoad = (defaultMapLat === null);
         defaultMapLat = parseFloat(view.lat);
         defaultMapLng = parseFloat(view.lng);
         defaultMapZoom = parseInt(view.zoom) || 12;
@@ -982,13 +969,18 @@
           displayEl.innerText = `${defaultMapLat.toFixed(4)}, ${defaultMapLng.toFixed(4)} (Zoom: ${defaultMapZoom})`;
         }
 
-        if (map) {
-          map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+        if (isFirstLoad) {
+          if (callTakingMap && !selectedLat) {
+            callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+          }
+          if (map) {
+            map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+          }
         }
-
-        if (callTakingMap && !selectedLat) {
-          callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-        }
+      } else if (defaultMapLat === null) {
+        defaultMapLat = 35.7327;
+        defaultMapLng = -78.8503;
+        defaultMapZoom = 12;
       }
     });
 
@@ -997,33 +989,19 @@
       const center = map.getCenter();
       const zoom = map.getZoom();
 
-      const newLat = parseFloat(center.lat.toFixed(5));
-      const newLng = parseFloat(center.lng.toFixed(5));
-
       db.ref('mapSettings/defaultView').set({
-        lat: newLat,
-        lng: newLng,
+        lat: parseFloat(center.lat.toFixed(5)),
+        lng: parseFloat(center.lng.toFixed(5)),
         zoom: zoom,
         updatedAt: Date.now()
       });
 
-      defaultMapLat = newLat;
-      defaultMapLng = newLng;
-      defaultMapZoom = zoom;
-
-      if (callTakingMap && !selectedLat) {
-        callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-      }
-
-      alert(`CAD Default Map View saved and applied to both Live Map and Call Taking!\nCenter: ${newLat}, ${newLng}\nZoom Level: ${zoom}`);
+      alert(`CAD Default Map View saved!\nCenter: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}\nZoom Level: ${zoom}`);
     }
 
     function revertMapToDefault() {
-      if (map) {
+      if (map && defaultMapLat !== null) {
         map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-      }
-      if (callTakingMap && !selectedLat) {
-        callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
       }
     }
 
@@ -1484,14 +1462,11 @@
 
     function startDrawingBoxArea() {
       closeBoxAreasModal();
-      const mapTabBtn = document.querySelectorAll('.tab-btn')[3];
-      switchTab('mapTab', mapTabBtn);
-      setTimeout(() => {
-        if (map && map.pm && typeof map.pm.enableDraw === 'function') {
-          map.pm.enableDraw('Polygon');
-          alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
-        }
-      }, 250);
+      switchTab('mapTab', document.querySelectorAll('.tab-btn')[3]);
+      if (map) {
+        map.pm.enableDraw('Polygon');
+        alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
+      }
     }
 
     function deleteBoxArea(id) {
@@ -1500,7 +1475,7 @@
       }
     }
 
-    async function deleteAllBoxAreas() {
+    function deleteAllBoxAreas() {
       const count = Object.keys(loadedBoxAreas).length;
       if (count === 0) {
         alert("There are no box areas to delete.");
@@ -1508,16 +1483,8 @@
       }
 
       if (confirm(`Are you sure you want to PERMANENTLY REMOVE ALL ${count} box areas from the system? This action cannot be undone.`)) {
-        try {
-          await db.ref('boxAreas').remove();
-          loadedBoxAreas = {};
-          renderConfiguredBoxAreasList();
-          refreshMapLayers();
-          alert("All response box areas have been cleared.");
-        } catch (err) {
-          console.error("Error clearing box areas:", err);
-          alert("Failed to delete box areas: " + err.message);
-        }
+        db.ref('boxAreas').set(null);
+        alert("All response box areas have been cleared.");
       }
     }
 
@@ -1571,56 +1538,20 @@
       }
     }
 
-    // Built-in XML KML Parser
-    function parseRawKmlXml(kmlString) {
-      const dom = new DOMParser().parseFromString(kmlString, 'text/xml');
-      const placemarks = dom.getElementsByTagName('Placemark');
-      const boxes = [];
-
-      for (let i = 0; i < placemarks.length; i++) {
-        const pm = placemarks[i];
-        const nameEl = pm.getElementsByTagName('name')[0];
-        const name = nameEl ? nameEl.textContent.trim() : `Box ${boxes.length + 1}`;
-        
-        const coordEls = pm.getElementsByTagName('coordinates');
-        for (let j = 0; j < coordEls.length; j++) {
-          const rawCoords = coordEls[j].textContent.trim();
-          const points = rawCoords.split(/\s+/).map(pair => {
-            const parts = pair.split(',');
-            if (parts.length >= 2) {
-              const lng = parseFloat(parts[0]);
-              const lat = parseFloat(parts[1]);
-              if (!isNaN(lat) && !isNaN(lng)) return [parseFloat(lat.toFixed(5)), parseFloat(lng.toFixed(5))];
-            }
-            return null;
-          }).filter(Boolean);
-
-          if (points.length >= 3) {
-            boxes.push({
-              name: name,
-              color: '#8e44ad',
-              coordinates: points,
-              createdAt: Date.now()
-            });
-            break;
-          }
-        }
-      }
-      return boxes;
-    }
-
     function parseGeoJsonOrArray(rawJson) {
+      let parsed = rawJson;
       if (typeof rawJson === 'string') {
         const trimmed = rawJson.trim();
         if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
-          return parseRawKmlXml(trimmed);
+          const dom = new DOMParser().parseFromString(trimmed, 'text/xml');
+          parsed = toGeoJSON.kml(dom);
+        } else {
+          parsed = JSON.parse(trimmed);
         }
       }
 
-      const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson.trim()) : rawJson;
       const normalizedBoxes = [];
 
-      // 1. GeoJSON FeatureCollection
       if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
         parsed.features.forEach((feature, idx) => {
           if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
@@ -1635,48 +1566,48 @@
             }
 
             rings.forEach(ring => {
-              // Convert GeoJSON [lng, lat] to Leaflet [lat, lng]
-              const leafletCoords = ring.map(pt => [parseFloat(parseFloat(pt[1]).toFixed(5)), parseFloat(parseFloat(pt[0]).toFixed(5))]);
-              if (leafletCoords.length >= 3) {
-                normalizedBoxes.push({
-                  name: String(name).trim(),
-                  color: '#8e44ad',
-                  coordinates: leafletCoords,
-                  createdAt: Date.now()
-                });
-              }
+              const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+              normalizedBoxes.push({
+                name: String(name).trim(),
+                color: '#8e44ad',
+                coordinates: leafletCoords,
+                createdAt: Date.now()
+              });
             });
           }
         });
-      } 
-      // 2. Standard Array of Objects [{ name: "Box 1", coordinates: [[lat, lng], ...] }]
-      else if (Array.isArray(parsed)) {
+      } else if (parsed.type === 'Feature' && parsed.geometry && (parsed.geometry.type === 'Polygon' || parsed.geometry.type === 'MultiPolygon')) {
+        const props = parsed.properties || {};
+        const name = props.name || props.NAME || props.Box || props.district || 'Box 1';
+        let ring = parsed.geometry.type === 'Polygon' ? parsed.geometry.coordinates[0] : parsed.geometry.coordinates[0][0];
+        const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
+        normalizedBoxes.push({
+          name: String(name).trim(),
+          color: '#8e44ad',
+          coordinates: leafletCoords,
+          createdAt: Date.now()
+        });
+      } else if (Array.isArray(parsed)) {
         parsed.forEach((item, idx) => {
-          const cleanCoords = getNormalizedCoords(item.coordinates);
-          if (cleanCoords && cleanCoords.length >= 3) {
+          if (item.coordinates && item.coordinates.length >= 3) {
             normalizedBoxes.push({
               name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
               color: '#8e44ad',
-              coordinates: cleanCoords,
+              coordinates: getNormalizedCoords(item.coordinates),
               createdAt: Date.now()
             });
           }
         });
-      } 
-      // 3. Object Key-Value Map
-      else if (typeof parsed === 'object') {
+      } else if (typeof parsed === 'object') {
         Object.keys(parsed).forEach((k, idx) => {
           const item = parsed[k];
-          if (item && item.coordinates) {
-            const cleanCoords = getNormalizedCoords(item.coordinates);
-            if (cleanCoords && cleanCoords.length >= 3) {
-              normalizedBoxes.push({
-                name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
-                color: '#8e44ad',
-                coordinates: cleanCoords,
-                createdAt: Date.now()
-              });
-            }
+          if (item.coordinates) {
+            normalizedBoxes.push({
+              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
+              color: '#8e44ad',
+              coordinates: getNormalizedCoords(item.coordinates),
+              createdAt: Date.now()
+            });
           }
         });
       }
@@ -1684,7 +1615,7 @@
       return normalizedBoxes;
     }
 
-    async function processBoundaryImport(overwriteAll = false) {
+    function processBoundaryImport(overwriteAll = false) {
       const text = document.getElementById('boxJsonTextInput').value.trim();
       if (!text) {
         alert("Please select a KMZ/KML/JSON file or paste data into the text box.");
@@ -1693,7 +1624,7 @@
 
       try {
         const boxes = parseGeoJsonOrArray(text);
-        if (!boxes || boxes.length === 0) {
+        if (boxes.length === 0) {
           alert("No valid polygon boundary areas found. Ensure the dataset contains polygons with at least 3 perimeter coordinates.");
           return;
         }
@@ -1702,30 +1633,21 @@
           if (!confirm(`Are you sure you want to OVERWRITE and DELETE all existing box areas with these ${boxes.length} imported area(s)?`)) {
             return;
           }
-          await db.ref('boxAreas').remove();
+          db.ref('boxAreas').set(null);
         }
 
-        const pushPromises = boxes.map(box => {
-          const newRef = db.ref('boxAreas').push();
-          return newRef.set({
-            name: box.name || 'Unnamed Box',
-            color: '#8e44ad',
-            coordinates: box.coordinates,
-            createdAt: Date.now()
-          });
+        boxes.forEach(box => {
+          db.ref('boxAreas').push(box);
         });
 
-        await Promise.all(pushPromises);
-
         document.getElementById('boxJsonTextInput').value = '';
-        const fileInput = document.getElementById('boxJsonFileInput');
-        if (fileInput) fileInput.value = '';
+        document.getElementById('boxJsonFileInput').value = '';
         document.getElementById('jsonImportPanel').style.display = 'none';
 
-        alert(`Successfully imported and saved ${boxes.length} response box area(s) in standard purple!`);
+        alert(`Successfully imported ${boxes.length} response box area(s) in standard purple!`);
       } catch (err) {
-        console.error("Import processing error:", err);
-        alert("Database write failed: " + err.message);
+        console.error("Import parsing error:", err);
+        alert("Invalid file format. Please verify the KMZ, KML, or GeoJSON structure.");
       }
     }
 
@@ -2177,8 +2099,10 @@
       }
 
       if (minLat === Infinity) {
-        minLat = maxLat = defaultMapLat;
-        minLng = maxLng = defaultMapLng;
+        const cLat = defaultMapLat || 35.7327;
+        const cLng = defaultMapLng || -78.8503;
+        minLat = maxLat = cLat;
+        minLng = maxLng = cLng;
       }
 
       const latBuffer = 0.36;
@@ -3114,9 +3038,7 @@
       document.getElementById('incidentType').value = '';
       document.getElementById('callCoordsDisplay').innerText = 'Not Set';
       document.getElementById('callBoxAreaDisplay').innerText = 'Out of Area';
-      if (callTakingMarker && callTakingMap) {
-        callTakingMap.removeLayer(callTakingMarker);
-      }
+      if (callTakingMarker) callTakingMap.removeLayer(callTakingMarker);
       selectedLat = null;
       selectedLng = null;
       detectedBoxArea = 'Out of Area';
@@ -3596,290 +3518,6 @@
     function closeStationModal() {
       document.getElementById('stationModal').style.display = 'none';
     }
-
-    // --- LEAFLET MAP ENGINE INITIALIZATION (SAFE & SYNCHRONIZED) ---
-    function initCallTakingMap() {
-      if (callTakingMap) return;
-      const el = document.getElementById('callTakingMap');
-      if (!el || el._leaflet_id) return;
-
-      try {
-        callTakingMap = L.map('callTakingMap').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(callTakingMap);
-
-        const GridLayer = L.GridLayer.extend({
-          createTile: function (coords) {
-            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-            const size = this.getTileSize();
-            tile.width = size.x;
-            tile.height = size.y;
-            const ctx = tile.getContext('2d');
-            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, size.x, size.y);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px monospace';
-            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-            return tile;
-          }
-        });
-
-        new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
-
-        callTakingMap.on('click', function(e) {
-          updateCallPinPosition(e.latlng.lat, e.latlng.lng);
-          const addrInput = document.getElementById('incidentAddress');
-          if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
-            addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
-          }
-        });
-      } catch (err) {
-        console.error("Error initializing Call Taking Map:", err);
-      }
-    }
-
-    function initMap() {
-      if (map) return;
-      const el = document.getElementById('map');
-      if (!el || el._leaflet_id) return;
-
-      try {
-        map = L.map('map').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        const GridLayer = L.GridLayer.extend({
-          createTile: function (coords) {
-            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-            const size = this.getTileSize();
-            tile.width = size.x;
-            tile.height = size.y;
-            const ctx = tile.getContext('2d');
-            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, size.x, size.y);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px monospace';
-            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-            return tile;
-          }
-        });
-
-        gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
-
-        incidentMarkersLayer = L.layerGroup().addTo(map);
-        stationMarkersLayer = L.layerGroup().addTo(map);
-        unitAvlMarkersLayer = L.layerGroup().addTo(map);
-        boxAreasLayer = L.layerGroup().addTo(map);
-
-        const overlayControl = {
-          "Tactical Grid": gridOverlay,
-          "Active & Pending Calls": incidentMarkersLayer,
-          "Stations": stationMarkersLayer,
-          "Unit Positions / AVL": unitAvlMarkersLayer,
-          "Box Areas / Districts": boxAreasLayer
-        };
-
-        L.control.layers(null, overlayControl, { collapsed: false }).addTo(map);
-
-        // Geoman toolbar check
-        if (map.pm && typeof map.pm.addControls === 'function') {
-          try {
-            map.pm.addControls({
-              position: 'topleft',
-              drawPolygon: true,
-              drawRectangle: true,
-              drawMarker: false,
-              drawCircleMarker: false,
-              drawPolyline: false,
-              drawCircle: false,
-              editMode: true,
-              dragMode: false,
-              cutPolygon: false,
-              removalMode: true
-            });
-          } catch(e) { console.warn("Geoman addControls failed:", e); }
-        }
-
-        map.on('pm:create', (e) => {
-          try {
-            const shape = e.layer;
-            const latlngs = shape.getLatLngs()[0];
-            const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
-
-            const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
-            if (boxName && boxName.trim() !== "") {
-              const newBoxRef = db.ref('boxAreas').push();
-              newBoxRef.set({
-                name: boxName.trim(),
-                color: '#8e44ad',
-                coordinates: coordinates,
-                createdAt: Date.now()
-              });
-              alert(`Box Area "${boxName.trim()}" saved!`);
-            }
-            map.removeLayer(shape);
-          } catch(err) { console.error("Error creating polygon box area:", err); }
-        });
-
-        refreshMapLayers();
-      } catch (err) {
-        console.error("Critical error in initMap:", err);
-      }
-    }
-
-    function refreshMapLayers() {
-      if (!map) return;
-
-      // 1. Incidents
-      try {
-        incidentMarkersLayer.clearLayers();
-        Object.keys(loadedIncidents).forEach(id => {
-          const inc = loadedIncidents[id];
-          if (inc && inc.lat && inc.lng) {
-            const lat = parseFloat(inc.lat);
-            const lng = parseFloat(inc.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
-              const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
-              
-              let radioInfo = '';
-              const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
-              if (radios.length > 0) {
-                radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
-              }
-
-              const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
-              const marker = L.marker([lat, lng], { icon: markerIcon })
-                .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
-              incidentMarkersLayer.addLayer(marker);
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing incidents layer:", e); }
-
-      // 2. Stations
-      try {
-        stationMarkersLayer.clearLayers();
-        Object.keys(loadedStations).forEach(id => {
-          const st = loadedStations[id];
-          if (st && st.lat && st.lng) {
-            const lat = parseFloat(st.lat);
-            const lng = parseFloat(st.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
-              const marker = L.marker([lat, lng])
-                .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
-              stationMarkersLayer.addLayer(marker);
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing stations layer:", e); }
-
-      // 3. Units AVL
-      try {
-        unitAvlMarkersLayer.clearLayers();
-        const now = Date.now();
-
-        Object.keys(loadedUnits).forEach(uId => {
-          const unit = loadedUnits[uId];
-          if (unit && unit.location && unit.location.lat && unit.location.lng) {
-            const lat = parseFloat(unit.location.lat);
-            const lng = parseFloat(unit.location.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const statusVal = unit.status || 'AVAILABLE';
-              const statusText = statusVal.replace(/_/g, ' ');
-              const shortDisplay = unit.shortId || uId;
-              
-              const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
-              const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
-              const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
-
-              const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
-              const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
-
-              const marker = L.marker([lat, lng], { icon: bubbleIcon })
-                .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`);
-              unitAvlMarkersLayer.addLayer(marker);
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing unit AVL layer:", e); }
-
-      // 4. Box Areas
-      try {
-        boxAreasLayer.clearLayers();
-        Object.keys(loadedBoxAreas).forEach(bId => {
-          const box = loadedBoxAreas[bId];
-          if (!box) return;
-          const coords = getNormalizedCoords(box.coordinates);
-          if (coords && coords.length >= 3) {
-            const polygon = L.polygon(coords, {
-              color: '#8e44ad',
-              fillColor: '#8e44ad',
-              weight: 2,
-              fillOpacity: 0.18
-            }).bindPopup(`<b>Response Zone: ${box.name || bId}</b>`);
-            boxAreasLayer.addLayer(polygon);
-          }
-        });
-      } catch (e) { console.warn("Error drawing box areas layer:", e); }
-    }
-
-    // --- TAB SWITCHING (SAFE & GUARANTEED RESIZE) ---
-    function switchTab(tabId, btnEl) {
-      try {
-        document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-        const targetPage = document.getElementById(tabId);
-        if (targetPage) targetPage.classList.add('active');
-        if (btnEl) btnEl.classList.add('active');
-
-        if (tabId === 'callTakingTab') {
-          setTimeout(() => {
-            if (!callTakingMap) {
-              initCallTakingMap();
-            }
-            if (callTakingMap) {
-              callTakingMap.invalidateSize();
-              if (!selectedLat) {
-                callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-              }
-            }
-          }, 120);
-        } else if (tabId === 'mapTab') {
-          setTimeout(() => {
-            if (!map) {
-              initMap();
-            }
-            if (map) {
-              map.invalidateSize();
-              refreshMapLayers();
-            }
-          }, 120);
-        }
-      } catch(err) {
-        console.error("switchTab critical error:", err);
-      }
-    }
-
-    window.onload = function() {
-      initCallTakingMap();
-      setTimeout(() => {
-        if (callTakingMap) {
-          callTakingMap.invalidateSize();
-          callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-        }
-      }, 200);
-    };
   </script>
 </body>
 </html>
