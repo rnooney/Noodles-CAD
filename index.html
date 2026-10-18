@@ -855,7 +855,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Map instances & Layer Groups for BOTH Maps
+    // Independent Map instances & Layer Groups for BOTH Maps
     let map, callTakingMap;
     let gridOverlay, callTakingGridOverlay;
     let incidentMarkersLayer, callTakingIncidentsLayer;
@@ -986,7 +986,6 @@
           displayEl.innerText = `${defaultMapLat.toFixed(4)}, ${defaultMapLng.toFixed(4)} (Zoom: ${defaultMapZoom})`;
         }
 
-        // If Call Taking map is initialized and user hasn't plotted a pin yet, sync view
         if (callTakingMap && !selectedLat) {
           callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
         }
@@ -1005,7 +1004,6 @@
         updatedAt: Date.now()
       });
 
-      // Update call taking map immediately if not actively pinning
       if (callTakingMap && !selectedLat) {
         callTakingMap.setView([center.lat, center.lng], zoom);
       }
@@ -2287,7 +2285,7 @@
       }
     });
 
-    // --- LEAFLET MAP ENGINE INITIALIZATION (SAFE & DEFENSIVE FOR BOTH MAPS) ---
+    // --- LEAFLET MAP ENGINE INITIALIZATION (SAFE & INDEPENDENT FOR BOTH MAPS) ---
     function initCallTakingMap() {
       if (callTakingMap) return;
       const el = document.getElementById('callTakingMap');
@@ -2442,7 +2440,7 @@
       }
     }
 
-    // --- DUAL-MAP LAYER REFRESH (REFRESHES BOTH TACTICAL & CALL ENTRY MAPS) ---
+    // --- REFRESH LAYERS CREATING INDEPENDENT MARKER INSTANCES FOR EACH MAP ---
     function refreshMapLayers() {
       // 1. Incidents Layer
       try {
@@ -2467,9 +2465,11 @@
               const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
               const popupContent = `<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`;
 
+              // Separate marker for map 1
               if (incidentMarkersLayer) {
                 L.marker([lat, lng], { icon: markerIcon }).bindPopup(popupContent).addTo(incidentMarkersLayer);
               }
+              // Separate marker for map 2
               if (callTakingIncidentsLayer) {
                 L.marker([lat, lng], { icon: markerIcon }).bindPopup(popupContent).addTo(callTakingIncidentsLayer);
               }
@@ -2524,15 +2524,15 @@
               const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
               const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
 
-              const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
-              const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
-              const popupContent = `<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`;
+              const popupContent = `<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : ''}`;
 
               if (unitAvlMarkersLayer) {
-                L.marker([lat, lng], { icon: bubbleIcon }).bindPopup(popupContent).addTo(unitAvlMarkersLayer);
+                const bubbleIcon1 = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
+                L.marker([lat, lng], { icon: bubbleIcon1 }).bindPopup(popupContent).addTo(unitAvlMarkersLayer);
               }
               if (callTakingUnitAvlLayer) {
-                L.marker([lat, lng], { icon: bubbleIcon }).bindPopup(popupContent).addTo(callTakingUnitAvlLayer);
+                const bubbleIcon2 = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
+                L.marker([lat, lng], { icon: bubbleIcon2 }).bindPopup(popupContent).addTo(callTakingUnitAvlLayer);
               }
             }
           }
@@ -2568,7 +2568,7 @@
       } catch (e) { console.warn("Error drawing box areas layer:", e); }
     }
 
-    // --- TAB SWITCHING (SAFE & GUARANTEED RESIZE) ---
+    // --- TAB SWITCHING WITH SAFE MAP RE-SIZING ---
     function switchTab(tabId, btnEl) {
       try {
         document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
