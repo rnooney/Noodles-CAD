@@ -155,7 +155,7 @@
 
     /* MAP TOOLBAR & CANVAS */
     .map-toolbar { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 10px 15px; border-radius: 6px 6px 0 0; border: 1px solid #444; border-bottom: none; }
-    #callTakingMap { height: 380px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; background: #1a1a1a; }
+    #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; background: #1a1a1a; }
     #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; background: #1a1a1a; }
 
     /* LEAFLET UNIT BUBBLE MARKER CSS */
@@ -529,7 +529,7 @@
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="modalTraitTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555; padding: 6px 12px; font-size: 12px;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -737,6 +737,13 @@
     </div>
   </div>
 
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
   <script>
     // --- CAD AUDIO ENGINE ---
     const CADAudio = {
@@ -826,82 +833,13 @@
       alert(`Reset ${soundKey} to default tone.`);
     }
 
-    // --- MODAL DIALOG CONTROLLERS ---
-    function openStationModal() {
-      document.getElementById('stationModal').style.display = 'flex';
-    }
-    function closeStationModal() {
-      document.getElementById('stationModal').style.display = 'none';
-    }
-
-    function openCallTypesModal() {
-      editingCallTypeId = null;
-      currentBuildingRunCard = [];
-      document.getElementById('newCallTypeInput').value = '';
-      renderRunCardDisplay();
-      document.getElementById('callTypesModal').style.display = 'flex';
-    }
-    function closeCallTypesModal() {
-      document.getElementById('callTypesModal').style.display = 'none';
-    }
-
-    function openRadioChannelsModal() {
-      document.getElementById('radioChannelsModal').style.display = 'flex';
-    }
-    function closeRadioChannelsModal() {
-      document.getElementById('radioChannelsModal').style.display = 'none';
-    }
-
-    function openTraitsModal() {
-      document.getElementById('traitsModal').style.display = 'flex';
-    }
-    function closeTraitsModal() {
-      document.getElementById('traitsModal').style.display = 'none';
-    }
-
     function openSoundSettingsModal() {
       CADAudio.init();
       document.getElementById('soundSettingsModal').style.display = 'flex';
     }
+
     function closeSoundSettingsModal() {
       document.getElementById('soundSettingsModal').style.display = 'none';
-    }
-
-    function openEditUnitModal(unitId) {
-      const unit = loadedUnits[unitId];
-      if (!unit) return;
-
-      document.getElementById('editUnitOriginalId').value = unitId;
-      document.getElementById('modalUnitEditTitle').innerText = `Edit: ${unitId}`;
-      document.getElementById('editUnitIdInput').value = unitId;
-      document.getElementById('editUnitShortIdInput').value = unit.shortId || unitId;
-      document.getElementById('editUnitPasswordInput').value = unit.password || '';
-      document.getElementById('editUnitStaffingType').value = unit.staffingType || 'DEDICATED';
-
-      refreshUnitCreatorStationDropdown();
-      document.getElementById('editUnitStationSelect').value = unit.assignedStationId || '';
-
-      const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
-      document.querySelectorAll('.edit-role-tag').forEach(cb => {
-        cb.checked = roles.includes(cb.value);
-      });
-
-      document.getElementById('editUnitModal').style.display = 'flex';
-    }
-    function closeEditUnitModal() {
-      document.getElementById('editUnitModal').style.display = 'none';
-    }
-
-    function toggleUnitCreatorForm() {
-      const form = document.getElementById('unitCreatorFormFields');
-      const btn = document.getElementById('btnToggleCreator');
-      if (form.style.display === 'none') {
-        form.style.display = 'block';
-        btn.innerText = 'Collapse Form';
-      } else {
-        form.style.display = 'none';
-        btn.innerText = 'Expand Form';
-      }
     }
 
     const firebaseConfig = {
@@ -917,14 +855,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Map instances & Independent Layer Groups
-    let map = null, callTakingMap = null;
-    let gridOverlay = null, callTakingGridOverlay = null;
-    let incidentMarkersLayer = null, callTakingIncidentsLayer = null;
-    let stationMarkersLayer = null, callTakingStationsLayer = null;
-    let unitAvlMarkersLayer = null, callTakingUnitAvlLayer = null;
-    let boxAreasLayer = null, callTakingBoxAreasLayer = null;
-    let callTakingMarker = null;
+    let map, callTakingMap;
+    let gridOverlay;
+    let incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
+    let callTakingMarker;
 
     let defaultMapLat = 35.7327;
     let defaultMapLng = -78.8503;
@@ -978,6 +912,7 @@
       iconAnchor: [11, 11]
     });
 
+    // ROBUST COORDINATE NORMALIZER (HANDLES NESTED, 3D, OR OBJECT TUPLES)
     function getNormalizedCoords(rawCoords) {
       if (!rawCoords) return [];
       let arr = Array.isArray(rawCoords) ? rawCoords : Object.values(rawCoords);
@@ -1034,7 +969,7 @@
       return "Out of Area";
     }
 
-    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW ---
+    // --- REALTIME LISTEN FOR DEFAULT MAP VIEW (SYNCS BOTH LIVE MAP & CALL TAKING MAP) ---
     db.ref('mapSettings/defaultView').on('value', (snapshot) => {
       const view = snapshot.val();
       if (view && view.lat && view.lng) {
@@ -1047,6 +982,12 @@
           displayEl.innerText = `${defaultMapLat.toFixed(4)}, ${defaultMapLng.toFixed(4)} (Zoom: ${defaultMapZoom})`;
         }
 
+        // Align Live Map
+        if (map) {
+          map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+        }
+
+        // Align Call Taking map if no pin has been actively dropped yet
         if (callTakingMap && !selectedLat) {
           callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
         }
@@ -1058,23 +999,34 @@
       const center = map.getCenter();
       const zoom = map.getZoom();
 
+      const newLat = parseFloat(center.lat.toFixed(5));
+      const newLng = parseFloat(center.lng.toFixed(5));
+
       db.ref('mapSettings/defaultView').set({
-        lat: parseFloat(center.lat.toFixed(5)),
-        lng: parseFloat(center.lng.toFixed(5)),
+        lat: newLat,
+        lng: newLng,
         zoom: zoom,
         updatedAt: Date.now()
       });
 
+      // Synchronize Call Taking Map to this new default view immediately
+      defaultMapLat = newLat;
+      defaultMapLng = newLng;
+      defaultMapZoom = zoom;
+
       if (callTakingMap && !selectedLat) {
-        callTakingMap.setView([center.lat, center.lng], zoom);
+        callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
       }
 
-      alert(`CAD Default Map View saved!\nCenter: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}\nZoom Level: ${zoom}`);
+      alert(`CAD Default Map View saved and applied to both Live Map and Call Taking!\nCenter: ${newLat}, ${newLng}\nZoom Level: ${zoom}`);
     }
 
     function revertMapToDefault() {
       if (map) {
         map.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+      }
+      if (callTakingMap && !selectedLat) {
+        callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
       }
     }
 
@@ -1192,332 +1144,634 @@
       });
     }
 
-    // --- LEAFLET INITIALIZATION ---
-    function initCallTakingMap() {
-      if (callTakingMap) return;
-      const el = document.getElementById('callTakingMap');
-      if (!el) return;
+    // ==========================================
+    // --- DISPATCH COMMAND-LINE ENGINE (CLI) ---
+    // ==========================================
+    const STATUS_MAP = {
+      'D': 'DISPATCHED',
+      'DISP': 'DISPATCHED',
+      'DISPATCHED': 'DISPATCHED',
+      'ER': 'ENROUTE',
+      'ENR': 'ENROUTE',
+      'ENROUTE': 'ENROUTE',
+      'OS': 'ONSCENE',
+      'ONS': 'ONSCENE',
+      'ONSCENE': 'ONSCENE',
+      'ARV': 'ARRIVED',
+      'ARRIVED': 'ARRIVED',
+      'TRN': 'TRANSPORTING',
+      'TRANS': 'TRANSPORTING',
+      'TRANSPORTING': 'TRANSPORTING',
+      'IQ': 'IN_QUARTERS',
+      'QTR': 'IN_QUARTERS',
+      'QUARTERS': 'IN_QUARTERS',
+      'IN_QUARTERS': 'IN_QUARTERS',
+      'AV': 'AVAILABLE',
+      'AVAIL': 'AVAILABLE',
+      'AVAILABLE': 'AVAILABLE',
+      'CALL': 'ON_CALL',
+      'ONCALL': 'ON_CALL',
+      'ON_CALL': 'ON_CALL',
+      'OOS': 'OUT_OF_SERVICE',
+      'OUT': 'OUT_OF_SERVICE',
+      'OUT_OF_SERVICE': 'OUT_OF_SERVICE'
+    };
 
-      try {
-        callTakingMap = L.map('callTakingMap').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(callTakingMap);
-
-        const GridLayer = L.GridLayer.extend({
-          createTile: function (coords) {
-            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-            const size = this.getTileSize();
-            tile.width = size.x;
-            tile.height = size.y;
-            const ctx = tile.getContext('2d');
-            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, size.x, size.y);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px monospace';
-            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-            return tile;
-          }
-        });
-
-        callTakingGridOverlay = new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
-        callTakingIncidentsLayer = L.layerGroup().addTo(callTakingMap);
-        callTakingStationsLayer = L.layerGroup().addTo(callTakingMap);
-        callTakingUnitAvlLayer = L.layerGroup().addTo(callTakingMap);
-        callTakingBoxAreasLayer = L.layerGroup().addTo(callTakingMap);
-
-        L.control.layers(null, {
-          "Tactical Grid": callTakingGridOverlay,
-          "Active Calls": callTakingIncidentsLayer,
-          "Stations": callTakingStationsLayer,
-          "Unit Positions / AVL": callTakingUnitAvlLayer,
-          "Box Areas / Districts": callTakingBoxAreasLayer
-        }, { collapsed: true }).addTo(callTakingMap);
-
-        callTakingMap.on('click', function(e) {
-          updateCallPinPosition(e.latlng.lat, e.latlng.lng);
-          const addrInput = document.getElementById('incidentAddress');
-          if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
-            addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
-          }
-        });
-
-        refreshMapLayers();
-      } catch (err) {
-        console.error("Error initializing Call Taking Map:", err);
-      }
-    }
-
-    function initMap() {
-      if (map) return;
-      const el = document.getElementById('map');
-      if (!el) return;
-
-      try {
-        map = L.map('map').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        const GridLayer = L.GridLayer.extend({
-          createTile: function (coords) {
-            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-            const size = this.getTileSize();
-            tile.width = size.x;
-            tile.height = size.y;
-            const ctx = tile.getContext('2d');
-            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, size.x, size.y);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = '10px monospace';
-            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-            return tile;
-          }
-        });
-
-        gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
-        incidentMarkersLayer = L.layerGroup().addTo(map);
-        stationMarkersLayer = L.layerGroup().addTo(map);
-        unitAvlMarkersLayer = L.layerGroup().addTo(map);
-        boxAreasLayer = L.layerGroup().addTo(map);
-
-        L.control.layers(null, {
-          "Tactical Grid": gridOverlay,
-          "Active Calls": incidentMarkersLayer,
-          "Stations": stationMarkersLayer,
-          "Unit Positions / AVL": unitAvlMarkersLayer,
-          "Box Areas / Districts": boxAreasLayer
-        }, { collapsed: false }).addTo(map);
-
-        if (map.pm && typeof map.pm.addControls === 'function') {
-          try {
-            map.pm.addControls({
-              position: 'topleft',
-              drawPolygon: true,
-              drawRectangle: true,
-              drawMarker: false,
-              drawCircleMarker: false,
-              drawPolyline: false,
-              drawCircle: false,
-              editMode: true,
-              dragMode: false,
-              cutPolygon: false,
-              removalMode: true
-            });
-          } catch(e) { console.warn("Geoman addControls failed:", e); }
-        }
-
-        map.on('pm:create', (e) => {
-          try {
-            const shape = e.layer;
-            const latlngs = shape.getLatLngs()[0];
-            const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
-
-            const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
-            if (boxName && boxName.trim() !== "") {
-              const newBoxRef = db.ref('boxAreas').push();
-              newBoxRef.set({
-                name: boxName.trim(),
-                color: '#8e44ad',
-                coordinates: coordinates,
-                createdAt: Date.now()
-              });
-              alert(`Box Area "${boxName.trim()}" saved!`);
-            }
-            map.removeLayer(shape);
-          } catch(err) { console.error("Error creating polygon box area:", err); }
-        });
-
-        refreshMapLayers();
-      } catch (err) {
-        console.error("Critical error in initMap:", err);
-      }
-    }
-
-    function refreshMapLayers() {
-      // 1. Incidents Layer
-      try {
-        if (incidentMarkersLayer) incidentMarkersLayer.clearLayers();
-        if (callTakingIncidentsLayer) callTakingIncidentsLayer.clearLayers();
-
-        Object.keys(loadedIncidents).forEach(id => {
-          const inc = loadedIncidents[id];
-          if (inc && inc.lat && inc.lng) {
-            const lat = parseFloat(inc.lat);
-            const lng = parseFloat(inc.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
-              const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
-              
-              let radioInfo = '';
-              const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
-              if (radios.length > 0) {
-                radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
-              }
-
-              const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
-              const popupContent = `<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`;
-
-              if (incidentMarkersLayer) {
-                L.marker([lat, lng], { icon: markerIcon }).bindPopup(popupContent).addTo(incidentMarkersLayer);
-              }
-              if (callTakingIncidentsLayer) {
-                L.marker([lat, lng], { icon: markerIcon }).bindPopup(popupContent).addTo(callTakingIncidentsLayer);
-              }
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing incidents layer:", e); }
-
-      // 2. Stations Layer
-      try {
-        if (stationMarkersLayer) stationMarkersLayer.clearLayers();
-        if (callTakingStationsLayer) callTakingStationsLayer.clearLayers();
-
-        Object.keys(loadedStations).forEach(id => {
-          const st = loadedStations[id];
-          if (st && st.lat && st.lng) {
-            const lat = parseFloat(st.lat);
-            const lng = parseFloat(st.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
-              const popupContent = `<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`;
-
-              if (stationMarkersLayer) {
-                L.marker([lat, lng]).bindPopup(popupContent).addTo(stationMarkersLayer);
-              }
-              if (callTakingStationsLayer) {
-                L.marker([lat, lng]).bindPopup(popupContent).addTo(callTakingStationsLayer);
-              }
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing stations layer:", e); }
-
-      // 3. Units AVL Layer
-      try {
-        if (unitAvlMarkersLayer) unitAvlMarkersLayer.clearLayers();
-        if (callTakingUnitAvlLayer) callTakingUnitAvlLayer.clearLayers();
-
-        const now = Date.now();
-
-        Object.keys(loadedUnits).forEach(uId => {
-          const unit = loadedUnits[uId];
-          if (unit && unit.location && unit.location.lat && unit.location.lng) {
-            const lat = parseFloat(unit.location.lat);
-            const lng = parseFloat(unit.location.lng);
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const statusVal = unit.status || 'AVAILABLE';
-              const statusText = statusVal.replace(/_/g, ' ');
-              const shortDisplay = unit.shortId || uId;
-              
-              const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
-              const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
-              const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
-
-              const popupContent = `<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : ''}`;
-
-              if (unitAvlMarkersLayer) {
-                const bubbleIcon1 = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
-                L.marker([lat, lng], { icon: bubbleIcon1 }).bindPopup(popupContent).addTo(unitAvlMarkersLayer);
-              }
-              if (callTakingUnitAvlLayer) {
-                const bubbleIcon2 = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
-                L.marker([lat, lng], { icon: bubbleIcon2 }).bindPopup(popupContent).addTo(callTakingUnitAvlLayer);
-              }
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing unit AVL layer:", e); }
-
-      // 4. Box Areas Layer
-      try {
-        if (boxAreasLayer) boxAreasLayer.clearLayers();
-        if (callTakingBoxAreasLayer) callTakingBoxAreasLayer.clearLayers();
-
-        Object.keys(loadedBoxAreas).forEach(bId => {
-          const box = loadedBoxAreas[bId];
-          if (!box) return;
-          const coords = getNormalizedCoords(box.coordinates);
-          if (coords && coords.length >= 3) {
-            const polyOpts = {
-              color: '#8e44ad',
-              fillColor: '#8e44ad',
-              weight: 2,
-              fillOpacity: 0.18
-            };
-            const popupContent = `<b>Response Zone: ${box.name || bId}</b>`;
-
-            if (boxAreasLayer) {
-              L.polygon(coords, polyOpts).bindPopup(popupContent).addTo(boxAreasLayer);
-            }
-            if (callTakingBoxAreasLayer) {
-              L.polygon(coords, polyOpts).bindPopup(popupContent).addTo(callTakingBoxAreasLayer);
-            }
-          }
-        });
-      } catch (e) { console.warn("Error drawing box areas layer:", e); }
-    }
-
-    function switchTab(tabId, btnEl) {
-      try {
-        document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-        const targetPage = document.getElementById(tabId);
-        if (targetPage) targetPage.classList.add('active');
-        if (btnEl) btnEl.classList.add('active');
-
-        if (tabId === 'callTakingTab') {
-          setTimeout(() => {
-            if (!callTakingMap) {
-              initCallTakingMap();
-            } else {
-              callTakingMap.invalidateSize();
-              refreshMapLayers();
-            }
-          }, 120);
-        } else if (tabId === 'mapTab') {
-          setTimeout(() => {
-            if (!map) {
-              initMap();
-            } else {
-              map.invalidateSize();
-              refreshMapLayers();
-            }
-          }, 120);
-        }
-      } catch(err) {
-        console.error("switchTab critical error:", err);
-      }
-    }
-
-    // --- FULL DATA LOGIC & LISTENER HOOKS ---
-    function refreshUnitCreatorStationDropdown() {
-      const selects = [
-        document.getElementById('newMgrStationSelect'),
-        document.getElementById('editUnitStationSelect')
-      ];
-
-      const sortedKeys = Object.keys(loadedStations).sort((a, b) => (loadedStations[a].name || '').localeCompare(loadedStations[b].name || ''));
+    function findUnitIdByQuery(query) {
+      if (!query) return null;
+      const clean = query.trim().toLowerCase();
+      const keys = Object.keys(loadedUnits);
       
-      selects.forEach(select => {
-        if (!select) return;
-        const currentVal = select.value;
-        select.innerHTML = '<option value="">-- No Home Station (GPS AVL Only) --</option>';
-        sortedKeys.forEach(stId => {
-          const st = loadedStations[stId];
-          const isSelected = stId === currentVal ? 'selected' : '';
-          select.innerHTML += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
+      for (let k of keys) {
+        const u = loadedUnits[k];
+        if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) {
+          return k;
+        }
+      }
+
+      for (let k of keys) {
+        const u = loadedUnits[k];
+        if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) {
+          return k;
+        }
+      }
+
+      return null;
+    }
+
+    function showCliFeedback(msg, isSuccess = true) {
+      const fb = document.getElementById('cliFeedbackMsg');
+      if (!fb) return;
+      fb.style.color = isSuccess ? '#2ecc71' : '#e74c3c';
+      fb.innerText = msg;
+      setTimeout(() => {
+        if (fb.innerText === msg) fb.innerText = '';
+      }, 4500);
+    }
+
+    function executeCliCommand(rawCmd) {
+      const cmd = rawCmd.trim();
+      if (!cmd) return;
+
+      const tokens = cmd.split(/\s+/);
+      const verb = tokens[0].toUpperCase();
+
+      if (verb === 'HELP' || verb === '?') {
+        alert("CAD CLI Commands:\n\n" +
+              "• Update Unit Status: <UNIT> <STATUS>\n" +
+              "  e.g.: 'E1 D', 'E1 ER', 'R33 OS', 'E1 IQ', 'E1 AV', 'E1 OOS'\n\n" +
+              "• Dispatch Unit to Call: DISP <UNIT> <#>\n" +
+              "  e.g.: 'DISP E1 1' or 'ADD R33 2'\n\n" +
+              "• Clear Unit from Call: CLEAR <UNIT> (or REM <UNIT> <#>)\n" +
+              "  e.g.: 'CLEAR E1'\n\n" +
+              "• Global Quarters / Available: ALL IQ or ALL AV\n\n" +
+              "Shortcut: Press Ctrl+Space anywhere to focus command line.");
+        showCliFeedback("Displayed CLI help manual.");
+        return;
+      }
+
+      if (verb === 'ALL' && tokens.length >= 2) {
+        const sub = tokens[1].toUpperCase();
+        if (sub === 'IQ' || sub === 'QUARTERS') {
+          setAllUnitsStatus('IN_QUARTERS');
+          showCliFeedback("Set all in-service units to IN QUARTERS");
+          return;
+        } else if (sub === 'AV' || sub === 'AVAIL' || sub === 'AVAILABLE') {
+          setAllUnitsStatus('AVAILABLE');
+          showCliFeedback("Set all in-service units to AVAILABLE");
+          return;
+        }
+      }
+
+      if (verb === 'CLEAR' || verb === 'REM' || verb === 'REMOVE') {
+        if (tokens.length < 2) {
+          showCliFeedback("Syntax: CLEAR <UNIT_ID>", false);
+          return;
+        }
+        const unitTarget = tokens[1];
+        const resolvedUnitId = findUnitIdByQuery(unitTarget);
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitTarget}" not found.`, false);
+          return;
+        }
+
+        let foundCallId = null;
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(resolvedUnitId)) {
+            foundCallId = incId;
+          }
         });
+
+        if (foundCallId) {
+          const inc = loadedIncidents[foundCallId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          const updated = assigned.filter(id => id !== resolvedUnitId);
+          const newStatus = updated.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+          db.ref(`incidents/${foundCallId}`).update({ assignedUnits: updated, status: newStatus });
+          db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
+
+          db.ref(`incidents/${foundCallId}/logs`).push({
+            author: 'CLI',
+            text: `${resolvedUnitId} cleared via CLI. Status: AVAILABLE.`,
+            timestamp: Date.now()
+          });
+
+          showCliFeedback(`Cleared ${resolvedUnitId} from incident and returned to AVAILABLE.`);
+        } else {
+          db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
+          showCliFeedback(`Unit ${resolvedUnitId} not assigned to active call. Status set to AVAILABLE.`);
+        }
+        return;
+      }
+
+      if (verb === 'DISP' || verb === 'DISPATCH' || verb === 'ADD') {
+        if (tokens.length < 3) {
+          showCliFeedback("Syntax: DISP <UNIT> <CALL_#>", false);
+          return;
+        }
+
+        const unitTarget = tokens[1];
+        const callNum = parseInt(tokens[2]);
+        const resolvedUnitId = findUnitIdByQuery(unitTarget);
+
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitTarget}" not found.`, false);
+          return;
+        }
+
+        if (isNaN(callNum) || callNum < 1 || callNum > activeIncidentIdOrder.length) {
+          showCliFeedback(`Invalid call index #${tokens[2]}. Active range: 1 to ${activeIncidentIdOrder.length}`, false);
+          return;
+        }
+
+        const targetIncId = activeIncidentIdOrder[callNum - 1];
+        const targetInc = loadedIncidents[targetIncId];
+        if (!targetInc) {
+          showCliFeedback(`Call #${callNum} not found.`, false);
+          return;
+        }
+
+        const currentAssigned = Array.isArray(targetInc.assignedUnits) ? [...targetInc.assignedUnits] : Object.values(targetInc.assignedUnits || {});
+        if (!currentAssigned.includes(resolvedUnitId)) {
+          currentAssigned.push(resolvedUnitId);
+        }
+
+        db.ref(`incidents/${targetIncId}`).update({
+          assignedUnits: currentAssigned,
+          status: 'DISPATCHED'
+        });
+
+        db.ref(`units/${resolvedUnitId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+
+        db.ref(`incidents/${targetIncId}/logs`).push({
+          author: 'CLI',
+          text: `Unit ${resolvedUnitId} dispatched to call via CLI.`,
+          timestamp: Date.now()
+        });
+
+        showCliFeedback(`Dispatched ${resolvedUnitId} to Call #${callNum} (${targetInc.type}).`);
+        return;
+      }
+
+      let unitQuery = null;
+      let statusQuery = null;
+
+      if (verb === 'STATUS' && tokens.length >= 3) {
+        unitQuery = tokens[1];
+        statusQuery = tokens[2].toUpperCase();
+      } else if (tokens.length === 2) {
+        unitQuery = tokens[0];
+        statusQuery = tokens[1].toUpperCase();
+      }
+
+      if (unitQuery && statusQuery) {
+        const resolvedUnitId = findUnitIdByQuery(unitQuery);
+        if (!resolvedUnitId) {
+          showCliFeedback(`Unit "${unitQuery}" not found.`, false);
+          return;
+        }
+
+        const targetStatus = STATUS_MAP[statusQuery];
+        if (!targetStatus) {
+          showCliFeedback(`Unknown status "${statusQuery}". Valid: D, ER, OS, ARV, TRN, IQ, AV, CALL, OOS`, false);
+          return;
+        }
+
+        db.ref(`units/${resolvedUnitId}`).update({
+          status: targetStatus,
+          lastUpdated: Date.now()
+        });
+
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(resolvedUnitId)) {
+            db.ref(`incidents/${incId}/logs`).push({
+              author: 'CLI',
+              text: `${resolvedUnitId} status updated to ${targetStatus.replace(/_/g, ' ')} via CLI.`,
+              timestamp: Date.now()
+            });
+          }
+        });
+
+        showCliFeedback(`Updated ${resolvedUnitId} to ${targetStatus.replace(/_/g, ' ')}.`);
+        return;
+      }
+
+      showCliFeedback(`Unrecognized command: "${cmd}". Type HELP for syntax.`, false);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+        e.preventDefault();
+        const cliInput = document.getElementById('cadCliInput');
+        if (cliInput) {
+          cliInput.focus();
+          cliInput.select();
+        }
+      } else if (e.key === 'Escape') {
+        const cliInput = document.getElementById('cadCliInput');
+        if (document.activeElement === cliInput) {
+          cliInput.value = '';
+          cliInput.blur();
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const cliInput = document.getElementById('cadCliInput');
+      if (cliInput) {
+        cliInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            executeCliCommand(cliInput.value);
+            cliInput.value = '';
+          }
+        });
+      }
+    });
+
+    // --- LIVE FILTER SEARCH ON BOX AREAS ---
+    function handleBoxAreaSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#configuredBoxAreasList .box-area-row');
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
       });
     }
+
+    function renderConfiguredBoxAreasList() {
+      const container = document.getElementById('configuredBoxAreasList');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const keys = Object.keys(loadedBoxAreas);
+      if (keys.length === 0) {
+        container.innerHTML = '<em>No response box areas setup yet. Click below to draw one on the map or import KMZ/JSON.</em>';
+        return;
+      }
+
+      const currentSearch = document.getElementById('boxAreaSearchInput') ? document.getElementById('boxAreaSearchInput').value.toLowerCase().trim() : '';
+
+      keys.forEach(bId => {
+        const box = loadedBoxAreas[bId];
+        const div = document.createElement('div');
+        div.className = 'box-area-row';
+        div.style.padding = '8px 0';
+        div.style.borderBottom = '1px solid #222';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.innerHTML = `
+          <div>
+            <strong style="color:#8e44ad;">${box.name}</strong>
+            <div style="font-size:11px; color:#aaa;">Vertices: ${getNormalizedCoords(box.coordinates).length} coordinates</div>
+          </div>
+          <div>
+            <button onclick="editBoxAreaName('${bId}', '${box.name.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
+            <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
+          </div>
+        `;
+
+        if (currentSearch) {
+          div.style.display = box.name.toLowerCase().includes(currentSearch) ? 'flex' : 'none';
+        } else {
+          div.style.display = 'flex';
+        }
+
+        container.appendChild(div);
+      });
+    }
+
+    function editBoxAreaName(bId, currentName) {
+      const updated = prompt("Edit Response Box Area Name / Number:", currentName);
+      if (updated !== null && updated.trim() !== "") {
+        db.ref(`boxAreas/${bId}`).update({
+          name: updated.trim(),
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    function startDrawingBoxArea() {
+      closeBoxAreasModal();
+      const mapTabBtn = document.querySelectorAll('.tab-btn')[3];
+      switchTab('mapTab', mapTabBtn);
+      setTimeout(() => {
+        if (map && map.pm && typeof map.pm.enableDraw === 'function') {
+          map.pm.enableDraw('Polygon');
+          alert("Click on the map to outline the perimeter points of the response area. Double click or click the first point to finish.");
+        }
+      }, 250);
+    }
+
+    function deleteBoxArea(id) {
+      if (confirm("Delete this response box area?")) {
+        db.ref(`boxAreas/${id}`).remove();
+      }
+    }
+
+    function deleteAllBoxAreas() {
+      const count = Object.keys(loadedBoxAreas).length;
+      if (count === 0) {
+        alert("There are no box areas to delete.");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to PERMANENTLY REMOVE ALL ${count} box areas from the system? This action cannot be undone.`)) {
+        db.ref('boxAreas').set(null);
+        alert("All response box areas have been cleared.");
+      }
+    }
+
+    function openBoxAreasModal() {
+      const searchInput = document.getElementById('boxAreaSearchInput');
+      if (searchInput) searchInput.value = '';
+      renderConfiguredBoxAreasList();
+      document.getElementById('boxAreasModal').style.display = 'flex';
+    }
+
+    function closeBoxAreasModal() {
+      document.getElementById('boxAreasModal').style.display = 'none';
+      document.getElementById('jsonImportPanel').style.display = 'none';
+    }
+
+    // --- KMZ, KML & JSON IMPORT SYSTEM ---
+    function toggleJsonImportBox() {
+      const panel = document.getElementById('jsonImportPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleBoxFileUpload(inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith('.kmz')) {
+        try {
+          const zip = await JSZip.loadAsync(file);
+          let kmlFileName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
+          
+          if (!kmlFileName) {
+            alert("No .kml boundary document found inside the uploaded KMZ archive.");
+            return;
+          }
+
+          const kmlText = await zip.file(kmlFileName).async("text");
+          document.getElementById('boxJsonTextInput').value = kmlText;
+          alert(`Extracted KML boundary data from ${file.name}. Click 'Append' or 'Replace' below to process.`);
+        } catch (err) {
+          console.error("KMZ extraction error:", err);
+          alert("Failed to unzip and extract KMZ file. Ensure the file is a valid compressed KML archive.");
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('boxJsonTextInput').value = e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // Native XML KML Parser
+    function parseRawKmlXml(kmlString) {
+      const dom = new DOMParser().parseFromString(kmlString, 'text/xml');
+      const placemarks = dom.getElementsByTagName('Placemark');
+      const boxes = [];
+
+      for (let i = 0; i < placemarks.length; i++) {
+        const pm = placemarks[i];
+        const nameEl = pm.getElementsByTagName('name')[0];
+        const name = nameEl ? nameEl.textContent.trim() : `Box ${boxes.length + 1}`;
+        
+        const coordEls = pm.getElementsByTagName('coordinates');
+        for (let j = 0; j < coordEls.length; j++) {
+          const rawCoords = coordEls[j].textContent.trim();
+          const points = rawCoords.split(/\s+/).map(pair => {
+            const parts = pair.split(',');
+            if (parts.length >= 2) {
+              const lng = parseFloat(parts[0]);
+              const lat = parseFloat(parts[1]);
+              if (!isNaN(lat) && !isNaN(lng)) return [parseFloat(lat.toFixed(5)), parseFloat(lng.toFixed(5))];
+            }
+            return null;
+          }).filter(Boolean);
+
+          if (points.length >= 3) {
+            boxes.push({
+              name: name,
+              color: '#8e44ad',
+              coordinates: points,
+              createdAt: Date.now()
+            });
+            break;
+          }
+        }
+      }
+      return boxes;
+    }
+
+    function parseGeoJsonOrArray(rawJson) {
+      if (typeof rawJson === 'string') {
+        const trimmed = rawJson.trim();
+        if (trimmed.startsWith('<') || trimmed.includes('<kml')) {
+          return parseRawKmlXml(trimmed);
+        }
+      }
+
+      const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson.trim()) : rawJson;
+      const normalizedBoxes = [];
+
+      if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
+        parsed.features.forEach((feature, idx) => {
+          if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+            const props = feature.properties || {};
+            const name = props.name || props.NAME || props.Box || props.BOX || props.district || props.DISTRICT || `Box ${idx + 1}`;
+            
+            let rings = [];
+            if (feature.geometry.type === 'Polygon') {
+              rings = [feature.geometry.coordinates[0]];
+            } else if (feature.geometry.type === 'MultiPolygon') {
+              rings = feature.geometry.coordinates.map(poly => poly[0]);
+            }
+
+            rings.forEach(ring => {
+              const leafletCoords = ring.map(pt => [parseFloat(parseFloat(pt[1]).toFixed(5)), parseFloat(parseFloat(pt[0]).toFixed(5))]);
+              normalizedBoxes.push({
+                name: String(name).trim(),
+                color: '#8e44ad',
+                coordinates: leafletCoords,
+                createdAt: Date.now()
+              });
+            });
+          }
+        });
+      } else if (Array.isArray(parsed)) {
+        parsed.forEach((item, idx) => {
+          if (item.coordinates && item.coordinates.length >= 3) {
+            normalizedBoxes.push({
+              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
+              color: '#8e44ad',
+              coordinates: getNormalizedCoords(item.coordinates),
+              createdAt: Date.now()
+            });
+          }
+        });
+      } else if (typeof parsed === 'object') {
+        Object.keys(parsed).forEach((k, idx) => {
+          const item = parsed[k];
+          if (item.coordinates) {
+            normalizedBoxes.push({
+              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
+              color: '#8e44ad',
+              coordinates: getNormalizedCoords(item.coordinates),
+              createdAt: Date.now()
+            });
+          }
+        });
+      }
+
+      return normalizedBoxes;
+    }
+
+    function processBoundaryImport(overwriteAll = false) {
+      const text = document.getElementById('boxJsonTextInput').value.trim();
+      if (!text) {
+        alert("Please select a KMZ/KML/JSON file or paste data into the text box.");
+        return;
+      }
+
+      try {
+        const boxes = parseGeoJsonOrArray(text);
+        if (boxes.length === 0) {
+          alert("No valid polygon boundary areas found. Ensure the dataset contains polygons with at least 3 perimeter coordinates.");
+          return;
+        }
+
+        if (overwriteAll) {
+          if (!confirm(`Are you sure you want to OVERWRITE and DELETE all existing box areas with these ${boxes.length} imported area(s)?`)) {
+            return;
+          }
+          db.ref('boxAreas').set(null);
+        }
+
+        boxes.forEach(box => {
+          db.ref('boxAreas').push(box);
+        });
+
+        document.getElementById('boxJsonTextInput').value = '';
+        document.getElementById('boxJsonFileInput').value = '';
+        document.getElementById('jsonImportPanel').style.display = 'none';
+
+        alert(`Successfully imported ${boxes.length} response box area(s) in standard purple!`);
+      } catch (err) {
+        console.error("Import parsing error:", err);
+        alert("Invalid file format. Please verify the KMZ, KML, or GeoJSON structure.");
+      }
+    }
+
+    function exportBoxAreasJson() {
+      const keys = Object.keys(loadedBoxAreas);
+      if (keys.length === 0) {
+        alert("No box areas to export.");
+        return;
+      }
+
+      const exportData = keys.map(k => ({
+        name: loadedBoxAreas[k].name,
+        color: '#8e44ad',
+        coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
+      }));
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `cad_box_areas_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // --- DYNAMIC TRAIT & CATEGORY MANAGER ---
+    const defaultInitialRoles = [
+      { name: "Engine", category: "1" },
+      { name: "Suppression", category: "1" },
+      { name: "EMS First Responder", category: "1" },
+      { name: "Ladder", category: "2" },
+      { name: "Truck", category: "2" },
+      { name: "Tower", category: "2" },
+      { name: "Rescue", category: "2" },
+      { name: "Extrication", category: "2" },
+      { name: "Technical Rescue", category: "2" },
+      { name: "Technical Rescue Support", category: "2" },
+      { name: "Search Company", category: "2" },
+      { name: "Water Rescue", category: "2" },
+      { name: "Tanker", category: "3" },
+      { name: "Water Tender", category: "3" },
+      { name: "Brush", category: "4" },
+      { name: "Utility", category: "5" },
+      { name: "Boat", category: "6" },
+      { name: "Air", category: "7" },
+      { name: "Ambulance", category: "8" },
+      { name: "ALS", category: "8" },
+      { name: "BLS", category: "8" },
+      { name: "Battalion", category: "9" },
+      { name: "EMS Supervisor", category: "9" },
+      { name: "Safety Officer", category: "9" }
+    ];
+
+    db.ref('customRoles').on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        defaultInitialRoles.forEach(r => db.ref('customRoles').push(r));
+        return;
+      }
+
+      loadedTraits = Object.keys(data).map(k => ({
+        id: k,
+        name: data[k].name,
+        category: data[k].category || "10"
+      })).sort((a, b) => {
+        if (a.category !== b.category) return parseInt(a.category) - parseInt(b.category);
+        return a.name.localeCompare(b.name);
+      });
+
+      renderTraitsManagerList();
+      renderAllRoleGrids();
+    });
 
     function renderTraitsManagerList() {
       const listContainer = document.getElementById('configuredTraitsList');
@@ -1551,7 +1805,7 @@
         div.innerHTML = `
           <span><strong>${trait.name}</strong></span>
           <div>
-            <button onclick="editTrait('${trait.id}', '${(trait.name || '').replace(/'/g, "\\'")}', '${trait.category}')" class="btn-action-sm btn-edit-sm">Edit</button>
+            <button onclick="editTrait('${trait.id}', '${trait.name.replace(/'/g, "\\'")}', '${trait.category}')" class="btn-action-sm btn-edit-sm">Edit</button>
             <button onclick="deleteTrait('${trait.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
           </div>
         `;
@@ -1580,7 +1834,7 @@
       if (palette) {
         palette.innerHTML = '';
         loadedTraits.forEach(t => {
-          palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${(t.name || '').replace(/'/g, "\\'")}')">+ ${t.name}</span>`;
+          palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${t.name.replace(/'/g, "\\'")}')">+ ${t.name}</span>`;
         });
       }
     }
@@ -1613,6 +1867,862 @@
         db.ref(`customRoles/${id}`).remove();
       }
     }
+
+    function openTraitsModal() {
+      document.getElementById('traitsModal').style.display = 'flex';
+    }
+
+    function closeTraitsModal() {
+      document.getElementById('traitsModal').style.display = 'none';
+    }
+
+    // --- UNIT CREATOR & MANAGER FUNCTIONS ---
+    function toggleUnitCreatorForm() {
+      const form = document.getElementById('unitCreatorFormFields');
+      const btn = document.getElementById('btnToggleCreator');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.innerText = 'Collapse Form';
+      } else {
+        form.style.display = 'none';
+        btn.innerText = 'Expand Form';
+      }
+    }
+
+    function refreshUnitCreatorStationDropdown() {
+      const selects = [
+        document.getElementById('newMgrStationSelect'),
+        document.getElementById('editUnitStationSelect')
+      ];
+
+      const sortedKeys = Object.keys(loadedStations).sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
+      
+      selects.forEach(select => {
+        if (!select) return;
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- No Home Station (GPS AVL Only) --</option>';
+        sortedKeys.forEach(stId => {
+          const st = loadedStations[stId];
+          const isSelected = stId === currentVal ? 'selected' : '';
+          select.innerHTML += `<option value="${stId}" ${isSelected}>${st.name}</option>`;
+        });
+      });
+    }
+
+    function saveNewRosterUnit() {
+      const unitId = document.getElementById('newMgrUnitId').value.trim();
+      const shortId = document.getElementById('newMgrShortId').value.trim() || unitId;
+      const password = document.getElementById('newMgrPassword').value.trim();
+      const staffingType = document.getElementById('newMgrStaffingType').value;
+      const initialStatus = document.getElementById('newMgrInitialStatus').value;
+      const stationId = document.getElementById('newMgrStationSelect').value;
+
+      if (!unitId) {
+        alert("Please enter a Unit Identifier.");
+        return;
+      }
+
+      const roles = [];
+      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => {
+        roles.push(cb.value);
+      });
+
+      const unitData = {
+        shortId: shortId,
+        password: password,
+        roles: roles,
+        staffingType: staffingType,
+        status: initialStatus,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        unitData.assignedStationId = stationId;
+        unitData.assignedStationName = st.name;
+        unitData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      }
+
+      db.ref(`units/${unitId}`).set(unitData);
+
+      document.getElementById('newMgrUnitId').value = '';
+      document.getElementById('newMgrShortId').value = '';
+      document.getElementById('newMgrPassword').value = '';
+      document.getElementById('newMgrStationSelect').value = '';
+      document.querySelectorAll('.mgr-role-tag').forEach(cb => cb.checked = false);
+
+      alert(`Unit ${unitId} registered successfully to CAD network!`);
+    }
+
+    // --- UNIT EDIT MODAL FUNCTIONS ---
+    function openEditUnitModal(unitId) {
+      const unit = loadedUnits[unitId];
+      if (!unit) return;
+
+      document.getElementById('editUnitOriginalId').value = unitId;
+      document.getElementById('modalUnitEditTitle').innerText = `Edit: ${unitId}`;
+      document.getElementById('editUnitIdInput').value = unitId;
+      document.getElementById('editUnitShortIdInput').value = unit.shortId || unitId;
+      document.getElementById('editUnitPasswordInput').value = unit.password || '';
+      document.getElementById('editUnitStaffingType').value = unit.staffingType || 'DEDICATED';
+
+      refreshUnitCreatorStationDropdown();
+      document.getElementById('editUnitStationSelect').value = unit.assignedStationId || '';
+
+      const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+      document.querySelectorAll('.edit-role-tag').forEach(cb => {
+        cb.checked = roles.includes(cb.value);
+      });
+
+      document.getElementById('editUnitModal').style.display = 'flex';
+    }
+
+    function closeEditUnitModal() {
+      document.getElementById('editUnitModal').style.display = 'none';
+    }
+
+    function saveEditedUnitDetails() {
+      const originalId = document.getElementById('editUnitOriginalId').value;
+      const newUnitId = document.getElementById('editUnitIdInput').value.trim();
+      const newShortId = document.getElementById('editUnitShortIdInput').value.trim() || newUnitId;
+      const newPassword = document.getElementById('editUnitPasswordInput').value.trim();
+      const staffingType = document.getElementById('editUnitStaffingType').value;
+      const stationId = document.getElementById('editUnitStationSelect').value;
+
+      if (!newUnitId) {
+        alert("Unit identifier cannot be empty.");
+        return;
+      }
+
+      const selectedRoles = [];
+      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => {
+        selectedRoles.push(cb.value);
+      });
+
+      const existingUnit = loadedUnits[originalId] || {};
+      const updatedData = {
+        ...existingUnit,
+        shortId: newShortId,
+        password: newPassword,
+        staffingType: staffingType,
+        roles: selectedRoles,
+        lastUpdated: Date.now()
+      };
+
+      if (stationId && loadedStations[stationId]) {
+        const st = loadedStations[stationId];
+        updatedData.assignedStationId = stationId;
+        updatedData.assignedStationName = st.name;
+        updatedData.location = {
+          lat: st.lat,
+          lng: st.lng,
+          type: 'STATIC_STATION'
+        };
+      } else {
+        delete updatedData.assignedStationId;
+        delete updatedData.assignedStationName;
+      }
+
+      if (originalId !== newUnitId) {
+        db.ref(`units/${newUnitId}`).set(updatedData);
+        db.ref(`units/${originalId}`).remove();
+
+        Object.keys(loadedIncidents).forEach(incId => {
+          const inc = loadedIncidents[incId];
+          const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+          if (assigned.includes(originalId)) {
+            const updatedAssigned = assigned.map(id => id === originalId ? newUnitId : id);
+            db.ref(`incidents/${incId}`).update({ assignedUnits: updatedAssigned });
+          }
+        });
+      } else {
+        db.ref(`units/${originalId}`).update(updatedData);
+      }
+
+      closeEditUnitModal();
+      alert(`Unit ${newUnitId} configuration updated successfully!`);
+    }
+
+    // --- MULTI-RADIO CHANNEL CALL ASSIGNMENT FUNCTIONS ---
+    function renderModalRadioList(radioChannelsArray = []) {
+      const container = document.getElementById('modalAssignedRadiosContainer');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const arr = Array.isArray(radioChannelsArray) ? radioChannelsArray : Object.values(radioChannelsArray || {});
+      if (!arr || arr.length === 0) {
+        container.innerHTML = '<em style="color:#777; font-size:12px;">No radio channels currently assigned to this incident.</em>';
+        return;
+      }
+
+      arr.forEach((rc, idx) => {
+        const row = document.createElement('div');
+        row.className = 'radio-assignment-row';
+        row.innerHTML = `
+          <strong style="color:#16a085; min-width: 100px;">${rc.name}</strong>
+          <span style="color:#ccc; font-size:13px; flex:1;">${rc.desc || '<em>No description</em>'}</span>
+          <button onclick="removeRadioChannelFromCall(${idx})" style="background:#c0392b; font-size:11px; padding:3px 8px;">Remove</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addRadioChannelToCall() {
+      if (!activeModalIncidentId) return;
+
+      const select = document.getElementById('modalAddRadioSelect');
+      const descInput = document.getElementById('modalAddRadioDescInput');
+      const channelName = select.value;
+      const channelDesc = descInput.value.trim();
+
+      if (!channelName) {
+        alert("Please select a radio channel to assign.");
+        return;
+      }
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+
+      if (currentRadios.some(r => r.name === channelName)) {
+        alert(`Radio channel ${channelName} is already assigned to this call.`);
+        return;
+      }
+
+      currentRadios.push({
+        name: channelName,
+        desc: channelDesc
+      });
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `Assigned Radio Channel: ${channelName}${channelDesc ? ' (' + channelDesc + ')' : ''}`,
+        timestamp: Date.now()
+      });
+
+      select.value = '';
+      descInput.value = '';
+    }
+
+    function removeRadioChannelFromCall(index) {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+      const removed = currentRadios.splice(index, 1)[0];
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        radioChannels: currentRadios
+      });
+
+      if (removed) {
+        db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+          author: 'DISPATCH',
+          text: `Removed Radio Channel: ${removed.name}`,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    // --- DISTRICT BOUNDING BOX (25-MILE RADIUS OF STATIONS) ---
+    function getDistrictViewbox() {
+      const stationKeys = Object.keys(loadedStations);
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+
+      if (stationKeys.length > 0) {
+        stationKeys.forEach(k => {
+          const st = loadedStations[k];
+          if (st.lat && st.lng) {
+            const lat = parseFloat(st.lat);
+            const lng = parseFloat(st.lng);
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+          }
+        });
+      }
+
+      if (minLat === Infinity) {
+        minLat = maxLat = defaultMapLat;
+        minLng = maxLng = defaultMapLng;
+      }
+
+      const latBuffer = 0.36;
+      const lngBuffer = 0.44;
+
+      const left = (minLng - lngBuffer).toFixed(5);
+      const bottom = (minLat - latBuffer).toFixed(5);
+      const right = (maxLng + lngBuffer).toFixed(5);
+      const top = (maxLat + latBuffer).toFixed(5);
+
+      return `${left},${top},${right},${bottom}`;
+    }
+
+    function cleanAddressDisplayName(displayName) {
+      if (!displayName) return '';
+      let parts = displayName.split(',').map(p => p.trim());
+      
+      parts = parts.filter(p => {
+        const lower = p.toLowerCase();
+        if (lower === 'united states' || lower === 'usa' || lower === 'us') return false;
+        if (/^\d{5}(-\d{4})?$/.test(p)) return false;
+        return true;
+      });
+
+      return parts.slice(0, 4).join(', ');
+    }
+
+    // --- ADDRESS & CROSS-STREET AUTOCOMPLETE WITH 25-MILE RADIUS CONSTRAINT ---
+    function handleAddressInput(query) {
+      clearTimeout(debounceTimer);
+      const resultsContainer = document.getElementById('autocompleteResults');
+      
+      if (!query || query.trim().length < 3) {
+        resultsContainer.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        const viewbox = getDistrictViewbox();
+        let cleanQuery = query.replace(/\s*[/@]\s*/g, ' & ').replace(/\s+and\s+/gi, ' & ');
+
+        const lookupUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&bounded=1&addressdetails=1&limit=6`;
+
+        fetch(lookupUrl)
+          .then(res => res.json())
+          .then(data => {
+            resultsContainer.innerHTML = '';
+            if (!data || data.length === 0) {
+              fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&addressdetails=1&limit=4`)
+                .then(r => r.json())
+                .then(fallbackData => {
+                  renderAddressSuggestions(fallbackData, resultsContainer);
+                })
+                .catch(() => { resultsContainer.style.display = 'none'; });
+              return;
+            }
+
+            renderAddressSuggestions(data, resultsContainer);
+          })
+          .catch(err => {
+            console.error("Geocoding lookup error:", err);
+            resultsContainer.style.display = 'none';
+          });
+      }, 300);
+    }
+
+    function renderAddressSuggestions(items, resultsContainer) {
+      resultsContainer.innerHTML = '';
+      if (!items || items.length === 0) {
+        resultsContainer.style.display = 'none';
+        return;
+      }
+
+      items.forEach(item => {
+        const cleanedLabel = cleanAddressDisplayName(item.display_name);
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerHTML = `<strong>${cleanedLabel}</strong>`;
+        
+        div.onclick = function() {
+          document.getElementById('incidentAddress').value = cleanedLabel;
+          updateCallPinPosition(item.lat, item.lon);
+          resultsContainer.style.display = 'none';
+        };
+        resultsContainer.appendChild(div);
+      });
+
+      resultsContainer.style.display = 'block';
+    }
+
+    function handleTypeInput(query) {
+      const container = document.getElementById('typeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'incidentType');
+    }
+
+    function handleTypeInputModal(query) {
+      const container = document.getElementById('modalTypeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'modalTypeInput');
+    }
+
+    function handleUpgradeTypeInput(query) {
+      const container = document.getElementById('modalUpgradeAutocompleteResults');
+      renderTypeSuggestions(query, container, 'modalUpgradeTypeInput');
+    }
+
+    function renderTypeSuggestions(query, containerEl, inputId) {
+      if (!query || query.trim().length === 0) {
+        containerEl.style.display = 'none';
+        return;
+      }
+
+      const q = query.toLowerCase();
+      const matches = loadedCallTypes.filter(t => t.name.toLowerCase().includes(q));
+
+      containerEl.innerHTML = '';
+      if (matches.length === 0) {
+        containerEl.style.display = 'none';
+        return;
+      }
+
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        div.innerText = item.name;
+        div.onclick = function() {
+          document.getElementById(inputId).value = item.name;
+          containerEl.style.display = 'none';
+        };
+        containerEl.appendChild(div);
+      });
+
+      containerEl.style.display = 'block';
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.autocomplete-container')) {
+        document.getElementById('autocompleteResults').style.display = 'none';
+        document.getElementById('typeAutocompleteResults').style.display = 'none';
+        document.getElementById('modalTypeAutocompleteResults').style.display = 'none';
+        document.getElementById('modalUpgradeAutocompleteResults').style.display = 'none';
+      }
+    });
+
+    // --- CALL UPGRADE LOGIC ---
+    async function executeCallUpgrade() {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const newTypeName = document.getElementById('modalUpgradeTypeInput').value.trim();
+      if (!newTypeName) {
+        alert("Please select or enter the upgraded call type.");
+        return;
+      }
+
+      const oldTypeName = inc.type;
+      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === newTypeName.toLowerCase());
+      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
+        alert(`No response order / run card found for "${newTypeName}". Please configure it in Call Types Manager.`);
+        return;
+      }
+
+      const fullUpgradedRunCard = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
+      const currentlyAssigned = Array.isArray(inc.assignedUnits) ? [...inc.assignedUnits] : Object.values(inc.assignedUnits || {});
+      const assignedUnitsSet = new Set(currentlyAssigned);
+
+      const remainingNeededTraits = [];
+      const usedAssignedForCoverage = new Set();
+
+      fullUpgradedRunCard.forEach(trait => {
+        const foundUnit = currentlyAssigned.find(uId => {
+          if (usedAssignedForCoverage.has(uId)) return false;
+          const u = loadedUnits[uId];
+          const uRoles = Array.isArray(u?.roles) ? u.roles : Object.values(u?.roles || {});
+          return uRoles.includes(trait);
+        });
+
+        if (foundUnit) {
+          usedAssignedForCoverage.add(foundUnit);
+        } else {
+          remainingNeededTraits.push(trait);
+        }
+      });
+
+      if (remainingNeededTraits.length === 0) {
+        db.ref(`incidents/${activeModalIncidentId}`).update({
+          type: newTypeName,
+          updatedAt: Date.now()
+        });
+
+        db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+          author: 'CAD SYSTEM',
+          text: `Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Existing units satisfy the upgraded run card.`,
+          timestamp: Date.now()
+        });
+
+        CADAudio.playUpgradeAlert();
+
+        document.getElementById('modalTypeInput').value = newTypeName;
+        document.getElementById('modalUpgradeTypeInput').value = '';
+        alert(`Call upgraded to ${newTypeName}! All required capabilities are already covered by assigned units.`);
+        return;
+      }
+
+      const stationCrewCapacity = getStationAvailableCrewsPool();
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      const additionalDispatched = [];
+
+      for (const requiredTrait of remainingNeededTraits) {
+        const slotCategoryTier = getTraitCategoryTier(requiredTrait);
+        let candidatePromises = [];
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+          const status = unit.status || 'AVAILABLE';
+          const isAvailable = status === 'AVAILABLE' || status === 'IN_QUARTERS' || status === 'ON_CALL';
+          const stId = unit.assignedStationId;
+          const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+
+          if (!roles.includes(requiredTrait) || !isAvailable || assignedUnitsSet.has(uId)) {
+            return;
+          }
+
+          let turnoutDelay = 0;
+          if (status === 'ON_CALL') {
+            turnoutDelay = 4.0;
+          } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
+            const cap = stationCrewCapacity[stId];
+            if (status === 'AVAILABLE') {
+              turnoutDelay = 0;
+            } else if (cap.staffedRemaining > 0) {
+              turnoutDelay = 0;
+            } else if (cap.onCallRemaining > 0) {
+              const nextOnCallIndex = cap.onCallPulledCount + 1;
+              turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
+            } else {
+              return;
+            }
+          }
+
+          let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+          let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+
+          if (!uLat && stId && loadedStations[stId]) {
+            uLat = parseFloat(loadedStations[stId].lat);
+            uLng = parseFloat(loadedStations[stId].lng);
+          }
+
+          if (uLat && uLng) {
+            candidatePromises.push((async () => {
+              const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+              const totalTime = routeInfo.timeMinutes + turnoutDelay;
+              return { 
+                id: uId, 
+                unit: unit, 
+                stId: stId,
+                turnoutDelay: turnoutDelay, 
+                totalTime: totalTime,
+                fulfilledTier: slotCategoryTier
+              };
+            })());
+          }
+        });
+
+        const candidates = await Promise.all(candidatePromises);
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => a.totalTime - b.totalTime);
+          const best = candidates[0];
+
+          assignedUnitsSet.add(best.id);
+          additionalDispatched.push(best.id);
+          unitFulfilledTierMap[best.id] = best.fulfilledTier;
+
+          if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
+            const cap = stationCrewCapacity[best.stId];
+            if (cap.staffedRemaining > 0) {
+              cap.staffedRemaining--;
+            } else if (cap.onCallRemaining > 0) {
+              cap.onCallRemaining--;
+              cap.onCallPulledCount++;
+            }
+          }
+        }
+      }
+
+      const combinedUnits = [...currentlyAssigned, ...additionalDispatched];
+
+      const sortedAllUnits = combinedUnits.map((uId, originalIndex) => {
+        const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
+        return {
+          id: uId,
+          tier: assignedTier,
+          pickIndex: originalIndex
+        };
+      }).sort((a, b) => {
+        if (a.tier !== b.tier) return a.tier - b.tier;
+        return a.pickIndex - b.pickIndex;
+      }).map(item => item.id);
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        type: newTypeName,
+        assignedUnits: sortedAllUnits,
+        status: 'DISPATCHED',
+        updatedAt: Date.now()
+      });
+
+      additionalDispatched.forEach(uId => {
+        db.ref(`units/${uId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+      });
+
+      const addDisplay = formatAssignedShortIds(additionalDispatched);
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'CAD SYSTEM',
+        text: `[UPGRADE]: Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Additional units dispatched: [${addDisplay}].`,
+        timestamp: Date.now()
+      });
+
+      CADAudio.playUpgradeAlert();
+
+      document.getElementById('modalTypeInput').value = newTypeName;
+      document.getElementById('modalUpgradeTypeInput').value = '';
+
+      alert(`Incident upgraded to ${newTypeName}!\nAdditional Units Dispatched: ${addDisplay || 'None'}`);
+    }
+
+    // --- LISTEN FOR RADIO CHANNELS ---
+    db.ref('radioChannels').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      loadedRadioChannels = Object.keys(data).map(k => ({ id: k, name: data[k].name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      const listContainer = document.getElementById('configuredRadioChannelsList');
+      if (listContainer) {
+        listContainer.innerHTML = '';
+        if (loadedRadioChannels.length === 0) {
+          listContainer.innerHTML = '<em>No radio channels configured yet.</em>';
+        } else {
+          loadedRadioChannels.forEach(rc => {
+            const div = document.createElement('div');
+            div.style.padding = '6px 0';
+            div.style.borderBottom = '1px solid #222';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.innerHTML = `
+              <span><strong>${rc.name}</strong></span>
+              <div>
+                <button onclick="editRadioChannel('${rc.id}', '${rc.name.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
+                <button onclick="deleteRadioChannel('${rc.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+              </div>
+            `;
+            listContainer.appendChild(div);
+          });
+        }
+      }
+
+      refreshModalAddRadioDropdown();
+    });
+
+    function saveNewRadioChannel() {
+      const name = document.getElementById('newRadioChannelInput').value.trim();
+      if (!name) return;
+
+      db.ref('radioChannels').push({ name: name, createdAt: Date.now() });
+      document.getElementById('newRadioChannelInput').value = '';
+    }
+
+    function editRadioChannel(id, currentName) {
+      const updatedName = prompt("Edit Radio Channel Name:", currentName);
+      if (updatedName !== null && updatedName.trim() !== "") {
+        db.ref(`radioChannels/${id}`).update({
+          name: updatedName.trim(),
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    function deleteRadioChannel(id) {
+      if (confirm("Delete radio channel preset?")) {
+        db.ref(`radioChannels/${id}`).remove();
+      }
+    }
+
+    function openRadioChannelsModal() {
+      document.getElementById('radioChannelsModal').style.display = 'flex';
+    }
+
+    function closeRadioChannelsModal() {
+      document.getElementById('radioChannelsModal').style.display = 'none';
+    }
+
+    function refreshModalAddRadioDropdown() {
+      const select = document.getElementById('modalAddRadioSelect');
+      if (!select) return;
+
+      select.innerHTML = '<option value="">-- Add Radio Channel --</option>';
+      loadedRadioChannels.forEach(rc => {
+        select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`;
+      });
+    }
+
+    // --- CALL TYPES & RUN CARD MANAGER ---
+    function appendTagToRunCard(tag) {
+      currentBuildingRunCard.push(tag);
+      renderRunCardDisplay();
+    }
+
+    function removeTagFromRunCard(index) {
+      currentBuildingRunCard.splice(index, 1);
+      renderRunCardDisplay();
+    }
+
+    function renderRunCardDisplay() {
+      const display = document.getElementById('activeRunCardDisplay');
+      display.innerHTML = '';
+      if (currentBuildingRunCard.length === 0) {
+        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>';
+        return;
+      }
+
+      currentBuildingRunCard.forEach((tag, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'run-card-chip';
+        chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
+        display.appendChild(chip);
+      });
+    }
+
+    db.ref('callTypes').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      loadedCallTypes = Object.keys(data).map(k => ({
+        id: k,
+        name: data[k].name,
+        responseOrder: Array.isArray(data[k].responseOrder) ? data[k].responseOrder : Object.values(data[k].responseOrder || {})
+      }));
+
+      const listContainer = document.getElementById('configuredCallTypesList');
+      if (listContainer) {
+        listContainer.innerHTML = '';
+        if (loadedCallTypes.length === 0) {
+          listContainer.innerHTML = '<em>No call types configured yet.</em>';
+        } else {
+          loadedCallTypes.forEach(ct => {
+            const div = document.createElement('div');
+            div.style.padding = '8px 0';
+            div.style.borderBottom = '1px solid #222';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            
+            const cardText = ct.responseOrder.length > 0 ? ct.responseOrder.join(', ') : 'No run card set';
+
+            div.innerHTML = `
+              <div>
+                <strong>${ct.name}</strong>
+                <div style="font-size:11px; color:#aaa; margin-top:2px;">Order: ${cardText}</div>
+              </div>
+              <div>
+                <button onclick="editCallType('${ct.id}')" class="btn-action-sm btn-edit-sm">Edit</button>
+                <button onclick="deleteCallType('${ct.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+              </div>
+            `;
+            listContainer.appendChild(div);
+          });
+        }
+      }
+    });
+
+    function saveNewCallType() {
+      const name = document.getElementById('newCallTypeInput').value.trim();
+      if (!name) {
+        alert("Please enter a call type name.");
+        return;
+      }
+
+      if (editingCallTypeId) {
+        db.ref(`callTypes/${editingCallTypeId}`).update({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          updatedAt: Date.now()
+        });
+        editingCallTypeId = null;
+      } else {
+        db.ref('callTypes').push({
+          name: name,
+          responseOrder: currentBuildingRunCard,
+          createdAt: Date.now()
+        });
+      }
+
+      document.getElementById('newCallTypeInput').value = '';
+      currentBuildingRunCard = [];
+      renderRunCardDisplay();
+    }
+
+    function editCallType(id) {
+      const ct = loadedCallTypes.find(t => t.id === id);
+      if (!ct) return;
+
+      editingCallTypeId = id;
+      document.getElementById('newCallTypeInput').value = ct.name;
+      currentBuildingRunCard = [...(ct.responseOrder || [])];
+      renderRunCardDisplay();
+    }
+
+    function deleteCallType(id) {
+      if (confirm("Delete call type preset?")) {
+        db.ref(`callTypes/${id}`).remove();
+      }
+    }
+
+    function openCallTypesModal() {
+      editingCallTypeId = null;
+      currentBuildingRunCard = [];
+      document.getElementById('newCallTypeInput').value = '';
+      renderRunCardDisplay();
+      document.getElementById('callTypesModal').style.display = 'flex';
+    }
+
+    function closeCallTypesModal() {
+      document.getElementById('callTypesModal').style.display = 'none';
+    }
+
+    // --- LISTEN FOR STATIONS & CREW SETTINGS ---
+    db.ref('stations').on('value', (snapshot) => {
+      loadedStations = snapshot.val() || {};
+      const listContainer = document.getElementById('configuredStationsList');
+      listContainer.innerHTML = '';
+
+      const keys = Object.keys(loadedStations);
+      if (keys.length === 0) {
+        listContainer.innerHTML = '<em>No stations setup yet.</em>';
+      } else {
+        const sortedStations = keys.map(k => ({ id: k, ...loadedStations[k] }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedStations.forEach(st => {
+          const div = document.createElement('div');
+          div.style.padding = '6px 0';
+          div.style.borderBottom = '1px solid #222';
+          div.style.display = 'flex';
+          div.style.justifyContent = 'space-between';
+          div.style.alignItems = 'center';
+          div.innerHTML = `
+            <div>
+              <strong>${st.name}</strong> [${st.lat}, ${st.lng}]
+              <div style="font-size:11px; color:#aaa; margin-top:2px;">Staffed Crews: ${st.staffedCrews || 0} | On-Call Crews: ${st.onCallCrews || 0}</div>
+            </div>
+            <div>
+              <button onclick="editStation('${st.id}', '${st.name.replace(/'/g, "\\'")}', '${st.lat}', '${st.lng}', '${st.staffedCrews || 1}', '${st.onCallCrews || 1}')" class="btn-action-sm btn-edit-sm">Edit</button>
+              <button onclick="deleteStation('${st.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
+            </div>
+          `;
+          listContainer.appendChild(div);
+        });
+      }
+
+      refreshUnitCreatorStationDropdown();
+      renderUnitRoster();
+      refreshMapLayers();
+    });
 
     function saveNewStation() {
       const name = document.getElementById('stationNameInput').value.trim();
@@ -1666,6 +2776,20 @@
         onCallCrews: parseInt(updatedOnCall),
         updatedAt: Date.now()
       });
+
+      Object.keys(loadedUnits).forEach(uId => {
+        const u = loadedUnits[uId];
+        if (u.assignedStationId === id) {
+          db.ref(`units/${uId}`).update({
+            assignedStationName: updatedName.trim(),
+            location: {
+              lat: updatedLat.trim(),
+              lng: updatedLng.trim(),
+              type: 'STATIC_STATION'
+            }
+          });
+        }
+      });
     }
 
     function deleteStation(id) {
@@ -1674,124 +2798,7 @@
       }
     }
 
-    function saveNewRadioChannel() {
-      const name = document.getElementById('newRadioChannelInput').value.trim();
-      if (!name) return;
-
-      db.ref('radioChannels').push({ name: name, createdAt: Date.now() });
-      document.getElementById('newRadioChannelInput').value = '';
-    }
-
-    function editRadioChannel(id, currentName) {
-      const updatedName = prompt("Edit Radio Channel Name:", currentName);
-      if (updatedName !== null && updatedName.trim() !== "") {
-        db.ref(`radioChannels/${id}`).update({
-          name: updatedName.trim(),
-          updatedAt: Date.now()
-        });
-      }
-    }
-
-    function deleteRadioChannel(id) {
-      if (confirm("Delete radio channel preset?")) {
-        db.ref(`radioChannels/${id}`).remove();
-      }
-    }
-
-    function refreshModalAddRadioDropdown() {
-      const select = document.getElementById('modalAddRadioSelect');
-      if (!select) return;
-
-      select.innerHTML = '<option value="">-- Add Radio Channel --</option>';
-      loadedRadioChannels.forEach(rc => {
-        select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`;
-      });
-    }
-
-    function appendTagToRunCard(tag) {
-      currentBuildingRunCard.push(tag);
-      renderRunCardDisplay();
-    }
-
-    function removeTagFromRunCard(index) {
-      currentBuildingRunCard.splice(index, 1);
-      renderRunCardDisplay();
-    }
-
-    function renderRunCardDisplay() {
-      const display = document.getElementById('activeRunCardDisplay');
-      if (!display) return;
-      display.innerHTML = '';
-      if (currentBuildingRunCard.length === 0) {
-        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>';
-        return;
-      }
-
-      currentBuildingRunCard.forEach((tag, idx) => {
-        const chip = document.createElement('span');
-        chip.className = 'run-card-chip';
-        chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
-        display.appendChild(chip);
-      });
-    }
-
-    function saveNewCallType() {
-      const name = document.getElementById('newCallTypeInput').value.trim();
-      if (!name) {
-        alert("Please enter a call type name.");
-        return;
-      }
-
-      if (editingCallTypeId) {
-        db.ref(`callTypes/${editingCallTypeId}`).update({
-          name: name,
-          responseOrder: currentBuildingRunCard,
-          updatedAt: Date.now()
-        });
-        editingCallTypeId = null;
-      } else {
-        db.ref('callTypes').push({
-          name: name,
-          responseOrder: currentBuildingRunCard,
-          createdAt: Date.now()
-        });
-      }
-
-      document.getElementById('newCallTypeInput').value = '';
-      currentBuildingRunCard = [];
-      renderRunCardDisplay();
-    }
-
-    function editCallType(id) {
-      const ct = loadedCallTypes.find(t => t.id === id);
-      if (!ct) return;
-
-      editingCallTypeId = id;
-      document.getElementById('newCallTypeInput').value = ct.name;
-      currentBuildingRunCard = [...(ct.responseOrder || [])];
-      renderRunCardDisplay();
-    }
-
-    function deleteCallType(id) {
-      if (confirm("Delete call type preset?")) {
-        db.ref(`callTypes/${id}`).remove();
-      }
-    }
-
-    function handleRosterSearchInput(query) {
-      const filter = (query || '').toLowerCase().trim();
-      const rows = document.querySelectorAll('#unitList .unit-row');
-      
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        if (!filter || text.includes(filter)) {
-          row.style.display = 'flex';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
-
+    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS (IGNORES OUT_OF_SERVICE) ---
     function setAllUnitsStatus(targetStatus) {
       const unitKeys = Object.keys(loadedUnits);
       if (unitKeys.length === 0) {
@@ -1821,23 +2828,57 @@
       }
     }
 
+    // --- LISTEN FOR UNITS ROSTER ---
+    db.ref('units').on('value', (snapshot) => {
+      loadedUnits = snapshot.val() || {};
+      renderUnitRoster();
+      refreshMapLayers();
+    });
+
+    // --- LIVE FILTER SEARCH ON ROSTER ---
+    function handleRosterSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#unitList .unit-row');
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // IN-PLACE DOM ROSTER UPDATE (PREVENTS DROPDOWNS FROM COLLAPSING ON LIVE SYNC)
     function renderUnitRoster() {
       const unitListEl = document.getElementById('unitList');
       if (!unitListEl) return;
 
       const unitKeys = Object.keys(loadedUnits);
+
       if (unitKeys.length === 0) {
         unitListEl.innerHTML = '<em>No active units logged in yet...</em>';
         return;
       }
 
+      const placeholder = unitListEl.querySelector('em');
+      if (placeholder) placeholder.remove();
+
       const availableStatuses = [
-        "DISPATCHED", "ENROUTE", "ONSCENE", "ARRIVED",
-        "TRANSPORTING", "IN_QUARTERS", "AVAILABLE", "ON_CALL", "OUT_OF_SERVICE"
+        "DISPATCHED",
+        "ENROUTE",
+        "ONSCENE",
+        "ARRIVED",
+        "TRANSPORTING",
+        "IN_QUARTERS",
+        "AVAILABLE",
+        "ON_CALL",
+        "OUT_OF_SERVICE"
       ];
 
       const sortedStationKeys = Object.keys(loadedStations)
-        .sort((a, b) => (loadedStations[a].name || '').localeCompare(loadedStations[b].name || ''));
+        .sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
 
       const existingRows = unitListEl.querySelectorAll('.unit-row');
       existingRows.forEach(row => {
@@ -1953,6 +2994,20 @@
         status: newStatus,
         lastUpdated: Date.now()
       });
+
+      Object.keys(loadedIncidents).forEach(incId => {
+        const inc = loadedIncidents[incId];
+        const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
+        if (assigned.includes(unitId)) {
+          const u = loadedUnits[unitId];
+          const displayName = u && u.shortId ? u.shortId : unitId;
+          db.ref(`incidents/${incId}/logs`).push({
+            author: 'DISPATCH',
+            text: `${displayName} status updated to ${newStatus.replace(/_/g, ' ')} by Dispatch.`,
+            timestamp: Date.now()
+          });
+        }
+      });
     }
 
     function changeUnitStaffingType(unitId, type) {
@@ -1990,108 +3045,7 @@
       }
     }
 
-    function saveNewRosterUnit() {
-      const unitId = document.getElementById('newMgrUnitId').value.trim();
-      const shortId = document.getElementById('newMgrShortId').value.trim() || unitId;
-      const password = document.getElementById('newMgrPassword').value.trim();
-      const staffingType = document.getElementById('newMgrStaffingType').value;
-      const initialStatus = document.getElementById('newMgrInitialStatus').value;
-      const stationId = document.getElementById('newMgrStationSelect').value;
-
-      if (!unitId) {
-        alert("Please enter a Unit Identifier.");
-        return;
-      }
-
-      const roles = [];
-      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => {
-        roles.push(cb.value);
-      });
-
-      const unitData = {
-        shortId: shortId,
-        password: password,
-        roles: roles,
-        staffingType: staffingType,
-        status: initialStatus,
-        lastUpdated: Date.now()
-      };
-
-      if (stationId && loadedStations[stationId]) {
-        const st = loadedStations[stationId];
-        unitData.assignedStationId = stationId;
-        unitData.assignedStationName = st.name;
-        unitData.location = {
-          lat: st.lat,
-          lng: st.lng,
-          type: 'STATIC_STATION'
-        };
-      }
-
-      db.ref(`units/${unitId}`).set(unitData);
-
-      document.getElementById('newMgrUnitId').value = '';
-      document.getElementById('newMgrShortId').value = '';
-      document.getElementById('newMgrPassword').value = '';
-      document.getElementById('newMgrStationSelect').value = '';
-      document.querySelectorAll('.mgr-role-tag').forEach(cb => cb.checked = false);
-
-      alert(`Unit ${unitId} registered successfully to CAD network!`);
-    }
-
-    function saveEditedUnitDetails() {
-      const originalId = document.getElementById('editUnitOriginalId').value;
-      const newUnitId = document.getElementById('editUnitIdInput').value.trim();
-      const newShortId = document.getElementById('editUnitShortIdInput').value.trim() || newUnitId;
-      const newPassword = document.getElementById('editUnitPasswordInput').value.trim();
-      const staffingType = document.getElementById('editUnitStaffingType').value;
-      const stationId = document.getElementById('editUnitStationSelect').value;
-
-      if (!newUnitId) {
-        alert("Unit identifier cannot be empty.");
-        return;
-      }
-
-      const selectedRoles = [];
-      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => {
-        selectedRoles.push(cb.value);
-      });
-
-      const existingUnit = loadedUnits[originalId] || {};
-      const updatedData = {
-        ...existingUnit,
-        shortId: newShortId,
-        password: newPassword,
-        staffingType: staffingType,
-        roles: selectedRoles,
-        lastUpdated: Date.now()
-      };
-
-      if (stationId && loadedStations[stationId]) {
-        const st = loadedStations[stationId];
-        updatedData.assignedStationId = stationId;
-        updatedData.assignedStationName = st.name;
-        updatedData.location = {
-          lat: st.lat,
-          lng: st.lng,
-          type: 'STATIC_STATION'
-        };
-      } else {
-        delete updatedData.assignedStationId;
-        delete updatedData.assignedStationName;
-      }
-
-      if (originalId !== newUnitId) {
-        db.ref(`units/${newUnitId}`).set(updatedData);
-        db.ref(`units/${originalId}`).remove();
-      } else {
-        db.ref(`units/${originalId}`).update(updatedData);
-      }
-
-      closeEditUnitModal();
-      alert(`Unit ${newUnitId} updated successfully!`);
-    }
-
+    // --- SUBMIT PENDING CALL ---
     function submitPendingCall() {
       let address = document.getElementById('incidentAddress').value.trim();
       const type = document.getElementById('incidentType').value.trim();
@@ -2124,7 +3078,7 @@
 
       newIncRef.child('logs').push({
         author: 'DISPATCH',
-        text: `Pending Call Created: [${type}] at ${address} [${detectedBoxArea}].`,
+        text: `Pending Call Created: [${type}] at ${address} [${detectedBoxArea}]. Awaiting unit dispatch.`,
         timestamp: Date.now()
       });
 
@@ -2141,9 +3095,62 @@
       selectedLng = null;
       detectedBoxArea = 'Out of Area';
 
-      alert("Call submitted as PENDING!");
+      alert("Call submitted as PENDING! Switch to the 'Active / Pending Calls' tab to dispatch units.");
     }
 
+    // --- LISTEN FOR INCIDENTS ---
+    db.ref('incidents').on('value', (snapshot) => {
+      loadedIncidents = snapshot.val() || {};
+      const incidentListEl = document.getElementById('activeIncidentList');
+      incidentListEl.innerHTML = '';
+
+      const keys = Object.keys(loadedIncidents);
+      activeIncidentIdOrder = keys;
+
+      if (keys.length === 0) {
+        incidentListEl.innerHTML = '<em>No active or pending incidents currently.</em>';
+      } else {
+        keys.forEach((id, index) => {
+          const inc = loadedIncidents[id];
+          const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+          const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
+          const callNumBadge = `<span class="call-num-badge">#${index + 1}</span>`;
+          
+          let radioInfo = '';
+          const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+          if (radios.length > 0) {
+            radioInfo = '<div style="font-size:12px; margin-top:4px;"><strong>Radios:</strong> ' +
+              radios.map(r => `<span class="radio-badge-tag">${r.name}${r.desc ? ' (' + r.desc + ')' : ''}</span>`).join(' ') + '</div>';
+          }
+
+          const card = document.createElement('div');
+          card.className = `incident-card ${isPending ? 'pending' : ''}`;
+          
+          const statusBadge = isPending ? '<span class="badge-pending">PENDING</span>' : '<span class="badge-dispatched">DISPATCHED</span>';
+
+          card.innerHTML = `
+            <div class="incident-header">
+              <strong style="font-size: 16px;">${callNumBadge}${inc.type} ${statusBadge} ${boxBadge}</strong>
+              <div>
+                <button class="btn-manage" onclick="openEditModal('${id}')">Open / Dispatch Call</button>
+              </div>
+            </div>
+            <p style="margin: 5px 0;"><strong>Location:</strong> ${inc.address}</p>
+            <p style="margin: 5px 0;"><strong>Assigned Units:</strong> ${formatAssignedShortIds(inc.assignedUnits)}</p>
+            ${radioInfo}
+          `;
+          incidentListEl.appendChild(card);
+        });
+      }
+
+      if (activeModalIncidentId && loadedIncidents[activeModalIncidentId]) {
+        renderModalAssignedUnitsChips(loadedIncidents[activeModalIncidentId].assignedUnits || []);
+      }
+
+      refreshMapLayers();
+    });
+
+    // --- MANAGE INCIDENT MODAL & SEPARATE UNIT DISPATCH WINDOW ---
     function openEditModal(incidentId) {
       activeModalIncidentId = incidentId;
       document.getElementById('editCallModal').style.display = 'flex';
@@ -2159,8 +3166,8 @@
         const callNumText = callIdx > 0 ? `[Call #${callIdx}] ` : '';
         const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
         document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type}${boxText}`;
-        document.getElementById('modalAddressInput').value = inc.address || '';
-        document.getElementById('modalTypeInput').value = inc.type || '';
+        document.getElementById('modalAddressInput').value = inc.address;
+        document.getElementById('modalTypeInput').value = inc.type;
 
         renderModalRadioList(inc.radioChannels || []);
         renderModalAssignedUnitsChips(inc.assignedUnits || []);
@@ -2180,6 +3187,319 @@
       });
     }
 
+    function openUnitDispatchModal() {
+      if (!activeModalIncidentId) return;
+
+      document.getElementById('suggestResponseNotice').style.display = 'none';
+      
+      const inc = loadedIncidents[activeModalIncidentId];
+      const assigned = Array.isArray(inc?.assignedUnits) ? inc.assignedUnits : Object.values(inc?.assignedUnits || {});
+      currentDispatchSelectionOrder = [...assigned];
+      unitFulfilledTierMap = {};
+
+      renderUnitDispatchList();
+      document.getElementById('unitDispatchModal').style.display = 'flex';
+    }
+
+    function toggleUnitDispatchSelection(uId, isChecked) {
+      if (isChecked) {
+        if (!currentDispatchSelectionOrder.includes(uId)) {
+          currentDispatchSelectionOrder.push(uId);
+        }
+      } else {
+        currentDispatchSelectionOrder = currentDispatchSelectionOrder.filter(id => id !== uId);
+        delete unitFulfilledTierMap[uId];
+      }
+    }
+
+    // --- RENDER DISPATCH LIST ---
+    async function renderUnitDispatchList() {
+      const container = document.getElementById('unitDispatchScrollList');
+      container.innerHTML = '<em>Calculating driving routes and staffing turnout times...</em>';
+
+      const unitKeys = Object.keys(loadedUnits);
+      if (unitKeys.length === 0) {
+        container.innerHTML = '<em>No active units logged in.</em>';
+        return;
+      }
+
+      const inc = loadedIncidents[activeModalIncidentId] || {};
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      const stationCrewTracking = getStationAvailableCrewsPool();
+
+      const unitTravelData = await Promise.all(unitKeys.map(async uId => {
+        const unit = loadedUnits[uId];
+        let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+        let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+        const stId = unit.assignedStationId;
+
+        if (!uLat && stId && loadedStations[stId]) {
+          uLat = parseFloat(loadedStations[stId].lat);
+          uLng = parseFloat(loadedStations[stId].lng);
+        }
+
+        let routeInfo = { distanceMiles: 999, timeMinutes: 999, isRoadRoute: false };
+        if (uLat && uLng) {
+          routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+        }
+
+        return {
+          id: uId,
+          unit: unit,
+          stId: stId,
+          drivingTimeMinutes: routeInfo.timeMinutes,
+          distanceMiles: routeInfo.distanceMiles,
+          isRoadRoute: routeInfo.isRoadRoute
+        };
+      }));
+
+      unitTravelData.sort((a, b) => a.drivingTimeMinutes - b.drivingTimeMinutes);
+
+      unitTravelData.forEach(item => {
+        let turnoutDelay = 0;
+        let staffingTag = "Staffed In-Station";
+        const isCrossStaffed = item.unit.staffingType === 'CROSS_STAFFED';
+        const currentStatus = item.unit.status || 'AVAILABLE';
+
+        if (currentStatus === 'ON_CALL') {
+          turnoutDelay = 4.0;
+          staffingTag = "On-Call Status";
+        } else if (isCrossStaffed && item.stId && stationCrewTracking[item.stId]) {
+          const track = stationCrewTracking[item.stId];
+          
+          if (currentStatus === 'AVAILABLE' || currentStatus === 'DISPATCHED' || currentStatus === 'ENROUTE') {
+            turnoutDelay = 0;
+            staffingTag = "In-Service (Active Crew)";
+          } else if (track.staffedRemaining > 0) {
+            track.staffedRemaining--;
+            turnoutDelay = 0;
+            staffingTag = "In-Station Staffed Crew";
+          } else if (track.onCallRemaining > 0) {
+            track.onCallRemaining--;
+            track.onCallPulledCount++;
+            turnoutDelay = track.onCallPulledCount === 1 ? 4.0 : 4.0 + (track.onCallPulledCount - 1) * 2.0;
+            staffingTag = `On-Call Crew #${track.onCallPulledCount} (+${turnoutDelay}m delay)`;
+          } else {
+            turnoutDelay = 15.0;
+            staffingTag = "Crews Exhausted / Locked";
+          }
+        }
+
+        item.turnoutDelay = turnoutDelay;
+        item.totalEstimatedMinutes = item.drivingTimeMinutes + turnoutDelay;
+        item.staffingTag = staffingTag;
+      });
+
+      unitTravelData.sort((a, b) => a.totalEstimatedMinutes - b.totalEstimatedMinutes);
+
+      container.innerHTML = '';
+
+      unitTravelData.forEach(item => {
+        const uId = item.id;
+        const unit = item.unit;
+        const shortBadge = unit.shortId ? ` (${unit.shortId})` : '';
+        const passIcon = unit.password ? ' 🔒' : '';
+        const isChecked = currentDispatchSelectionOrder.includes(uId);
+        const orderIdx = currentDispatchSelectionOrder.indexOf(uId);
+        const orderBadge = isChecked ? `<span style="background:#e63946; color:#fff; font-size:11px; padding:2px 6px; border-radius:3px; margin-left:6px;">#${orderIdx + 1}</span>` : '';
+        const statusText = unit.status ? unit.status.replace(/_/g, ' ') : 'AVAILABLE';
+        const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+        const rolesText = roles.join(', ') || 'No capability tags';
+        const staffingTypeBadge = unit.staffingType === 'CROSS_STAFFED' ? '[Cross-Staffed]' : '[Dedicated]';
+
+        const delayDisplay = item.turnoutDelay > 0 ? `<span style="color:#f1c40f; font-size:11px;"> [${item.staffingTag}]</span>` : '';
+
+        const travelBadge = item.distanceMiles < 900 
+          ? `<span style="color:#2ecc71; font-weight:bold; margin-left:8px;">~${item.totalEstimatedMinutes.toFixed(1)} mins (${item.distanceMiles.toFixed(1)} mi)</span>${delayDisplay}`
+          : '<span style="color:#888; margin-left:8px;">[No Station/Location Set]</span>';
+
+        const div = document.createElement('div');
+        div.className = 'unit-dispatch-item';
+        div.innerHTML = `
+          <div>
+            <strong>${uId}${shortBadge}${passIcon}</strong> ${orderBadge} <span style="font-size:11px; color:#aaa;">${staffingTypeBadge}</span>
+            ${travelBadge}
+            <span class="status-${unit.status}" style="font-size:12px; margin-left:8px;">[${statusText}]</span>
+            <div style="font-size:11px; color:#aaa; margin-top:2px;">Tags: ${rolesText}</div>
+          </div>
+          <input type="checkbox" class="dispatch-unit-select" value="${uId}" ${isChecked ? 'checked' : ''} onchange="toggleUnitDispatchSelection('${uId}', this.checked); renderUnitDispatchList();">
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function closeUnitDispatchModal() {
+      document.getElementById('unitDispatchModal').style.display = 'none';
+    }
+
+    // --- AUTOMATED RESPONSE SUGGESTION ENGINE ---
+    async function suggestResponseForCall() {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === inc.type.toLowerCase());
+      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
+        alert(`No response order / run card configured for "${inc.type}". Configure it in Call Types Manager.`);
+        return;
+      }
+
+      const runCardOrder = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
+      const suggestedOrder = [];
+      const suggestedSet = new Set();
+      unitFulfilledTierMap = {};
+
+      const stationCrewCapacity = getStationAvailableCrewsPool();
+
+      const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
+      const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
+
+      for (const requiredTrait of runCardOrder) {
+        const slotCategoryTier = getTraitCategoryTier(requiredTrait);
+        let candidatePromises = [];
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
+          const status = unit.status || 'AVAILABLE';
+          const isAvailable = status === 'AVAILABLE' || status === 'IN_QUARTERS' || status === 'ON_CALL';
+          const stId = unit.assignedStationId;
+          const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
+
+          if (!roles.includes(requiredTrait) || !isAvailable || suggestedSet.has(uId)) {
+            return;
+          }
+
+          let turnoutDelay = 0;
+          if (status === 'ON_CALL') {
+            turnoutDelay = 4.0;
+          } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
+            const cap = stationCrewCapacity[stId];
+            if (status === 'AVAILABLE') {
+              turnoutDelay = 0;
+            } else if (cap.staffedRemaining > 0) {
+              turnoutDelay = 0;
+            } else if (cap.onCallRemaining > 0) {
+              const nextOnCallIndex = cap.onCallPulledCount + 1;
+              turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
+            } else {
+              return;
+            }
+          }
+
+          let uLat = unit.location ? parseFloat(unit.location.lat) : null;
+          let uLng = unit.location ? parseFloat(unit.location.lng) : null;
+
+          if (!uLat && stId && loadedStations[stId]) {
+            uLat = parseFloat(loadedStations[stId].lat);
+            uLng = parseFloat(loadedStations[stId].lng);
+          }
+
+          if (uLat && uLng) {
+            candidatePromises.push((async () => {
+              const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
+              const totalTime = routeInfo.timeMinutes + turnoutDelay;
+              return { 
+                id: uId, 
+                unit: unit, 
+                stId: stId,
+                turnoutDelay: turnoutDelay, 
+                totalTime: totalTime,
+                fulfilledTier: slotCategoryTier
+              };
+            })());
+          }
+        });
+
+        const candidates = await Promise.all(candidatePromises);
+
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => a.totalTime - b.totalTime);
+          const best = candidates[0];
+
+          suggestedSet.add(best.id);
+          suggestedOrder.push(best.id);
+          unitFulfilledTierMap[best.id] = best.fulfilledTier;
+
+          if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
+            const cap = stationCrewCapacity[best.stId];
+            if (cap.staffedRemaining > 0) {
+              cap.staffedRemaining--;
+            } else if (cap.onCallRemaining > 0) {
+              cap.onCallRemaining--;
+              cap.onCallPulledCount++;
+            }
+          }
+        }
+      }
+
+      if (suggestedOrder.length === 0) {
+        alert("No available units matched the required run card or all station crews were exhausted.");
+        return;
+      }
+
+      currentDispatchSelectionOrder = suggestedOrder;
+      renderUnitDispatchList();
+
+      const notice = document.getElementById('suggestResponseNotice');
+      const shortDisplay = formatAssignedShortIds(suggestedOrder);
+      notice.innerText = `Suggested ${suggestedOrder.length} unit(s) based on staffing & travel time: ${shortDisplay}`;
+      notice.style.display = 'block';
+    }
+
+    function confirmUnitDispatchSelection() {
+      if (!activeModalIncidentId) return;
+
+      const newAddress = document.getElementById('modalAddressInput').value.trim();
+      const newType = document.getElementById('modalTypeInput').value.trim();
+
+      const rawSelection = [...currentDispatchSelectionOrder];
+      
+      const sortedSelectedUnits = rawSelection.map((uId, originalIndex) => {
+        const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
+        return {
+          id: uId,
+          tier: assignedTier,
+          pickIndex: originalIndex
+        };
+      }).sort((a, b) => {
+        if (a.tier !== b.tier) {
+          return a.tier - b.tier;
+        }
+        return a.pickIndex - b.pickIndex;
+      }).map(item => item.id);
+
+      const newStatus = sortedSelectedUnits.length > 0 ? 'DISPATCHED' : 'PENDING';
+
+      db.ref(`incidents/${activeModalIncidentId}`).update({
+        address: newAddress,
+        type: newType,
+        assignedUnits: sortedSelectedUnits,
+        status: newStatus
+      });
+
+      sortedSelectedUnits.forEach(uId => {
+        db.ref(`units/${uId}`).update({
+          status: 'DISPATCHED',
+          lastUpdated: Date.now()
+        });
+      });
+
+      const shortLogDisplay = formatAssignedShortIds(sortedSelectedUnits);
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `Units dispatched in category tier order: [${shortLogDisplay}]. Call status set to ${newStatus}.`,
+        timestamp: Date.now()
+      });
+
+      closeUnitDispatchModal();
+      alert(`Units dispatched in sorted category tier order: ${shortLogDisplay}`);
+    }
+
     function closeEditModal() {
       if (activeModalIncidentId) {
         db.ref(`incidents/${activeModalIncidentId}`).off();
@@ -2188,75 +3508,7 @@
       document.getElementById('editCallModal').style.display = 'none';
     }
 
-    function renderModalRadioList(radioChannelsArray = []) {
-      const container = document.getElementById('modalAssignedRadiosContainer');
-      if (!container) return;
-
-      container.innerHTML = '';
-      const arr = Array.isArray(radioChannelsArray) ? radioChannelsArray : Object.values(radioChannelsArray || {});
-      if (!arr || arr.length === 0) {
-        container.innerHTML = '<em style="color:#777; font-size:12px;">No radio channels currently assigned to this incident.</em>';
-        return;
-      }
-
-      arr.forEach((rc, idx) => {
-        const row = document.createElement('div');
-        row.className = 'radio-assignment-row';
-        row.innerHTML = `
-          <strong style="color:#16a085; min-width: 100px;">${rc.name}</strong>
-          <span style="color:#ccc; font-size:13px; flex:1;">${rc.desc || '<em>No description</em>'}</span>
-          <button onclick="removeRadioChannelFromCall(${idx})" style="background:#c0392b; font-size:11px; padding:3px 8px;">Remove</button>
-        `;
-        container.appendChild(row);
-      });
-    }
-
-    function addRadioChannelToCall() {
-      if (!activeModalIncidentId) return;
-
-      const select = document.getElementById('modalAddRadioSelect');
-      const descInput = document.getElementById('modalAddRadioDescInput');
-      const channelName = select.value;
-      const channelDesc = descInput.value.trim();
-
-      if (!channelName) {
-        alert("Please select a radio channel to assign.");
-        return;
-      }
-
-      const inc = loadedIncidents[activeModalIncidentId] || {};
-      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
-
-      if (currentRadios.some(r => r.name === channelName)) {
-        alert(`Radio channel ${channelName} is already assigned to this call.`);
-        return;
-      }
-
-      currentRadios.push({
-        name: channelName,
-        desc: channelDesc
-      });
-
-      db.ref(`incidents/${activeModalIncidentId}`).update({
-        radioChannels: currentRadios
-      });
-
-      select.value = '';
-      descInput.value = '';
-    }
-
-    function removeRadioChannelFromCall(index) {
-      if (!activeModalIncidentId) return;
-
-      const inc = loadedIncidents[activeModalIncidentId] || {};
-      const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
-      currentRadios.splice(index, 1);
-
-      db.ref(`incidents/${activeModalIncidentId}`).update({
-        radioChannels: currentRadios
-      });
-    }
-
+    // CLEAR & ARCHIVE CALL
     function clearCurrentModalCall() {
       if (!activeModalIncidentId) return;
       if (confirm("Clear and archive this incident? Assigned units will automatically be set to AVAILABLE.")) {
@@ -2274,12 +3526,23 @@
               });
             });
 
-            db.ref(`pastIncidents`).push({
-              ...callData,
-              clearedAt: Date.now()
+            db.ref(`incidents/${id}/logs`).push({
+              author: 'CAD SYSTEM',
+              text: `Incident cleared and archived by Dispatch. Assigned units (${formatAssignedShortIds(assignedUnits)}) returned to AVAILABLE.`,
+              timestamp: Date.now()
             });
 
-            db.ref(`incidents/${id}`).remove();
+            db.ref(`incidents/${id}`).once('value', (finalSnap) => {
+              db.ref('pastIncidents').push({
+                ...finalSnap.val(),
+                clearedAt: Date.now()
+              });
+
+              db.ref(`incidents/${id}`).remove();
+              closeEditModal();
+              alert("Incident cleared! Assigned units returned to AVAILABLE.");
+            });
+          } else {
             closeEditModal();
           }
         });
@@ -2299,186 +3562,297 @@
       document.getElementById('modalLogInput').value = '';
     }
 
-    function openUnitDispatchModal() {
-      if (!activeModalIncidentId) return;
-      document.getElementById('suggestResponseNotice').style.display = 'none';
-      const inc = loadedIncidents[activeModalIncidentId];
-      const assigned = Array.isArray(inc?.assignedUnits) ? inc.assignedUnits : Object.values(inc?.assignedUnits || {});
-      currentDispatchSelectionOrder = [...assigned];
-      renderUnitDispatchList();
-      document.getElementById('unitDispatchModal').style.display = 'flex';
+    function openStationModal() {
+      document.getElementById('stationModal').style.display = 'flex';
+      initMap();
     }
 
-    function closeUnitDispatchModal() {
-      document.getElementById('unitDispatchModal').style.display = 'none';
+    function closeStationModal() {
+      document.getElementById('stationModal').style.display = 'none';
     }
 
-    function toggleUnitDispatchSelection(uId, isChecked) {
-      if (isChecked) {
-        if (!currentDispatchSelectionOrder.includes(uId)) {
-          currentDispatchSelectionOrder.push(uId);
-        }
-      } else {
-        currentDispatchSelectionOrder = currentDispatchSelectionOrder.filter(id => id !== uId);
-      }
-    }
+    // --- LEAFLET MAP ENGINE INITIALIZATION (SAFE & SYNCHRONIZED) ---
+    function initCallTakingMap() {
+      if (callTakingMap) return;
+      const el = document.getElementById('callTakingMap');
+      if (!el || el._leaflet_id) return;
 
-    async function renderUnitDispatchList() {
-      const container = document.getElementById('unitDispatchScrollList');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const unitKeys = Object.keys(loadedUnits);
-      if (unitKeys.length === 0) {
-        container.innerHTML = '<em>No active units logged in.</em>';
-        return;
-      }
-
-      unitKeys.forEach(uId => {
-        const unit = loadedUnits[uId];
-        const isChecked = currentDispatchSelectionOrder.includes(uId);
-        const div = document.createElement('div');
-        div.className = 'unit-dispatch-item';
-        div.innerHTML = `
-          <div>
-            <strong>${uId}</strong> (${unit.shortId || uId})
-            <span class="status-${unit.status}" style="font-size:12px; margin-left:8px;">[${(unit.status || 'AVAILABLE').replace(/_/g, ' ')}]</span>
-          </div>
-          <input type="checkbox" class="dispatch-unit-select" value="${uId}" ${isChecked ? 'checked' : ''} onchange="toggleUnitDispatchSelection('${uId}', this.checked)">
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function confirmUnitDispatchSelection() {
-      if (!activeModalIncidentId) return;
-
-      const newStatus = currentDispatchSelectionOrder.length > 0 ? 'DISPATCHED' : 'PENDING';
-      db.ref(`incidents/${activeModalIncidentId}`).update({
-        assignedUnits: currentDispatchSelectionOrder,
-        status: newStatus
-      });
-
-      currentDispatchSelectionOrder.forEach(uId => {
-        db.ref(`units/${uId}`).update({
-          status: 'DISPATCHED',
-          lastUpdated: Date.now()
-        });
-      });
-
-      closeUnitDispatchModal();
-    }
-
-    async function suggestResponseForCall() {
-      alert("Auto suggestion logic updated.");
-    }
-
-    async function executeCallUpgrade() {
-      alert("Call upgraded.");
-    }
-
-    function handleAddressInput(val) {
-      // Stub autocomplete
-    }
-    function handleTypeInput(val) {}
-    function handleTypeInputModal(val) {}
-    function handleUpgradeTypeInput(val) {}
-
-    // --- FIREBASE LISTENERS ---
-    db.ref('stations').on('value', (snapshot) => {
       try {
-        loadedStations = snapshot.val() || {};
-        refreshUnitCreatorStationDropdown();
-        renderUnitRoster();
-        refreshMapLayers();
-      } catch(e) { console.error("Error in stations listener:", e); }
-    });
+        callTakingMap = L.map('callTakingMap').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
 
-    db.ref('radioChannels').on('value', (snapshot) => {
-      try {
-        const data = snapshot.val() || {};
-        loadedRadioChannels = Object.keys(data).map(k => ({ id: k, name: data[k].name }));
-        refreshModalAddRadioDropdown();
-      } catch(e) { console.error("Error in radioChannels listener:", e); }
-    });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(callTakingMap);
 
-    db.ref('callTypes').on('value', (snapshot) => {
-      try {
-        const data = snapshot.val() || {};
-        loadedCallTypes = Object.keys(data).map(k => ({ id: k, name: data[k].name, responseOrder: data[k].responseOrder || [] }));
-      } catch(e) { console.error("Error in callTypes listener:", e); }
-    });
-
-    db.ref('customRoles').on('value', (snapshot) => {
-      try {
-        const data = snapshot.val();
-        if (!data) {
-          defaultInitialRoles.forEach(r => db.ref('customRoles').push(r));
-          return;
-        }
-        loadedTraits = Object.keys(data).map(k => ({ id: k, name: data[k].name, category: data[k].category || "10" }));
-        renderTraitsManagerList();
-        renderAllRoleGrids();
-      } catch(e) { console.error("Error in customRoles listener:", e); }
-    });
-
-    db.ref('boxAreas').on('value', (snapshot) => {
-      try {
-        loadedBoxAreas = snapshot.val() || {};
-        refreshMapLayers();
-      } catch(e) { console.error("Error in boxAreas listener:", e); }
-    });
-
-    db.ref('units').on('value', (snapshot) => {
-      try {
-        loadedUnits = snapshot.val() || {};
-        renderUnitRoster();
-        refreshMapLayers();
-      } catch(e) { console.error("Error in units listener:", e); }
-    });
-
-    db.ref('incidents').on('value', (snapshot) => {
-      try {
-        loadedIncidents = snapshot.val() || {};
-        const incidentListEl = document.getElementById('activeIncidentList');
-        if (incidentListEl) {
-          incidentListEl.innerHTML = '';
-          const keys = Object.keys(loadedIncidents);
-          activeIncidentIdOrder = keys;
-
-          if (keys.length === 0) {
-            incidentListEl.innerHTML = '<em>No active or pending incidents currently.</em>';
-          } else {
-            keys.forEach((id, index) => {
-              const inc = loadedIncidents[id];
-              const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
-              const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
-              const callNumBadge = `<span class="call-num-badge">#${index + 1}</span>`;
-              
-              const card = document.createElement('div');
-              card.className = `incident-card ${isPending ? 'pending' : ''}`;
-              const statusBadge = isPending ? '<span class="badge-pending">PENDING</span>' : '<span class="badge-dispatched">DISPATCHED</span>';
-
-              card.innerHTML = `
-                <div class="incident-header">
-                  <strong style="font-size: 16px;">${callNumBadge}${inc.type} ${statusBadge} ${boxBadge}</strong>
-                  <div>
-                    <button class="btn-manage" onclick="openEditModal('${id}')">Open / Dispatch Call</button>
-                  </div>
-                </div>
-                <p style="margin: 5px 0;"><strong>Location:</strong> ${inc.address}</p>
-                <p style="margin: 5px 0;"><strong>Assigned Units:</strong> ${formatAssignedShortIds(inc.assignedUnits)}</p>
-              `;
-              incidentListEl.appendChild(card);
-            });
+        const GridLayer = L.GridLayer.extend({
+          createTile: function (coords) {
+            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+            const size = this.getTileSize();
+            tile.width = size.x;
+            tile.height = size.y;
+            const ctx = tile.getContext('2d');
+            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, size.x, size.y);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px monospace';
+            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+            return tile;
           }
+        });
+
+        new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
+
+        callTakingMap.on('click', function(e) {
+          updateCallPinPosition(e.latlng.lat, e.latlng.lng);
+          const addrInput = document.getElementById('incidentAddress');
+          if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+            addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
+          }
+        });
+      } catch (err) {
+        console.error("Error initializing Call Taking Map:", err);
+      }
+    }
+
+    function initMap() {
+      if (map) return;
+      const el = document.getElementById('map');
+      if (!el || el._leaflet_id) return;
+
+      try {
+        map = L.map('map').setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const GridLayer = L.GridLayer.extend({
+          createTile: function (coords) {
+            const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+            const size = this.getTileSize();
+            tile.width = size.x;
+            tile.height = size.y;
+            const ctx = tile.getContext('2d');
+            ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, size.x, size.y);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '10px monospace';
+            ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
+            return tile;
+          }
+        });
+
+        gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
+
+        incidentMarkersLayer = L.layerGroup().addTo(map);
+        stationMarkersLayer = L.layerGroup().addTo(map);
+        unitAvlMarkersLayer = L.layerGroup().addTo(map);
+        boxAreasLayer = L.layerGroup().addTo(map);
+
+        const overlayControl = {
+          "Tactical Grid": gridOverlay,
+          "Active & Pending Calls": incidentMarkersLayer,
+          "Stations": stationMarkersLayer,
+          "Unit Positions / AVL": unitAvlMarkersLayer,
+          "Box Areas / Districts": boxAreasLayer
+        };
+
+        L.control.layers(null, overlayControl, { collapsed: false }).addTo(map);
+
+        // Geoman toolbar check
+        if (map.pm && typeof map.pm.addControls === 'function') {
+          try {
+            map.pm.addControls({
+              position: 'topleft',
+              drawPolygon: true,
+              drawRectangle: true,
+              drawMarker: false,
+              drawCircleMarker: false,
+              drawPolyline: false,
+              drawCircle: false,
+              editMode: true,
+              dragMode: false,
+              cutPolygon: false,
+              removalMode: true
+            });
+          } catch(e) { console.warn("Geoman addControls failed:", e); }
         }
+
+        map.on('pm:create', (e) => {
+          try {
+            const shape = e.layer;
+            const latlngs = shape.getLatLngs()[0];
+            const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
+
+            const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
+            if (boxName && boxName.trim() !== "") {
+              const newBoxRef = db.ref('boxAreas').push();
+              newBoxRef.set({
+                name: boxName.trim(),
+                color: '#8e44ad',
+                coordinates: coordinates,
+                createdAt: Date.now()
+              });
+              alert(`Box Area "${boxName.trim()}" saved!`);
+            }
+            map.removeLayer(shape);
+          } catch(err) { console.error("Error creating polygon box area:", err); }
+        });
+
         refreshMapLayers();
-      } catch(e) { console.error("Error in incidents listener:", e); }
-    });
+      } catch (err) {
+        console.error("Critical error in initMap:", err);
+      }
+    }
+
+    function refreshMapLayers() {
+      if (!map) return;
+
+      // 1. Incidents
+      try {
+        incidentMarkersLayer.clearLayers();
+        Object.keys(loadedIncidents).forEach(id => {
+          const inc = loadedIncidents[id];
+          if (inc && inc.lat && inc.lng) {
+            const lat = parseFloat(inc.lat);
+            const lng = parseFloat(inc.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
+              const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
+              
+              let radioInfo = '';
+              const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
+              if (radios.length > 0) {
+                radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
+              }
+
+              const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
+              const marker = L.marker([lat, lng], { icon: markerIcon })
+                .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
+              incidentMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing incidents layer:", e); }
+
+      // 2. Stations
+      try {
+        stationMarkersLayer.clearLayers();
+        Object.keys(loadedStations).forEach(id => {
+          const st = loadedStations[id];
+          if (st && st.lat && st.lng) {
+            const lat = parseFloat(st.lat);
+            const lng = parseFloat(st.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
+              const marker = L.marker([lat, lng])
+                .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
+              stationMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing stations layer:", e); }
+
+      // 3. Units AVL
+      try {
+        unitAvlMarkersLayer.clearLayers();
+        const now = Date.now();
+
+        Object.keys(loadedUnits).forEach(uId => {
+          const unit = loadedUnits[uId];
+          if (unit && unit.location && unit.location.lat && unit.location.lng) {
+            const lat = parseFloat(unit.location.lat);
+            const lng = parseFloat(unit.location.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const statusVal = unit.status || 'AVAILABLE';
+              const statusText = statusVal.replace(/_/g, ' ');
+              const shortDisplay = unit.shortId || uId;
+              
+              const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
+              const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
+              const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
+
+              const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
+              const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
+
+              const marker = L.marker([lat, lng], { icon: bubbleIcon })
+                .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`);
+              unitAvlMarkersLayer.addLayer(marker);
+            }
+          }
+        });
+      } catch (e) { console.warn("Error drawing unit AVL layer:", e); }
+
+      // 4. Box Areas
+      try {
+        boxAreasLayer.clearLayers();
+        Object.keys(loadedBoxAreas).forEach(bId => {
+          const box = loadedBoxAreas[bId];
+          if (!box) return;
+          const coords = getNormalizedCoords(box.coordinates);
+          if (coords && coords.length >= 3) {
+            const polygon = L.polygon(coords, {
+              color: '#8e44ad',
+              fillColor: '#8e44ad',
+              weight: 2,
+              fillOpacity: 0.18
+            }).bindPopup(`<b>Response Zone: ${box.name || bId}</b>`);
+            boxAreasLayer.addLayer(polygon);
+          }
+        });
+      } catch (e) { console.warn("Error drawing box areas layer:", e); }
+    }
+
+    // --- TAB SWITCHING (SAFE & GUARANTEED RESIZE) ---
+    function switchTab(tabId, btnEl) {
+      try {
+        document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        const targetPage = document.getElementById(tabId);
+        if (targetPage) targetPage.classList.add('active');
+        if (btnEl) btnEl.classList.add('active');
+
+        if (tabId === 'callTakingTab') {
+          setTimeout(() => {
+            if (!callTakingMap) {
+              initCallTakingMap();
+            }
+            if (callTakingMap) {
+              callTakingMap.invalidateSize();
+              if (!selectedLat) {
+                callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+              }
+            }
+          }, 120);
+        } else if (tabId === 'mapTab') {
+          setTimeout(() => {
+            if (!map) {
+              initMap();
+            }
+            if (map) {
+              map.invalidateSize();
+              refreshMapLayers();
+            }
+          }, 120);
+        }
+      } catch(err) {
+        console.error("switchTab critical error:", err);
+      }
+    }
 
     window.onload = function() {
       initCallTakingMap();
+      setTimeout(() => {
+        if (callTakingMap) {
+          callTakingMap.invalidateSize();
+          callTakingMap.setView([defaultMapLat, defaultMapLng], defaultMapZoom);
+        }
+      }, 200);
     };
   </script>
 </body>
