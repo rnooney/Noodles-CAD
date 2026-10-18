@@ -401,7 +401,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT, EXPORT, AND PURGE) -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT, EXPORT, SEARCH & PURGE) -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 780px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -431,6 +431,11 @@
           <button onclick="processBoundaryImport(false)" style="background: #27ae60; flex: 1; font-size: 12px; padding: 8px;">Append / Add to Existing</button>
           <button onclick="processBoundaryImport(true)" style="background: #c0392b; flex: 1; font-size: 12px; padding: 8px;">Replace / Overwrite All</button>
         </div>
+      </div>
+
+      <!-- LIVE SEARCH FILTER FOR BOX AREAS -->
+      <div style="margin-bottom: 12px;">
+        <input type="text" id="boxAreaSearchInput" placeholder="Filter box areas by name or district..." oninput="handleBoxAreaSearchInput(this.value)" style="margin-bottom:0; background:#141414; border:1px solid #444; font-size:14px;">
       </div>
 
       <div class="section-title">Configured Box Areas</div>
@@ -1387,357 +1392,20 @@
       }
     });
 
-    function getStationAvailableCrewsPool() {
-      const stationPool = {};
+    // --- LIVE FILTER SEARCH ON BOX AREAS ---
+    function handleBoxAreaSearchInput(query) {
+      const filter = (query || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('#configuredBoxAreasList .box-area-row');
       
-      Object.keys(loadedStations).forEach(stId => {
-        const st = loadedStations[stId];
-        stationPool[stId] = {
-          staffedRemaining: st.staffedCrews !== undefined ? parseInt(st.staffedCrews) : 1,
-          onCallRemaining: st.onCallCrews !== undefined ? parseInt(st.onCallCrews) : 1,
-          onCallPulledCount: 0
-        };
-      });
-
-      const inServiceActiveStatuses = ['AVAILABLE', 'DISPATCHED', 'ENROUTE', 'ONSCENE', 'TRANSPORTING', 'ARRIVED'];
-
-      Object.keys(loadedUnits).forEach(uId => {
-        const unit = loadedUnits[uId];
-        const stId = unit.assignedStationId;
-        const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
-        const currentStatus = unit.status || 'AVAILABLE';
-
-        if (isCrossStaffed && stId && stationPool[stId] && inServiceActiveStatuses.includes(currentStatus)) {
-          const pool = stationPool[stId];
-          if (pool.staffedRemaining > 0) {
-            pool.staffedRemaining--;
-          } else if (pool.onCallRemaining > 0) {
-            pool.onCallRemaining--;
-            pool.onCallPulledCount++;
-          }
-        }
-      });
-
-      return stationPool;
-    }
-
-    const GridLayer = L.GridLayer.extend({
-      createTile: function (coords) {
-        const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-        const size = this.getTileSize();
-        tile.width = size.x;
-        tile.height = size.y;
-
-        const ctx = tile.getContext('2d');
-        ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(0, 0, size.x, size.y);
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = '10px monospace';
-        ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-
-        return tile;
-      }
-    });
-
-    function getStraightLineInMiles(lat1, lon1, lat2, lon2) {
-      if (!lat1 || !lon1 || !lat2 || !lon2) return 99999;
-      const R = 3958.8;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    }
-
-    async function calculateRoadRoute(originLat, originLng, destLat, destLng) {
-      try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=false`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (data && data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          const distanceMiles = (route.distance / 1609.34);
-          const timeMinutes = ((route.duration * EMERGENCY_RESPONSE_MULTIPLIER) / 60);
-          return {
-            distanceMiles: distanceMiles,
-            timeMinutes: timeMinutes,
-            isRoadRoute: true
-          };
-        }
-      } catch (err) {
-        console.warn("OSRM fallback", err);
-      }
-
-      const dist = getStraightLineInMiles(originLat, originLng, destLat, destLng);
-      const approxMinutes = (dist / 35) * 60;
-      return {
-        distanceMiles: dist,
-        timeMinutes: approxMinutes,
-        isRoadRoute: false
-      };
-    }
-
-    function initCallTakingMap() {
-      if (callTakingMap) return;
-
-      const initLat = defaultMapLat || 35.7327;
-      const initLng = defaultMapLng || -78.8503;
-
-      callTakingMap = L.map('callTakingMap').setView([initLat, initLng], defaultMapZoom);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(callTakingMap);
-
-      new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
-
-      callTakingMap.on('click', function(e) {
-        updateCallPinPosition(e.latlng.lat, e.latlng.lng);
-        const addrInput = document.getElementById('incidentAddress');
-        if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
-          addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (!filter || text.includes(filter)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
         }
       });
     }
-
-    function updateCallPinPosition(lat, lng) {
-      selectedLat = parseFloat(lat).toFixed(5);
-      selectedLng = parseFloat(lng).toFixed(5);
-
-      detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
-
-      document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
-      document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
-
-      if (callTakingMarker) {
-        callTakingMap.removeLayer(callTakingMarker);
-      }
-
-      callTakingMarker = L.marker([selectedLat, selectedLng], { draggable: true }).addTo(callTakingMap);
-      callTakingMap.panTo([selectedLat, selectedLng]);
-
-      callTakingMarker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
-        selectedLat = pos.lat.toFixed(5);
-        selectedLng = pos.lng.toFixed(5);
-        detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
-        document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
-        document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
-
-        const addrInput = document.getElementById('incidentAddress');
-        if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
-          addrInput.value = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
-        }
-      });
-    }
-
-    window.onload = function() {
-      initCallTakingMap();
-    };
-
-    function initMap() {
-      if (map) return;
-
-      const initLat = defaultMapLat || 35.7327;
-      const initLng = defaultMapLng || -78.8503;
-
-      map = L.map('map').setView([initLat, initLng], defaultMapZoom);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
-      gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
-
-      incidentMarkersLayer = L.layerGroup().addTo(map);
-      stationMarkersLayer = L.layerGroup().addTo(map);
-      unitAvlMarkersLayer = L.layerGroup().addTo(map);
-      boxAreasLayer = L.layerGroup().addTo(map);
-
-      const overlayControl = {
-        "Tactical Grid": gridOverlay,
-        "Active & Pending Calls": incidentMarkersLayer,
-        "Stations": stationMarkersLayer,
-        "Unit Positions / AVL": unitAvlMarkersLayer,
-        "Box Areas / Districts": boxAreasLayer
-      };
-
-      L.control.layers(null, overlayControl, { collapsed: false }).addTo(map);
-
-      map.pm.addControls({
-        position: 'topleft',
-        drawPolygon: true,
-        drawRectangle: true,
-        drawMarker: false,
-        drawCircleMarker: false,
-        drawPolyline: false,
-        drawCircle: false,
-        editMode: true,
-        dragMode: false,
-        cutPolygon: false,
-        removalMode: true
-      });
-
-      map.on('pm:create', (e) => {
-        const shape = e.layer;
-        const latlngs = shape.getLatLngs()[0];
-        const coordinates = latlngs.map(ll => [parseFloat(ll.lat.toFixed(5)), parseFloat(ll.lng.toFixed(5))]);
-
-        const boxName = prompt("Enter Name/Number for this Response Box Area (e.g. Box 3301, District 1):");
-        if (boxName && boxName.trim() !== "") {
-          const newBoxRef = db.ref('boxAreas').push();
-          newBoxRef.set({
-            name: boxName.trim(),
-            color: '#8e44ad',
-            coordinates: coordinates,
-            createdAt: Date.now()
-          });
-          alert(`Box Area "${boxName.trim()}" saved!`);
-        }
-        map.removeLayer(shape);
-      });
-
-      refreshMapLayers();
-    }
-
-    function switchTab(tabId, btnEl) {
-      document.querySelectorAll('.tab-page').forEach(page => page.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-      document.getElementById(tabId).classList.add('active');
-      btnEl.classList.add('active');
-
-      if (tabId === 'callTakingTab' && callTakingMap) {
-        setTimeout(() => { 
-          callTakingMap.invalidateSize();
-        }, 150);
-      } else if (tabId === 'mapTab') {
-        initMap();
-        setTimeout(() => { 
-          if (map) {
-            map.invalidateSize(); 
-            refreshMapLayers();
-          }
-        }, 150);
-      }
-    }
-
-    function refreshMapLayers() {
-      if (!map) return;
-
-      incidentMarkersLayer.clearLayers();
-      Object.keys(loadedIncidents).forEach(id => {
-        const inc = loadedIncidents[id];
-        if (inc.lat && inc.lng) {
-          const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
-          const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
-          
-          let radioInfo = '';
-          const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
-          if (radios.length > 0) {
-            radioInfo = '<br><b>Radios:</b> ' + radios.map(r => `${r.name}${r.desc ? ' (' + r.desc + ')' : ''}`).join(', ');
-          }
-
-          const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
-
-          const marker = L.marker([inc.lat, inc.lng], { icon: markerIcon })
-            .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
-          incidentMarkersLayer.addLayer(marker);
-        }
-      });
-
-      stationMarkersLayer.clearLayers();
-      Object.keys(loadedStations).forEach(id => {
-        const st = loadedStations[id];
-        if (st.lat && st.lng) {
-          const staffText = `Staffed: ${st.staffedCrews || 0} | On-Call: ${st.onCallCrews || 0}`;
-          const marker = L.marker([st.lat, st.lng])
-            .bindPopup(`<b>Station: ${st.name}</b><br><small style="color:#aaa;">${staffText}</small>`);
-          stationMarkersLayer.addLayer(marker);
-        }
-      });
-
-      unitAvlMarkersLayer.clearLayers();
-      const now = Date.now();
-
-      Object.keys(loadedUnits).forEach(uId => {
-        const unit = loadedUnits[uId];
-        if (unit.location && unit.location.lat && unit.location.lng) {
-          const statusVal = unit.status || 'AVAILABLE';
-          const statusText = statusVal.replace(/_/g, ' ');
-          const shortDisplay = unit.shortId || uId;
-          
-          const isGpsAvl = unit.location.type === 'LIVE_GPS_AVL';
-          const ageMs = now - (unit.location.lastUpdated || unit.lastUpdated || now);
-          const isStale = isGpsAvl && (ageMs > 2 * 60 * 1000);
-
-          const bubbleIcon = createUnitBubbleIcon(shortDisplay, statusVal, isStale);
-          const staleTag = isStale ? '<br><span style="color:#f1c40f; font-weight:bold;">[STALE GPS SIGNAL]</span>' : '';
-
-          const marker = L.marker([unit.location.lat, unit.location.lng], { icon: bubbleIcon })
-            .bindPopup(`<b>Unit: ${uId} (${shortDisplay})</b><br>Status: ${statusText}<br>Location Type: ${unit.location.type || 'AVL GPS'}${staleTag}`);
-          unitAvlMarkersLayer.addLayer(marker);
-        }
-      });
-
-      boxAreasLayer.clearLayers();
-      Object.keys(loadedBoxAreas).forEach(bId => {
-        const box = loadedBoxAreas[bId];
-        const coords = getNormalizedCoords(box.coordinates);
-        if (coords.length >= 3) {
-          // Force standardized purple styling across all box areas
-          const polygon = L.polygon(coords, {
-            color: '#8e44ad',
-            fillColor: '#8e44ad',
-            weight: 2,
-            fillOpacity: 0.18
-          }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
-          boxAreasLayer.addLayer(polygon);
-        }
-      });
-    }
-
-    // --- AUTOMATIC STALE AVL GPS TIMEOUT WATCHDOG (5 MINUTE TIMEOUT) ---
-    setInterval(() => {
-      const now = Date.now();
-      const STALE_TIMEOUT_MS = 5 * 60 * 1000;
-      const committedStatuses = ['DISPATCHED', 'ENROUTE', 'ONSCENE', 'TRANSPORTING', 'ARRIVED'];
-
-      Object.keys(loadedUnits).forEach(uId => {
-        const unit = loadedUnits[uId];
-        const loc = unit.location;
-        const currentStatus = unit.status || 'AVAILABLE';
-
-        if (loc && loc.type === 'LIVE_GPS_AVL' && !committedStatuses.includes(currentStatus)) {
-          const ageMs = now - (loc.lastUpdated || unit.lastUpdated || 0);
-
-          if (ageMs > STALE_TIMEOUT_MS && unit.assignedStationId && loadedStations[unit.assignedStationId]) {
-            const st = loadedStations[unit.assignedStationId];
-            db.ref(`units/${uId}/location`).set({
-              lat: st.lat,
-              lng: st.lng,
-              type: 'STATIC_STATION',
-              lastUpdated: Date.now()
-            });
-            console.log(`[AVL TIMEOUT] Unit ${uId} GPS signal lost >5m. Reverted location to ${st.name}.`);
-          }
-        }
-      });
-    }, 30000);
-
-    // --- LISTEN FOR BOX AREAS ---
-    db.ref('boxAreas').on('value', (snapshot) => {
-      loadedBoxAreas = snapshot.val() || {};
-      renderConfiguredBoxAreasList();
-      refreshMapLayers();
-    });
 
     function renderConfiguredBoxAreasList() {
       const container = document.getElementById('configuredBoxAreasList');
@@ -1750,9 +1418,12 @@
         return;
       }
 
+      const currentSearch = document.getElementById('boxAreaSearchInput') ? document.getElementById('boxAreaSearchInput').value.toLowerCase().trim() : '';
+
       keys.forEach(bId => {
         const box = loadedBoxAreas[bId];
         const div = document.createElement('div');
+        div.className = 'box-area-row';
         div.style.padding = '8px 0';
         div.style.borderBottom = '1px solid #222';
         div.style.display = 'flex';
@@ -1768,6 +1439,13 @@
             <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
           </div>
         `;
+
+        if (currentSearch) {
+          div.style.display = box.name.toLowerCase().includes(currentSearch) ? 'flex' : 'none';
+        } else {
+          div.style.display = 'flex';
+        }
+
         container.appendChild(div);
       });
     }
@@ -1811,6 +1489,9 @@
     }
 
     function openBoxAreasModal() {
+      const searchInput = document.getElementById('boxAreaSearchInput');
+      if (searchInput) searchInput.value = '';
+      renderConfiguredBoxAreasList();
       document.getElementById('boxAreasModal').style.display = 'flex';
     }
 
@@ -1888,7 +1569,7 @@
               const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
               normalizedBoxes.push({
                 name: String(name).trim(),
-                color: '#8e44ad', // Standardized purple
+                color: '#8e44ad',
                 coordinates: leafletCoords,
                 createdAt: Date.now()
               });
