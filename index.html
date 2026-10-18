@@ -401,7 +401,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT & EXPORT) -->
+  <!-- BOX AREAS MANAGER MODAL (WITH JSON & KMZ/KML IMPORT, EXPORT, AND PURGE) -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 780px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -411,11 +411,12 @@
           <button onclick="closeBoxAreasModal()" style="background: #555; font-size: 12px; padding: 6px 12px; margin-left: 6px;">Close</button>
         </div>
       </div>
-      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import KMZ, KML, and GeoJSON boundaries exported from Google Earth, ArcGIS, or CAD systems.</p>
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, or import KMZ, KML, and GeoJSON boundaries. All box areas render in standard purple.</p>
 
       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button onclick="startDrawingBoxArea()" style="background:#8e44ad; flex: 1; font-size:13px; padding:10px;">+ Draw Box on Map</button>
         <button onclick="toggleJsonImportBox()" style="background:#34495e; flex: 1; font-size:13px; padding:10px;">Import KMZ / KML / JSON</button>
+        <button onclick="deleteAllBoxAreas()" style="background:#c0392b; flex: 1; font-size:13px; padding:10px;">Delete All Box Areas</button>
       </div>
 
       <!-- FILE & TEXT IMPORT PANEL -->
@@ -1151,7 +1152,6 @@
       const clean = query.trim().toLowerCase();
       const keys = Object.keys(loadedUnits);
       
-      // 1. Exact match on ID or Short ID
       for (let k of keys) {
         const u = loadedUnits[k];
         if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) {
@@ -1159,7 +1159,6 @@
         }
       }
 
-      // 2. Starts-with match
       for (let k of keys) {
         const u = loadedUnits[k];
         if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) {
@@ -1187,7 +1186,6 @@
       const tokens = cmd.split(/\s+/);
       const verb = tokens[0].toUpperCase();
 
-      // Help
       if (verb === 'HELP' || verb === '?') {
         alert("CAD CLI Commands:\n\n" +
               "• Update Unit Status: <UNIT> <STATUS>\n" +
@@ -1202,7 +1200,6 @@
         return;
       }
 
-      // Global status: ALL IQ / ALL AV
       if (verb === 'ALL' && tokens.length >= 2) {
         const sub = tokens[1].toUpperCase();
         if (sub === 'IQ' || sub === 'QUARTERS') {
@@ -1216,7 +1213,6 @@
         }
       }
 
-      // Clear / Remove: CLEAR <UNIT>
       if (verb === 'CLEAR' || verb === 'REM' || verb === 'REMOVE') {
         if (tokens.length < 2) {
           showCliFeedback("Syntax: CLEAR <UNIT_ID>", false);
@@ -1229,7 +1225,6 @@
           return;
         }
 
-        // Find which call has this unit
         let foundCallId = null;
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
@@ -1262,7 +1257,6 @@
         return;
       }
 
-      // Dispatch to call: DISP <UNIT> <CALL_INDEX> or ADD <UNIT> <CALL_INDEX>
       if (verb === 'DISP' || verb === 'DISPATCH' || verb === 'ADD') {
         if (tokens.length < 3) {
           showCliFeedback("Syntax: DISP <UNIT> <CALL_#>", false);
@@ -1315,7 +1309,6 @@
         return;
       }
 
-      // Status updates: <UNIT> <STATUS> (e.g. E1 D, R33 OS) or STATUS <UNIT> <STATUS>
       let unitQuery = null;
       let statusQuery = null;
 
@@ -1345,7 +1338,6 @@
           lastUpdated: Date.now()
         });
 
-        // Log to any call unit is currently assigned to
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
           const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
@@ -1365,7 +1357,6 @@
       showCliFeedback(`Unrecognized command: "${cmd}". Type HELP for syntax.`, false);
     }
 
-    // Keyboard shortcut (Ctrl+Space or Cmd+Space) to focus CLI prompt
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
         e.preventDefault();
@@ -1383,7 +1374,6 @@
       }
     });
 
-    // Enter key handler on CLI input
     window.addEventListener('DOMContentLoaded', () => {
       const cliInput = document.getElementById('cadCliInput');
       if (cliInput) {
@@ -1702,10 +1692,12 @@
         const box = loadedBoxAreas[bId];
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
+          // Force standardized purple styling across all box areas
           const polygon = L.polygon(coords, {
-            color: box.color || '#8e44ad',
+            color: '#8e44ad',
+            fillColor: '#8e44ad',
             weight: 2,
-            fillOpacity: 0.15
+            fillOpacity: 0.18
           }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
           boxAreasLayer.addLayer(polygon);
         }
@@ -1805,6 +1797,19 @@
       }
     }
 
+    function deleteAllBoxAreas() {
+      const count = Object.keys(loadedBoxAreas).length;
+      if (count === 0) {
+        alert("There are no box areas to delete.");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to PERMANENTLY REMOVE ALL ${count} box areas from the system? This action cannot be undone.`)) {
+        db.ref('boxAreas').set(null);
+        alert("All response box areas have been cleared.");
+      }
+    }
+
     function openBoxAreasModal() {
       document.getElementById('boxAreasModal').style.display = 'flex';
     }
@@ -1883,7 +1888,7 @@
               const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
               normalizedBoxes.push({
                 name: String(name).trim(),
-                color: props.stroke || props.fill || '#8e44ad',
+                color: '#8e44ad', // Standardized purple
                 coordinates: leafletCoords,
                 createdAt: Date.now()
               });
@@ -1906,7 +1911,7 @@
           if (item.coordinates && item.coordinates.length >= 3) {
             normalizedBoxes.push({
               name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
-              color: item.color || '#8e44ad',
+              color: '#8e44ad',
               coordinates: getNormalizedCoords(item.coordinates),
               createdAt: Date.now()
             });
@@ -1918,7 +1923,7 @@
           if (item.coordinates) {
             normalizedBoxes.push({
               name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
-              color: item.color || '#8e44ad',
+              color: '#8e44ad',
               coordinates: getNormalizedCoords(item.coordinates),
               createdAt: Date.now()
             });
@@ -1958,7 +1963,7 @@
         document.getElementById('boxJsonFileInput').value = '';
         document.getElementById('jsonImportPanel').style.display = 'none';
 
-        alert(`Successfully imported ${boxes.length} response box area(s)!`);
+        alert(`Successfully imported ${boxes.length} response box area(s) in standard purple!`);
       } catch (err) {
         console.error("Import parsing error:", err);
         alert("Invalid file format. Please verify the KMZ, KML, or GeoJSON structure.");
@@ -1974,7 +1979,7 @@
 
       const exportData = keys.map(k => ({
         name: loadedBoxAreas[k].name,
-        color: loadedBoxAreas[k].color || '#8e44ad',
+        color: '#8e44ad',
         coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
       }));
 
