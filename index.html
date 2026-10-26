@@ -420,9 +420,9 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH JSON, KMZ/KML & COLOR PICKER CONTROLS) -->
+  <!-- BOX AREAS MANAGER MODAL (WITH PRIORITY & ORDER ADJUSTMENTS) -->
   <div class="modal-overlay" id="boxAreasModal">
-    <div class="modal-content" style="max-width: 780px;">
+    <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <h2 style="margin: 0; color: #8e44ad;">Response Box Areas & Districts</h2>
         <div>
@@ -430,7 +430,7 @@
           <button onclick="closeBoxAreasModal()" style="background: #555; font-size: 12px; padding: 6px 12px; margin-left: 6px;">Close</button>
         </div>
       </div>
-      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons directly on the map, set custom zone colors, or import KMZ, KML, and GeoJSON boundaries.</p>
+      <p style="color:#aaa; font-size:13px; margin: 0 0 15px 0;">Draw custom box polygons, assign custom zone colors, or import KMZ/KML/GeoJSON boundaries. Adjust priorities using <strong>▲ Top</strong> / <strong>▼</strong> to ensure nested enclaves or islands are evaluated and rendered above regional boundaries.</p>
 
       <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
         <div style="display: flex; align-items: center; background: #2a2a2a; padding: 4px 10px; border-radius: 4px; border: 1px solid #444;">
@@ -466,8 +466,8 @@
         >
       </div>
 
-      <div class="section-title">Configured Box Areas</div>
-      <div id="configuredBoxAreasList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+      <div class="section-title">Configured Box Areas (Sorted by Evaluation Priority)</div>
+      <div id="configuredBoxAreasList" style="max-height: 250px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
         <em>Loading box areas...</em>
       </div>
     </div>
@@ -977,6 +977,18 @@
       }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
     }
 
+    // Shoelace formula to calculate approximate surface polygon area
+    function getPolygonArea(coords) {
+      if (!coords || coords.length < 3) return 0;
+      let area = 0;
+      for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+        const xi = coords[i][1], yi = coords[i][0];
+        const xj = coords[j][1], yj = coords[j][0];
+        area += (xj + xi) * (yj - yi);
+      }
+      return Math.abs(area / 2);
+    }
+
     function isPointInPolygon(point, vs) {
       const x = point[0], y = point[1];
       let inside = false;
@@ -989,16 +1001,29 @@
       return inside;
     }
 
+    // Evaluates prioritized / smaller enclave zones first
     function calculateBoxAreaForCoords(lat, lng) {
       if (!lat || !lng) return "Out of Area";
       const pt = [parseFloat(lat), parseFloat(lng)];
 
-      const keys = Object.keys(loadedBoxAreas);
-      for (let k of keys) {
+      const sortedBoxes = Object.keys(loadedBoxAreas).map(k => {
         const box = loadedBoxAreas[k];
         const coords = getNormalizedCoords(box.coordinates);
-        if (coords.length >= 3) {
-          if (isPointInPolygon(pt, coords)) {
+        return {
+          id: k,
+          name: box.name,
+          coords: coords,
+          priority: parseInt(box.priority) || 0,
+          area: getPolygonArea(coords)
+        };
+      }).sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority;
+        return a.area - b.area;
+      });
+
+      for (let box of sortedBoxes) {
+        if (box.coords.length >= 3) {
+          if (isPointInPolygon(pt, box.coords)) {
             return box.name;
           }
         }
@@ -1758,6 +1783,7 @@
           newBoxRef.set({
             name: boxName.trim(),
             color: chosenColor,
+            priority: 0,
             coordinates: coordinates,
             createdAt: Date.now()
           });
@@ -1850,7 +1876,21 @@
       });
 
       boxAreasLayer.clearLayers();
-      Object.keys(loadedBoxAreas).forEach(bId => {
+      
+      // Sort render order: larger zones render first at bottom, higher-priority and smaller islands render on top
+      const sortedRenderKeys = Object.keys(loadedBoxAreas).sort((a, b) => {
+        const boxA = loadedBoxAreas[a];
+        const boxB = loadedBoxAreas[b];
+        const prioA = parseInt(boxA.priority) || 0;
+        const prioB = parseInt(boxB.priority) || 0;
+        if (prioA !== prioB) return prioA - prioB;
+        
+        const areaA = getPolygonArea(getNormalizedCoords(boxA.coordinates));
+        const areaB = getPolygonArea(getNormalizedCoords(boxB.coordinates));
+        return areaB - areaA;
+      });
+
+      sortedRenderKeys.forEach(bId => {
         const box = loadedBoxAreas[bId];
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
@@ -1860,7 +1900,7 @@
             fillColor: polygonColor,
             weight: 2,
             fillOpacity: 0.18
-          }).bindPopup(`<b>Response Zone: ${box.name}</b><br><small style="color:${polygonColor};">Color: ${polygonColor}</small>`);
+          }).bindPopup(`<b>Response Zone: ${box.name}</b><br><small style="color:${polygonColor};">Priority: ${box.priority || 0}</small>`);
           boxAreasLayer.addLayer(polygon);
         }
       });
@@ -1927,10 +1967,19 @@
         ? document.getElementById('boxAreaSearchInput').value.toLowerCase().trim() 
         : '';
 
-      keys.forEach(bId => {
+      // Sort display list so top priority layers appear at the top
+      const sortedKeys = keys.sort((a, b) => {
+        const prioA = parseInt(loadedBoxAreas[a].priority) || 0;
+        const prioB = parseInt(loadedBoxAreas[b].priority) || 0;
+        if (prioB !== prioA) return prioB - prioA;
+        return (loadedBoxAreas[a].name || '').localeCompare(loadedBoxAreas[b].name || '');
+      });
+
+      sortedKeys.forEach(bId => {
         const box = loadedBoxAreas[bId];
         const boxName = box.name || 'Unnamed Box';
         const boxColor = box.color || '#8e44ad';
+        const priority = parseInt(box.priority) || 0;
         const verticesCount = getNormalizedCoords(box.coordinates).length;
 
         const div = document.createElement('div');
@@ -1952,15 +2001,28 @@
             >
             <div>
               <strong style="color:${boxColor};">${boxName}</strong>
-              <div style="font-size:11px; color:#aaa;">Vertices: ${verticesCount} coordinates</div>
+              <div style="font-size:11px; color:#aaa;">
+                Priority: <strong style="color:#f1c40f;">${priority}</strong> | Vertices: ${verticesCount}
+              </div>
             </div>
           </div>
-          <div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button onclick="adjustBoxPriority('${bId}', 1)" class="btn-action-sm" style="background:#27ae60;" title="Elevate evaluation priority / bring to front">▲ Top</button>
+            <button onclick="adjustBoxPriority('${bId}', -1)" class="btn-action-sm" style="background:#555;" title="Lower evaluation priority / send backward">▼</button>
             <button onclick="editBoxAreaName('${bId}', '${boxName.replace(/'/g, "\\'")}')" class="btn-action-sm btn-edit-sm">Edit</button>
             <button onclick="deleteBoxArea('${bId}')" class="btn-action-sm btn-delete-sm">Delete</button>
           </div>
         `;
         container.appendChild(div);
+      });
+    }
+
+    function adjustBoxPriority(bId, delta) {
+      if (!bId || !loadedBoxAreas[bId]) return;
+      const currentPriority = parseInt(loadedBoxAreas[bId].priority) || 0;
+      db.ref(`boxAreas/${bId}`).update({
+        priority: currentPriority + delta,
+        updatedAt: Date.now()
       });
     }
 
@@ -2082,6 +2144,7 @@
               normalizedBoxes.push({
                 name: String(name).trim(),
                 color: props.stroke || props.fill || '#8e44ad',
+                priority: 0,
                 coordinates: leafletCoords,
                 createdAt: Date.now()
               });
@@ -2096,6 +2159,7 @@
         normalizedBoxes.push({
           name: String(name).trim(),
           color: '#8e44ad',
+          priority: 0,
           coordinates: leafletCoords,
           createdAt: Date.now()
         });
@@ -2105,6 +2169,7 @@
             normalizedBoxes.push({
               name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
               color: item.color || '#8e44ad',
+              priority: parseInt(item.priority) || 0,
               coordinates: getNormalizedCoords(item.coordinates),
               createdAt: Date.now()
             });
@@ -2117,6 +2182,7 @@
             normalizedBoxes.push({
               name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
               color: item.color || '#8e44ad',
+              priority: parseInt(item.priority) || 0,
               coordinates: getNormalizedCoords(item.coordinates),
               createdAt: Date.now()
             });
@@ -2173,6 +2239,7 @@
       const exportData = keys.map(k => ({
         name: loadedBoxAreas[k].name,
         color: loadedBoxAreas[k].color || '#8e44ad',
+        priority: parseInt(loadedBoxAreas[k].priority) || 0,
         coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
       }));
 
