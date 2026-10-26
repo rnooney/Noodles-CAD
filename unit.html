@@ -472,6 +472,60 @@
       }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
     }
 
+    // Shoelace formula to calculate approximate surface polygon area
+    function getPolygonArea(coords) {
+      if (!coords || coords.length < 3) return 0;
+      let area = 0;
+      for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+        const xi = coords[i][1], yi = coords[i][0];
+        const xj = coords[j][1], yj = coords[j][0];
+        area += (xj + xi) * (yj - yi);
+      }
+      return Math.abs(area / 2);
+    }
+
+    function isPointInPolygon(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Priority + Area-Weighted Box Area Determination
+    function calculateBoxAreaForCoords(lat, lng) {
+      if (!lat || !lng) return "Out of Area";
+      const pt = [parseFloat(lat), parseFloat(lng)];
+
+      const sortedBoxes = Object.keys(loadedBoxAreas).map(k => {
+        const box = loadedBoxAreas[k];
+        const coords = getNormalizedCoords(box.coordinates);
+        return {
+          id: k,
+          name: box.name,
+          coords: coords,
+          priority: parseInt(box.priority) || 0,
+          area: getPolygonArea(coords)
+        };
+      }).sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority;
+        return a.area - b.area;
+      });
+
+      for (let box of sortedBoxes) {
+        if (box.coords.length >= 3) {
+          if (isPointInPolygon(pt, box.coords)) {
+            return box.name;
+          }
+        }
+      }
+      return "Out of Area";
+    }
+
     // --- REALTIME LISTEN FOR DEFAULT MAP VIEW ---
     db.ref('mapSettings/defaultView').on('value', (snapshot) => {
       const view = snapshot.val();
@@ -771,7 +825,7 @@
           if (!map) {
             initMap();
           } else {
-            map.invalidateSize();
+            map.invalidateSize(); 
             refreshMapLayers();
           }
         }, 100);
@@ -818,10 +872,12 @@
           const size = this.getTileSize();
           tile.width = size.x;
           tile.height = size.y;
+
           const ctx = tile.getContext('2d');
           ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
           ctx.lineWidth = 1;
           ctx.strokeRect(0, 0, size.x, size.y);
+
           ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
           ctx.font = '10px monospace';
           ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
@@ -897,15 +953,31 @@
       });
 
       boxAreasLayer.clearLayers();
-      Object.keys(loadedBoxAreas).forEach(bId => {
+
+      // Sort so larger zones are drawn first (bottom), smaller/higher priority on top
+      const sortedRenderKeys = Object.keys(loadedBoxAreas).sort((a, b) => {
+        const boxA = loadedBoxAreas[a];
+        const boxB = loadedBoxAreas[b];
+        const prioA = parseInt(boxA.priority) || 0;
+        const prioB = parseInt(boxB.priority) || 0;
+        if (prioA !== prioB) return prioA - prioB;
+        
+        const areaA = getPolygonArea(getNormalizedCoords(boxA.coordinates));
+        const areaB = getPolygonArea(getNormalizedCoords(boxB.coordinates));
+        return areaB - areaA;
+      });
+
+      sortedRenderKeys.forEach(bId => {
         const box = loadedBoxAreas[bId];
         const coords = getNormalizedCoords(box.coordinates);
         if (coords.length >= 3) {
+          const polygonColor = box.color || '#8e44ad';
           const polygon = L.polygon(coords, {
-            color: box.color || '#8e44ad',
+            color: polygonColor,
+            fillColor: polygonColor,
             weight: 2,
-            fillOpacity: 0.15
-          }).bindPopup(`<b>Response Zone: ${box.name}</b>`);
+            fillOpacity: 0.18
+          }).bindPopup(`<b>Response Zone: ${box.name}</b><br><small style="color:${polygonColor};">Priority: ${box.priority || 0}</small>`);
           boxAreasLayer.addLayer(polygon);
         }
       });
