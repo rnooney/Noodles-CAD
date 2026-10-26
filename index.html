@@ -207,6 +207,7 @@
     .btn-map-control:hover { background: #2c3e50; }
 
     #callTakingMap { height: 360px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 15px; }
+    #modalEditMap { height: 260px; width: 100%; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
     #map { height: 580px; width: 100%; border-radius: 0 0 6px 6px; border: 1px solid #444; }
 
     /* LEAFLET UNIT BUBBLE MARKER CSS */
@@ -303,7 +304,7 @@
       
       <div class="section-title">Incident Location (Address, Cross Streets e.g. "Main St & 1st Ave", or click map to plot)</div>
       <div class="autocomplete-container">
-        <input type="text" id="incidentAddress" placeholder="Enter address, cross streets (e.g. Hwy 55 & Main St), or click map..." oninput="handleAddressInput(this.value)" autocomplete="off">
+        <input type="text" id="incidentAddress" placeholder="Enter address, cross streets (e.g. Hwy 55 & Main St), or click map..." oninput="handleAddressInput(this.value, 'incidentAddress', 'autocompleteResults', updateCallPinPosition)" autocomplete="off">
         <div class="autocomplete-results" id="autocompleteResults"></div>
       </div>
 
@@ -585,7 +586,7 @@
     </div>
   </div>
 
-  <!-- EDIT / DISPATCH / UPGRADE INCIDENT MODAL -->
+  <!-- EDIT / DISPATCH / UPGRADE INCIDENT MODAL (WITH LIVE ADDRESS & PIN MODIFIER) -->
   <div class="modal-overlay" id="editCallModal">
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -594,8 +595,26 @@
       </div>
       
       <div style="margin-top: 15px;">
-        <div class="section-title">Location / Address</div>
-        <input type="text" id="modalAddressInput">
+        <!-- EDIT INCIDENT LOCATION & INTERACTIVE PIN -->
+        <div style="background: #181c24; border: 1px solid #283747; border-left: 4px solid #3498db; padding: 14px; border-radius: 4px; margin-bottom: 18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+            <span class="section-title" style="color:#3498db; margin-bottom:0;">Incident Address & Location</span>
+            <button onclick="saveEditedCallLocation()" style="background:#2980b9; font-size:12px; padding:6px 14px;">Save & Update Location</button>
+          </div>
+          
+          <div class="autocomplete-container" style="margin-bottom: 10px;">
+            <input type="text" id="modalAddressInput" placeholder="Change address, cross-streets, or adjust pin on map..." oninput="handleAddressInput(this.value, 'modalAddressInput', 'modalAddressAutocompleteResults', updateModalEditPinPosition)" style="margin-bottom: 0;" autocomplete="off">
+            <div class="autocomplete-results" id="modalAddressAutocompleteResults"></div>
+          </div>
+
+          <div id="modalEditMap"></div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #ccc;">
+            <span>Coordinates: <strong id="modalCoordsDisplay" style="color:#f1c40f;">Not Set</strong></span>
+            <span>Box Area: <strong id="modalBoxAreaDisplay" style="color:#9b59b6;">Out of Area</strong></span>
+          </div>
+          <small style="color: #888; display: block; margin-top: 4px;">Click the map or drag the pin to reposition the incident. Updating will automatically recalculate the box area and log an official entry.</small>
+        </div>
 
         <div class="section-title">Call Type</div>
         <div class="autocomplete-container">
@@ -883,10 +902,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let map, callTakingMap;
+    let map, callTakingMap, modalEditMap;
     let gridOverlay;
     let incidentMarkersLayer, stationMarkersLayer, unitAvlMarkersLayer, boxAreasLayer;
-    let callTakingMarker;
+    let callTakingMarker, modalEditMarker;
 
     let defaultMapLat = null;
     let defaultMapLng = null;
@@ -895,6 +914,11 @@
     let selectedLat = null;
     let selectedLng = null;
     let detectedBoxArea = "Out of Area";
+
+    let modalEditLat = null;
+    let modalEditLng = null;
+    let modalEditBoxArea = "Out of Area";
+
     let activeModalIncidentId = null;
     let debounceTimer;
 
@@ -1184,7 +1208,6 @@
       const clean = query.trim().toLowerCase();
       const keys = Object.keys(loadedUnits);
       
-      // 1. Exact match on ID or Short ID
       for (let k of keys) {
         const u = loadedUnits[k];
         if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) {
@@ -1192,7 +1215,6 @@
         }
       }
 
-      // 2. Starts-with match
       for (let k of keys) {
         const u = loadedUnits[k];
         if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) {
@@ -1220,7 +1242,6 @@
       const tokens = cmd.split(/\s+/);
       const verb = tokens[0].toUpperCase();
 
-      // Help
       if (verb === 'HELP' || verb === '?') {
         alert("CAD CLI Commands:\n\n" +
               "• Update Unit Status: <UNIT> <STATUS>\n" +
@@ -1235,7 +1256,6 @@
         return;
       }
 
-      // Global status: ALL IQ / ALL AV
       if (verb === 'ALL' && tokens.length >= 2) {
         const sub = tokens[1].toUpperCase();
         if (sub === 'IQ' || sub === 'QUARTERS') {
@@ -1249,7 +1269,6 @@
         }
       }
 
-      // Clear / Remove: CLEAR <UNIT>
       if (verb === 'CLEAR' || verb === 'REM' || verb === 'REMOVE') {
         if (tokens.length < 2) {
           showCliFeedback("Syntax: CLEAR <UNIT_ID>", false);
@@ -1262,7 +1281,6 @@
           return;
         }
 
-        // Find which call has this unit
         let foundCallId = null;
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
@@ -1295,7 +1313,6 @@
         return;
       }
 
-      // Dispatch to call: DISP <UNIT> <CALL_INDEX> or ADD <UNIT> <CALL_INDEX>
       if (verb === 'DISP' || verb === 'DISPATCH' || verb === 'ADD') {
         if (tokens.length < 3) {
           showCliFeedback("Syntax: DISP <UNIT> <CALL_#>", false);
@@ -1348,7 +1365,6 @@
         return;
       }
 
-      // Status updates: <UNIT> <STATUS> (e.g. E1 D, R33 OS) or STATUS <UNIT> <STATUS>
       let unitQuery = null;
       let statusQuery = null;
 
@@ -1378,7 +1394,6 @@
           lastUpdated: Date.now()
         });
 
-        // Log to any call unit is currently assigned to
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
           const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
@@ -1398,7 +1413,6 @@
       showCliFeedback(`Unrecognized command: "${cmd}". Type HELP for syntax.`, false);
     }
 
-    // Keyboard shortcut (Ctrl+Space or Cmd+Space) to focus CLI prompt
     document.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
         e.preventDefault();
@@ -1416,7 +1430,6 @@
       }
     });
 
-    // Enter key handler on CLI input
     window.addEventListener('DOMContentLoaded', () => {
       const cliInput = document.getElementById('cadCliInput');
       if (cliInput) {
@@ -1578,6 +1591,111 @@
           addrInput.value = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
         }
       });
+    }
+
+    // --- MODAL EDIT LOCATION MINI-MAP ---
+    function initModalEditMap(initialLat, initialLng) {
+      const lat = initialLat ? parseFloat(initialLat) : (defaultMapLat || 35.7327);
+      const lng = initialLng ? parseFloat(initialLng) : (defaultMapLng || -78.8503);
+
+      if (!modalEditMap) {
+        modalEditMap = L.map('modalEditMap').setView([lat, lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(modalEditMap);
+
+        modalEditMap.on('click', function(e) {
+          updateModalEditPinPosition(e.latlng.lat, e.latlng.lng);
+          const addrInput = document.getElementById('modalAddressInput');
+          if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+            addrInput.value = `Plotted Coordinates (${parseFloat(e.latlng.lat).toFixed(4)}, ${parseFloat(e.latlng.lng).toFixed(4)})`;
+          }
+        });
+      } else {
+        modalEditMap.setView([lat, lng], 13);
+      }
+
+      setTimeout(() => {
+        modalEditMap.invalidateSize();
+      }, 150);
+
+      updateModalEditPinPosition(lat, lng, false);
+    }
+
+    function updateModalEditPinPosition(lat, lng, pan = true) {
+      if (!lat || !lng) return;
+      modalEditLat = parseFloat(lat).toFixed(5);
+      modalEditLng = parseFloat(lng).toFixed(5);
+
+      modalEditBoxArea = calculateBoxAreaForCoords(modalEditLat, modalEditLng);
+
+      const coordsEl = document.getElementById('modalCoordsDisplay');
+      const boxEl = document.getElementById('modalBoxAreaDisplay');
+      if (coordsEl) coordsEl.innerText = `${modalEditLat}, ${modalEditLng}`;
+      if (boxEl) boxEl.innerText = modalEditBoxArea;
+
+      if (!modalEditMap) return;
+
+      if (modalEditMarker) {
+        modalEditMap.removeLayer(modalEditMarker);
+      }
+
+      modalEditMarker = L.marker([modalEditLat, modalEditLng], { draggable: true }).addTo(modalEditMap);
+      if (pan) modalEditMap.panTo([modalEditLat, modalEditLng]);
+
+      modalEditMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        modalEditLat = pos.lat.toFixed(5);
+        modalEditLng = pos.lng.toFixed(5);
+        modalEditBoxArea = calculateBoxAreaForCoords(modalEditLat, modalEditLng);
+
+        if (coordsEl) coordsEl.innerText = `${modalEditLat}, ${modalEditLng}`;
+        if (boxEl) boxEl.innerText = modalEditBoxArea;
+
+        const addrInput = document.getElementById('modalAddressInput');
+        if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
+          addrInput.value = `Plotted Coordinates (${modalEditLat}, ${modalEditLng})`;
+        }
+      });
+    }
+
+    function saveEditedCallLocation() {
+      if (!activeModalIncidentId) return;
+
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const newAddress = document.getElementById('modalAddressInput').value.trim();
+      if (!newAddress) {
+        alert("Please enter a valid address or plot coordinates on the map.");
+        return;
+      }
+
+      const prevAddress = inc.address;
+      const prevBox = inc.boxArea || 'N/A';
+      const updatedBox = modalEditBoxArea || calculateBoxAreaForCoords(modalEditLat, modalEditLng);
+
+      const updatePayload = {
+        address: newAddress,
+        boxArea: updatedBox,
+        updatedAt: Date.now()
+      };
+
+      if (modalEditLat && modalEditLng) {
+        updatePayload.lat = modalEditLat;
+        updatePayload.lng = modalEditLng;
+      }
+
+      db.ref(`incidents/${activeModalIncidentId}`).update(updatePayload);
+
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
+        author: 'DISPATCH',
+        text: `Incident location updated from [${prevAddress} - ${prevBox}] to [${newAddress} - ${updatedBox}].`,
+        timestamp: Date.now()
+      });
+
+      alert(`Incident location updated successfully to:\n${newAddress} [${updatedBox}]`);
     }
 
     window.onload = function() {
@@ -2524,13 +2642,13 @@
       return parts.slice(0, 4).join(', ');
     }
 
-    // --- ADDRESS & CROSS-STREET AUTOCOMPLETE WITH 25-MILE RADIUS CONSTRAINT ---
-    function handleAddressInput(query) {
+    // --- GENERIC ADDRESS & CROSS-STREET AUTOCOMPLETE WITH 25-MILE RADIUS CONSTRAINT ---
+    function handleAddressInput(query, targetInputId, resultsContainerId, pinUpdateCallback) {
       clearTimeout(debounceTimer);
-      const resultsContainer = document.getElementById('autocompleteResults');
+      const resultsContainer = document.getElementById(resultsContainerId);
       
       if (!query || query.trim().length < 3) {
-        resultsContainer.style.display = 'none';
+        if (resultsContainer) resultsContainer.style.display = 'none';
         return;
       }
 
@@ -2543,27 +2661,31 @@
         fetch(lookupUrl)
           .then(res => res.json())
           .then(data => {
+            if (!resultsContainer) return;
             resultsContainer.innerHTML = '';
             if (!data || data.length === 0) {
               fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&addressdetails=1&limit=4`)
                 .then(r => r.json())
                 .then(fallbackData => {
-                  renderAddressSuggestions(fallbackData, resultsContainer);
+                  renderAddressSuggestions(fallbackData, targetInputId, resultsContainerId, pinUpdateCallback);
                 })
                 .catch(() => { resultsContainer.style.display = 'none'; });
               return;
             }
 
-            renderAddressSuggestions(data, resultsContainer);
+            renderAddressSuggestions(data, targetInputId, resultsContainerId, pinUpdateCallback);
           })
           .catch(err => {
             console.error("Geocoding lookup error:", err);
-            resultsContainer.style.display = 'none';
+            if (resultsContainer) resultsContainer.style.display = 'none';
           });
       }, 300);
     }
 
-    function renderAddressSuggestions(items, resultsContainer) {
+    function renderAddressSuggestions(items, targetInputId, resultsContainerId, pinUpdateCallback) {
+      const resultsContainer = document.getElementById(resultsContainerId);
+      if (!resultsContainer) return;
+
       resultsContainer.innerHTML = '';
       if (!items || items.length === 0) {
         resultsContainer.style.display = 'none';
@@ -2577,8 +2699,11 @@
         div.innerHTML = `<strong>${cleanedLabel}</strong>`;
         
         div.onclick = function() {
-          document.getElementById('incidentAddress').value = cleanedLabel;
-          updateCallPinPosition(item.lat, item.lon);
+          const inputEl = document.getElementById(targetInputId);
+          if (inputEl) inputEl.value = cleanedLabel;
+          if (typeof pinUpdateCallback === 'function') {
+            pinUpdateCallback(item.lat, item.lon);
+          }
           resultsContainer.style.display = 'none';
         };
         resultsContainer.appendChild(div);
@@ -2633,10 +2758,17 @@
 
     document.addEventListener('click', function(e) {
       if (!e.target.closest('.autocomplete-container')) {
-        document.getElementById('autocompleteResults').style.display = 'none';
-        document.getElementById('typeAutocompleteResults').style.display = 'none';
-        document.getElementById('modalTypeAutocompleteResults').style.display = 'none';
-        document.getElementById('modalUpgradeAutocompleteResults').style.display = 'none';
+        const drop1 = document.getElementById('autocompleteResults');
+        const drop2 = document.getElementById('modalAddressAutocompleteResults');
+        const drop3 = document.getElementById('typeAutocompleteResults');
+        const drop4 = document.getElementById('modalTypeAutocompleteResults');
+        const drop5 = document.getElementById('modalUpgradeAutocompleteResults');
+
+        if (drop1) drop1.style.display = 'none';
+        if (drop2) drop2.style.display = 'none';
+        if (drop3) drop3.style.display = 'none';
+        if (drop4) drop4.style.display = 'none';
+        if (drop5) drop5.style.display = 'none';
       }
     });
 
@@ -3508,11 +3640,16 @@
         const callNumText = callIdx > 0 ? `[Call #${callIdx}] ` : '';
         const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
         document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type}${boxText}`;
-        document.getElementById('modalAddressInput').value = inc.address;
+        
+        if (document.activeElement !== document.getElementById('modalAddressInput')) {
+          document.getElementById('modalAddressInput').value = inc.address;
+        }
         document.getElementById('modalTypeInput').value = inc.type;
 
         renderModalRadioList(inc.radioChannels || []);
         renderModalAssignedUnitsChips(inc.assignedUnits || []);
+
+        initModalEditMap(inc.lat, inc.lng);
 
         const logs = inc.logs || {};
         const feed = document.getElementById('modalLogFeed');
@@ -3848,6 +3985,10 @@
       }
       activeModalIncidentId = null;
       document.getElementById('editCallModal').style.display = 'none';
+      if (modalEditMarker && modalEditMap) {
+        modalEditMap.removeLayer(modalEditMarker);
+        modalEditMarker = null;
+      }
     }
 
     // CLEAR & ARCHIVE CALL
