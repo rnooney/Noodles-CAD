@@ -3139,7 +3139,7 @@
         id: k,
         name: data[k].name,
         responseOrder: Array.isArray(data[k].responseOrder) ? data[k].responseOrder : Object.values(data[k].responseOrder || {})
-      }));
+      })).sort((a, b) => a.name.localeCompare(b.name));
 
       const listContainer = document.getElementById('configuredCallTypesList');
       if (listContainer) {
