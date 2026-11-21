@@ -171,6 +171,7 @@
     .alarm-tab-btn { background: #252525; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; }
     .alarm-tab-btn.active { background: #d35400; color: #fff; border-color: #e67e22; }
     .alarm-editor-box { background: #161616; border: 1px solid #3a3a3a; border-left: 4px solid #d35400; padding: 14px; border-radius: 4px; margin-bottom: 15px; }
+    .cumulative-preview-box { background: #0d1a14; border: 1px solid #1e4d38; padding: 8px 12px; border-radius: 4px; margin-top: 10px; font-size: 12px; color: #2ecc71; }
 
     .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
 
@@ -486,7 +487,7 @@
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -560,12 +561,12 @@
 
         <!-- UPGRADE CALL / ALARM LEVEL SECTION -->
         <div style="background: #231b15; padding: 15px; border-radius: 4px; border: 1px solid #d35400; margin-bottom: 15px;">
-          <span class="section-title" style="color:#e67e22; display:block; margin-bottom:8px;">Upgrade Call Alarm Level / Change Call Type</span>
+          <span class="section-title" style="color:#e67e22; display:block; margin-bottom:8px;">Escalate Alarm Series / Change Call Type</span>
           
-          <!-- QUICK ALARM LEVEL ESCALATION FOR CURRENT CALL TYPE -->
+          <!-- CUMULATIVE ALARM SERIES ESCALATION -->
           <div style="display:flex; gap:10px; margin-bottom: 10px;" id="quickAlarmUpgradeRow">
             <select id="modalAlarmUpgradeSelect" style="flex: 2; margin-bottom: 0;">
-              <option value="">-- Select Alarm Level --</option>
+              <option value="">-- Select Target Alarm Level --</option>
             </select>
             <button class="btn-upgrade" onclick="executeAlarmLevelUpgrade()" style="flex: 1; white-space: nowrap;">Upgrade Alarm & Dispatch</button>
           </div>
@@ -578,7 +579,7 @@
             </div>
             <button class="btn-upgrade" style="background:#a04000; flex:1; white-space:nowrap;" onclick="executeCallTypeSwitchUpgrade()">Switch Type & Dispatch</button>
           </div>
-          <small style="color:#aaa; display:block; margin-top:6px;">Analyzes currently assigned units and automatically dispatches only the additional units required by the target alarm run card.</small>
+          <small style="color:#aaa; display:block; margin-top:6px;">Sums all alarm levels in series up to the selected alarm level and dispatches only the additional units required beyond what is already assigned.</small>
         </div>
 
         <!-- MULTI-RADIO CHANNEL ASSIGNMENT MATRIX -->
@@ -700,22 +701,22 @@
     </div>
   </div>
 
-  <!-- CALL TYPES SETUP & MULTI-ALARM RUN CARD BUILDER MODAL -->
+  <!-- CALL TYPES SETUP & CUMULATIVE ALARM SERIES BUILDER MODAL -->
   <div class="modal-overlay" id="callTypesModal">
     <div class="modal-content" style="max-width: 820px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; color: #2980b9;">Call Types & Custom Alarm Level Run Cards</h2>
+        <h2 style="margin: 0; color: #2980b9;">Call Types & Cumulative Alarm Series Builder</h2>
         <button onclick="closeCallTypesModal()" style="background: #555;">Close Window</button>
       </div>
-      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure call types with custom-named alarm levels (e.g. <em>1st Alarm</em>, <em>Working Fire</em>, <em>2nd Alarm</em>) and define the apparatus run card for each level.</p>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Alarms operate <strong>in series</strong>: specify only the <strong>additional units</strong> added when escalating to each alarm level. The CAD automatically sums Alarm 1 + Alarm 2 + ... up to the active alarm level.</p>
 
       <div class="section-title">Call Type Name</div>
       <input type="text" id="newCallTypeInput" placeholder="e.g. Structure Fire, Brush Fire, Technical Rescue, MVA">
 
       <!-- ALARM LEVEL SELECTOR TABS -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span class="section-title" style="margin-bottom: 0; color: #f39c12;">Alarm Levels for this Call Type:</span>
-        <button onclick="addAlarmLevelToBuilder()" style="background: #27ae60; font-size: 12px; padding: 5px 12px;">+ Add Alarm Level</button>
+        <span class="section-title" style="margin-bottom: 0; color: #f39c12;">Alarm Series Levels:</span>
+        <button onclick="addAlarmLevelToBuilder()" style="background: #27ae60; font-size: 12px; padding: 5px 12px;">+ Add Next Alarm Level</button>
       </div>
       <div class="alarm-tabs-bar" id="alarmBuilderTabs"></div>
 
@@ -724,22 +725,26 @@
         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
           <div style="flex: 1;">
             <span class="section-title">Alarm Level Custom Title</span>
-            <input type="text" id="activeAlarmTitleInput" placeholder="e.g. 1st Alarm, Box Alarm, Working Fire, 2nd Alarm" oninput="updateActiveAlarmTitle(this.value)" style="margin-bottom: 0;">
+            <input type="text" id="activeAlarmTitleInput" placeholder="e.g. 1st Alarm, Working Fire, 2nd Alarm" oninput="updateActiveAlarmTitle(this.value)" style="margin-bottom: 0;">
           </div>
           <button id="btnRemoveAlarmLevel" onclick="removeCurrentAlarmLevel()" style="background: #c0392b; font-size: 12px; padding: 10px 14px; margin-top: 18px;">Remove Alarm</button>
         </div>
 
-        <div class="section-title">Build Run Card Sequence for <strong id="activeAlarmLabelIndicator" style="color:#f39c12;">Alarm 1</strong> (Click tags to append)</div>
+        <div class="section-title">Additional Units Added at <strong id="activeAlarmLabelIndicator" style="color:#f39c12;">Alarm 1</strong> (Click tags to append)</div>
         <div style="margin-bottom: 12px; background: #101010; padding: 10px; border-radius: 4px; border: 1px solid #333;" id="callTypeTagPalette">
           <em>Loading traits...</em>
         </div>
 
         <div style="background: #0a0a0a; padding: 12px; border-radius: 4px; min-height: 40px;" id="activeRunCardDisplay">
-          <em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>
+          <em style="color:#666; font-size: 12px;">No incremental units added for this alarm level. Click tags above to add.</em>
+        </div>
+
+        <div class="cumulative-preview-box" id="cumulativeSeriesPreview">
+          <strong>Cumulative Total at this Alarm:</strong> <em>None</em>
         </div>
       </div>
 
-      <button onclick="saveNewCallType()" style="background: #2980b9; width: 100%; padding: 14px; font-size: 15px;">Save Call Type & All Alarm Levels</button>
+      <button onclick="saveNewCallType()" style="background: #2980b9; width: 100%; padding: 14px; font-size: 15px;">Save Call Type & Alarm Series</button>
 
       <div class="section-title" style="margin-top: 20px;">Configured Call Types (Alphabetical)</div>
       <div id="configuredCallTypesList" style="max-height: 240px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
@@ -2380,17 +2385,19 @@
       resultsContainer.style.display = 'block';
     }
 
-    // --- CALL TYPE AUTOCOMPLETE & ALARM DROPDOWN SYNC ---
+    // --- CALL TYPE AUTOCOMPLETE & CUMULATIVE ALARM DROPDOWN SYNC ---
     function syncCallTakingAlarmOptions(typeName) {
       const select = document.getElementById('incidentAlarmLevelSelect');
       if (!select) return;
       select.innerHTML = '';
       const matched = loadedCallTypes.find(t => t.name.toLowerCase() === (typeName || '').trim().toLowerCase());
       if (matched && matched.alarms && matched.alarms.length > 0) {
+        let runningTotal = 0;
         matched.alarms.forEach((al, idx) => {
+          runningTotal += al.responseOrder.length;
           const opt = document.createElement('option');
           opt.value = idx;
-          opt.innerText = al.title || `Alarm ${idx + 1}`;
+          opt.innerText = `${al.title || `Alarm ${idx + 1}`} (${runningTotal} total units)`;
           select.appendChild(opt);
         });
       } else {
@@ -2451,23 +2458,39 @@
       }
     });
 
-    // --- MULTI-ALARM UPGRADE & RUN CARD CALCULATION ENGINE ---
-    function getRunCardForCallTypeAndAlarm(typeName, alarmIndex = 0) {
+    // ========================================================
+    // --- CUMULATIVE ALARM SERIES CALCULATION & UPGRADES ---
+    // ========================================================
+    function getCumulativeRunCard(typeName, alarmIndex = 0) {
       const matched = loadedCallTypes.find(t => t.name.toLowerCase() === (typeName || '').trim().toLowerCase());
       if (!matched || !matched.alarms || matched.alarms.length === 0) return null;
+
       const safeIdx = Math.min(Math.max(0, alarmIndex), matched.alarms.length - 1);
-      return matched.alarms[safeIdx];
+      const targetAlarm = matched.alarms[safeIdx];
+
+      // Sum all alarms from 0 up to safeIdx in series
+      const cumulativeOrder = [];
+      for (let i = 0; i <= safeIdx; i++) {
+        const stepOrder = matched.alarms[i].responseOrder || [];
+        cumulativeOrder.push(...stepOrder);
+      }
+
+      return {
+        title: targetAlarm.title || `Alarm ${safeIdx + 1}`,
+        responseOrder: cumulativeOrder,
+        incrementalOrder: targetAlarm.responseOrder || []
+      };
     }
 
-    async function dispatchDifferentialRunCard(newTypeName, targetAlarmObj, targetAlarmIdx) {
+    async function dispatchDifferentialRunCard(newTypeName, cumulativeAlarmData, targetAlarmIdx) {
       if (!activeModalIncidentId) return;
       const inc = loadedIncidents[activeModalIncidentId];
       if (!inc) return;
 
       const oldTypeName = inc.type;
       const oldAlarmTitle = inc.alarmTitle || '1st Alarm';
-      const newAlarmTitle = targetAlarmObj.title || `Alarm ${targetAlarmIdx + 1}`;
-      const fullTargetRunCard = Array.isArray(targetAlarmObj.responseOrder) ? targetAlarmObj.responseOrder : Object.values(targetAlarmObj.responseOrder || {});
+      const newAlarmTitle = cumulativeAlarmData.title;
+      const fullCumulativeRunCard = cumulativeAlarmData.responseOrder || [];
 
       const currentlyAssigned = Array.isArray(inc.assignedUnits) ? [...inc.assignedUnits] : Object.values(inc.assignedUnits || {});
       const assignedUnitsSet = new Set(currentlyAssigned);
@@ -2475,7 +2498,7 @@
       const remainingNeededTraits = [];
       const usedAssignedForCoverage = new Set();
 
-      fullTargetRunCard.forEach(trait => {
+      fullCumulativeRunCard.forEach(trait => {
         const foundUnit = currentlyAssigned.find(uId => {
           if (usedAssignedForCoverage.has(uId)) return false;
           const u = loadedUnits[uId];
@@ -2500,7 +2523,7 @@
 
         db.ref(`incidents/${activeModalIncidentId}/logs`).push({
           author: 'CAD SYSTEM',
-          text: `[ALARM UPDATE]: Incident set to [${newTypeName} - ${newAlarmTitle}] (from ${oldTypeName} - ${oldAlarmTitle}). Existing units satisfy the run card.`,
+          text: `[ALARM UPDATE]: Incident set to [${newTypeName} - ${newAlarmTitle}] (from ${oldTypeName} - ${oldAlarmTitle}). Existing units satisfy the cumulative series run card.`,
           timestamp: Date.now()
         });
 
@@ -2604,7 +2627,7 @@
       const addDisplay = formatAssignedShortIds(additionalDispatched);
       db.ref(`incidents/${activeModalIncidentId}/logs`).push({
         author: 'CAD SYSTEM',
-        text: `[ALARM UPGRADE]: [${oldTypeName} - ${oldAlarmTitle}] upgraded to [${newTypeName} - ${newAlarmTitle}]. Additional units dispatched: [${addDisplay}].`,
+        text: `[ALARM ESCALATION]: [${oldTypeName} - ${oldAlarmTitle}] upgraded to [${newTypeName} - ${newAlarmTitle}]. Additional units dispatched: [${addDisplay}].`,
         timestamp: Date.now()
       });
 
@@ -2628,13 +2651,13 @@
         return;
       }
 
-      const alarmObj = getRunCardForCallTypeAndAlarm(inc.type, targetIdx);
-      if (!alarmObj) {
+      const cumulativeAlarmData = getCumulativeRunCard(inc.type, targetIdx);
+      if (!cumulativeAlarmData) {
         alert(`No alarm configuration found for "${inc.type}".`);
         return;
       }
 
-      await dispatchDifferentialRunCard(inc.type, alarmObj, targetIdx);
+      await dispatchDifferentialRunCard(inc.type, cumulativeAlarmData, targetIdx);
     }
 
     async function executeCallTypeSwitchUpgrade() {
@@ -2645,13 +2668,13 @@
         return;
       }
 
-      const alarmObj = getRunCardForCallTypeAndAlarm(newTypeName, 0);
-      if (!alarmObj) {
+      const cumulativeAlarmData = getCumulativeRunCard(newTypeName, 0);
+      if (!cumulativeAlarmData) {
         alert(`No run card configured for "${newTypeName}". Configure it in Call Types Manager.`);
         return;
       }
 
-      await dispatchDifferentialRunCard(newTypeName, alarmObj, 0);
+      await dispatchDifferentialRunCard(newTypeName, cumulativeAlarmData, 0);
     }
 
     // --- LISTEN FOR RADIO CHANNELS ---
@@ -2716,7 +2739,7 @@
     }
 
     // ========================================================
-    // --- MULTI-ALARM CALL TYPES & RUN CARD BUILDER MANAGER ---
+    // --- CUMULATIVE ALARM SERIES BUILDER MANAGER ---
     // ========================================================
     function renderAlarmBuilderUI() {
       const tabsBar = document.getElementById('alarmBuilderTabs');
@@ -2724,6 +2747,7 @@
       const labelIndicator = document.getElementById('activeAlarmLabelIndicator');
       const removeBtn = document.getElementById('btnRemoveAlarmLevel');
       const display = document.getElementById('activeRunCardDisplay');
+      const previewBox = document.getElementById('cumulativeSeriesPreview');
 
       if (!tabsBar || !display) return;
 
@@ -2751,25 +2775,34 @@
 
       display.innerHTML = '';
       if (!activeAlarm.responseOrder || activeAlarm.responseOrder.length === 0) {
-        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty for this alarm level. Click tags above to build sequence.</em>';
-        return;
+        display.innerHTML = '<em style="color:#666; font-size: 12px;">No incremental units added for this alarm level. Click tags above to add.</em>';
+      } else {
+        activeAlarm.responseOrder.forEach((tag, idx) => {
+          const chip = document.createElement('span');
+          chip.className = 'run-card-chip';
+          chip.innerHTML = `+${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
+          display.appendChild(chip);
+        });
       }
 
-      activeAlarm.responseOrder.forEach((tag, idx) => {
-        const chip = document.createElement('span');
-        chip.className = 'run-card-chip';
-        chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
-        display.appendChild(chip);
-      });
+      // Render cumulative total from Alarm 0 through activeBuildingAlarmIdx
+      if (previewBox) {
+        const cumulativeUnits = [];
+        for (let i = 0; i <= activeBuildingAlarmIdx; i++) {
+          cumulativeUnits.push(...(buildingAlarmsList[i].responseOrder || []));
+        }
+        const summaryText = cumulativeUnits.length > 0 ? cumulativeUnits.join(', ') : '<em>None</em>';
+        previewBox.innerHTML = `<strong>Cumulative Series Total (${cumulativeUnits.length} unit${cumulativeUnits.length === 1 ? '' : 's'}):</strong> ${summaryText}`;
+      }
     }
 
     function addAlarmLevelToBuilder() {
       const nextNum = buildingAlarmsList.length + 1;
       const suffix = nextNum === 2 ? 'nd' : (nextNum === 3 ? 'rd' : 'th');
-      const prevRunCard = [...(buildingAlarmsList[buildingAlarmsList.length - 1]?.responseOrder || [])];
+      // Starts empty because alarms operate in series (incremental additions)
       buildingAlarmsList.push({
         title: `${nextNum}${suffix} Alarm`,
-        responseOrder: prevRunCard
+        responseOrder: []
       });
       activeBuildingAlarmIdx = buildingAlarmsList.length - 1;
       renderAlarmBuilderUI();
@@ -2806,7 +2839,6 @@
       renderAlarmBuilderUI();
     }
 
-    // Helper to normalize legacy flat responseOrder OR multi-alarm arrays
     function normalizeCallTypeAlarms(rawCt) {
       if (rawCt.alarms) {
         const arr = Array.isArray(rawCt.alarms) ? rawCt.alarms : Object.values(rawCt.alarms);
@@ -2841,9 +2873,10 @@
             div.style.justifyContent = 'space-between';
             div.style.alignItems = 'flex-start';
 
-            const alarmsHtml = ct.alarms.map(al => {
-              const unitsText = al.responseOrder.length > 0 ? al.responseOrder.join(', ') : 'No units configured';
-              return `<div style="font-size:11px; color:#ccc; margin-top:3px;"><strong style="color:#f39c12;">[${al.title}]</strong>: ${unitsText}</div>`;
+            const alarmsHtml = ct.alarms.map((al, idx) => {
+              const prefix = idx > 0 ? '+' : '';
+              const unitsText = al.responseOrder.length > 0 ? al.responseOrder.join(', ') : 'No incremental units';
+              return `<div style="font-size:11px; color:#ccc; margin-top:3px;"><strong style="color:#f39c12;">[${al.title}]</strong>: ${prefix}${unitsText}</div>`;
             }).join('');
 
             div.innerHTML = `
@@ -3200,8 +3233,8 @@
       if (!address) { alert("Please enter an address, cross streets, or plot on map."); return; }
       if (!type) { alert("Please select or enter a call type."); return; }
 
-      const alarmObj = getRunCardForCallTypeAndAlarm(type, alarmIdx);
-      const alarmTitle = alarmObj ? alarmObj.title : '1st Alarm';
+      const cumulativeAlarmData = getCumulativeRunCard(type, alarmIdx);
+      const alarmTitle = cumulativeAlarmData ? cumulativeAlarmData.title : '1st Alarm';
 
       const newIncRef = db.ref('incidents').push();
       newIncRef.set({
@@ -3312,16 +3345,21 @@
         document.getElementById('modalTypeInput').value = inc.type;
         document.getElementById('modalCurrentAlarmDisplay').value = alarmTitle;
 
-        // Populate quick alarm upgrade selector for this call type
+        // Populate cumulative alarm upgrade selector for this call type
         const alarmSelect = document.getElementById('modalAlarmUpgradeSelect');
         const matchedCt = loadedCallTypes.find(t => t.name.toLowerCase() === (inc.type || '').trim().toLowerCase());
         if (alarmSelect) {
           alarmSelect.innerHTML = '';
           if (matchedCt && matchedCt.alarms && matchedCt.alarms.length > 0) {
+            let cumulativeCount = 0;
             matchedCt.alarms.forEach((al, idx) => {
+              const incCount = al.responseOrder.length;
+              cumulativeCount += incCount;
               const opt = document.createElement('option');
               opt.value = idx;
-              opt.innerText = `${al.title} (${al.responseOrder.length} units)`;
+              opt.innerText = idx === 0 
+                ? `${al.title} (${cumulativeCount} units)` 
+                : `${al.title} (+${incCount} units | ${cumulativeCount} total)`;
               if (idx === (inc.alarmLevelIndex || 0)) opt.selected = true;
               alarmSelect.appendChild(opt);
             });
@@ -3474,21 +3512,21 @@
 
     function closeUnitDispatchModal() { document.getElementById('unitDispatchModal').style.display = 'none'; }
 
-    // --- AUTOMATED RESPONSE SUGGESTION ENGINE (USES ACTIVE ALARM LEVEL) ---
+    // --- AUTOMATED RESPONSE SUGGESTION ENGINE (USES CUMULATIVE ALARM SERIES) ---
     async function suggestResponseForCall() {
       if (!activeModalIncidentId) return;
       const inc = loadedIncidents[activeModalIncidentId];
       if (!inc) return;
 
       const alarmIdx = inc.alarmLevelIndex || 0;
-      const alarmObj = getRunCardForCallTypeAndAlarm(inc.type, alarmIdx);
+      const cumulativeAlarmData = getCumulativeRunCard(inc.type, alarmIdx);
 
-      if (!alarmObj || !alarmObj.responseOrder || alarmObj.responseOrder.length === 0) {
+      if (!cumulativeAlarmData || !cumulativeAlarmData.responseOrder || cumulativeAlarmData.responseOrder.length === 0) {
         alert(`No run card configured for "${inc.type}" (${inc.alarmTitle || 'Alarm 1'}). Configure it in Call Types Manager.`);
         return;
       }
 
-      const runCardOrder = alarmObj.responseOrder;
+      const runCardOrder = cumulativeAlarmData.responseOrder;
       const suggestedOrder = [];
       const suggestedSet = new Set();
       unitFulfilledTierMap = {};
@@ -3568,7 +3606,7 @@
 
       const notice = document.getElementById('suggestResponseNotice');
       const shortDisplay = formatAssignedShortIds(suggestedOrder);
-      notice.innerText = `Suggested ${suggestedOrder.length} unit(s) for [${alarmObj.title}]: ${shortDisplay}`;
+      notice.innerText = `Suggested ${suggestedOrder.length} cumulative unit(s) for [${cumulativeAlarmData.title}]: ${shortDisplay}`;
       notice.style.display = 'block';
     }
 
