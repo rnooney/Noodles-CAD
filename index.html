@@ -26,49 +26,16 @@
       gap: 6px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-    .cli-input-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .cli-prompt {
-      font-family: monospace;
-      font-weight: bold;
-      color: #1abc9c;
-      font-size: 14px;
-      white-space: nowrap;
-    }
+    .cli-input-row { display: flex; align-items: center; gap: 10px; }
+    .cli-prompt { font-family: monospace; font-weight: bold; color: #1abc9c; font-size: 14px; white-space: nowrap; }
     #cadCliInput {
-      flex: 1;
-      padding: 10px 14px;
-      font-family: monospace;
-      font-size: 15px;
-      background: #000;
-      color: #2ecc71;
-      border: 1px solid #334;
-      border-radius: 4px;
-      margin-bottom: 0;
-      outline: none;
-      box-sizing: border-box;
+      flex: 1; padding: 10px 14px; font-family: monospace; font-size: 15px;
+      background: #000; color: #2ecc71; border: 1px solid #334; border-radius: 4px;
+      margin-bottom: 0; outline: none; box-sizing: border-box;
     }
-    #cadCliInput:focus {
-      border-color: #1abc9c;
-      box-shadow: 0 0 8px rgba(26,188,156,0.4);
-    }
-    .cli-hints {
-      font-size: 11px;
-      color: #7f8c8d;
-      font-family: monospace;
-      display: flex;
-      justify-content: space-between;
-    }
-    .cli-feedback {
-      font-size: 12px;
-      font-family: monospace;
-      font-weight: bold;
-      min-height: 16px;
-      transition: color 0.2s;
-    }
+    #cadCliInput:focus { border-color: #1abc9c; box-shadow: 0 0 8px rgba(26,188,156,0.4); }
+    .cli-hints { font-size: 11px; color: #7f8c8d; font-family: monospace; display: flex; justify-content: space-between; }
+    .cli-feedback { font-size: 12px; font-family: monospace; font-weight: bold; min-height: 16px; transition: color 0.2s; }
 
     /* NAVIGATION TABS */
     .nav-tabs { display: flex; gap: 10px; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 20px; }
@@ -81,35 +48,16 @@
 
     /* FORM STYLES */
     input[type="text"], input[type="password"], input[type="number"], select, textarea { width: 98%; padding: 12px; font-size: 15px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; margin-bottom: 15px; box-sizing: border-box; }
-    .checkbox-group { margin: 10px 0 20px 0; display: flex; flex-wrap: wrap; gap: 12px; background: #2a2a2a; padding: 12px; border-radius: 4px; border: 1px solid #333; }
-    .checkbox-group label { font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
     /* AUTOCOMPLETE DROPDOWN STYLES */
     .autocomplete-container { position: relative; width: 100%; }
     .autocomplete-results {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: #2a2a2a;
-      border: 1px solid #555;
-      border-radius: 0 0 6px 6px;
-      max-height: 220px;
-      overflow-y: auto;
-      z-index: 999;
-      display: none;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      position: absolute; top: 100%; left: 0; right: 0; background: #2a2a2a;
+      border: 1px solid #555; border-radius: 0 0 6px 6px; max-height: 220px;
+      overflow-y: auto; z-index: 999; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
-    .autocomplete-item {
-      padding: 12px;
-      border-bottom: 1px solid #3d3d3d;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .autocomplete-item:hover {
-      background: #e63946;
-      color: #fff;
-    }
+    .autocomplete-item { padding: 12px; border-bottom: 1px solid #3d3d3d; cursor: pointer; font-size: 14px; }
+    .autocomplete-item:hover { background: #e63946; color: #fff; }
 
     /* INCIDENT CARDS */
     .incident-card { background: #2a2a2a; padding: 18px; margin-bottom: 14px; border-left: 6px solid #e63946; border-radius: 0 6px 6px 0; }
@@ -125,27 +73,11 @@
 
     /* ASSIGNED UNIT QUICK REMOVE CHIPS */
     .assigned-chip {
-      display: inline-flex;
-      align-items: center;
-      background: #111;
-      border: 1px solid #444;
-      padding: 5px 10px;
-      border-radius: 4px;
-      margin: 3px 6px 3px 0;
-      font-size: 13px;
-      font-weight: bold;
-      color: #fff;
+      display: inline-flex; align-items: center; background: #111; border: 1px solid #444;
+      padding: 5px 10px; border-radius: 4px; margin: 3px 6px 3px 0; font-size: 13px; font-weight: bold; color: #fff;
     }
-    .assigned-chip .remove-x {
-      margin-left: 8px;
-      color: #e63946;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: bold;
-    }
-    .assigned-chip .remove-x:hover {
-      color: #ff6b6b;
-    }
+    .assigned-chip .remove-x { margin-left: 8px; color: #e63946; cursor: pointer; font-size: 15px; font-weight: bold; }
+    .assigned-chip .remove-x:hover { color: #ff6b6b; }
 
     /* UNIT MANAGER CREATOR PANEL */
     .unit-creator-card { background: #252525; padding: 20px; border-radius: 6px; border: 1px solid #444; margin-bottom: 20px; }
@@ -169,40 +101,29 @@
     /* BUTTONS */
     button { padding: 10px 18px; background: #e63946; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
     button:hover { background: #c1121f; }
-    
     .btn-manage { background: #f39c12; font-size: 13px; margin-right: 6px; color: #000; }
     .btn-manage:hover { background: #d35400; color: #fff; }
-
     .btn-clear { background: #27ae60; font-size: 13px; }
     .btn-clear:hover { background: #1e8449; }
-    
     .btn-upgrade { background: #d35400; color: #fff; font-size: 14px; }
     .btn-upgrade:hover { background: #e67e22; }
-
     .btn-edit-unit { background: #f39c12; color: #000; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 10px; }
     .btn-edit-unit:hover { background: #d35400; color: #fff; }
-
     .btn-remove-unit { background: #c0392b; color: #fff; padding: 4px 10px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 6px; }
     .btn-remove-unit:hover { background: #e74c3c; }
-
     .btn-header-mgr { background: #2980b9; float: right; margin-top: -10px; margin-left: 8px; }
     .btn-header-mgr:hover { background: #3498db; }
-
     .btn-action-sm { font-size: 11px; padding: 4px 10px; margin-left: 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; color: #fff; }
     .btn-edit-sm { background: #f39c12; color: #000; }
     .btn-edit-sm:hover { background: #d35400; color: #fff; }
     .btn-delete-sm { background: #c0392b; }
     .btn-delete-sm:hover { background: #e74c3c; }
-
     .btn-suggest { background: #f39c12; color: #000; font-size: 14px; margin-right: 10px; }
     .btn-suggest:hover { background: #d35400; color: #fff; }
-
     .btn-global-quarters { background: #2980b9; color: #fff; margin-right: 10px; }
     .btn-global-quarters:hover { background: #3498db; }
-
     .btn-global-avail { background: #27ae60; color: #fff; }
     .btn-global-avail:hover { background: #2ea043; }
-
     .btn-map-control { background: #34495e; font-size: 12px; padding: 8px 14px; }
     .btn-map-control:hover { background: #2c3e50; }
 
@@ -219,8 +140,9 @@
     .radio-assignment-row { display: flex; gap: 8px; align-items: center; background: #181818; padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #333; }
     .radio-badge-tag { background: #16a085; color: #fff; padding: 3px 7px; border-radius: 3px; font-size: 11px; font-weight: bold; margin-right: 4px; display: inline-block; }
 
-    /* BOX AREA BADGE */
+    /* BADGES */
     .box-badge { background: #8e44ad; color: #fff; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; margin-left: 6px; display: inline-block; }
+    .alarm-badge { background: #d35400; color: #fff; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; margin-left: 6px; display: inline-block; border: 1px solid #e67e22; }
     .call-num-badge { background: #2c3e50; color: #f1c40f; border: 1px solid #f39c12; padding: 2px 7px; border-radius: 3px; font-weight: bold; font-size: 13px; margin-right: 8px; }
 
     /* MODAL WINDOW STYLES */
@@ -244,22 +166,19 @@
     .run-card-chip { background: #e63946; color: #fff; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; margin-right: 6px; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; }
     .run-card-chip span { cursor: pointer; color: #f1c40f; font-weight: bold; }
 
+    /* ALARM LEVEL BUILDER TABS */
+    .alarm-tabs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
+    .alarm-tab-btn { background: #252525; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; }
+    .alarm-tab-btn.active { background: #d35400; color: #fff; border-color: #e67e22; }
+    .alarm-editor-box { background: #161616; border: 1px solid #3a3a3a; border-left: 4px solid #d35400; padding: 14px; border-radius: 4px; margin-bottom: 15px; }
+
     .sound-setting-row { background: #141414; padding: 12px; border: 1px solid #333; border-radius: 4px; margin-bottom: 12px; }
 
     /* BOX COLOR PICKER STYLES */
     .box-color-picker {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      border: 1px solid #555;
-      border-radius: 4px;
-      background: none;
-      cursor: pointer;
-      vertical-align: middle;
-      margin-right: 6px;
+      -webkit-appearance: none; -moz-appearance: none; appearance: none;
+      width: 28px; height: 28px; padding: 0; border: 1px solid #555; border-radius: 4px;
+      background: none; cursor: pointer; vertical-align: middle; margin-right: 6px;
     }
     .box-color-picker::-webkit-color-swatch-wrapper { padding: 0; }
     .box-color-picker::-webkit-color-swatch { border: none; border-radius: 3px; }
@@ -315,10 +234,20 @@
         Detected Box Area: <strong id="callBoxAreaDisplay" style="color:#9b59b6;">Out of Area</strong>
       </p>
 
-      <div class="section-title">Call Type</div>
-      <div class="autocomplete-container">
-        <input type="text" id="incidentType" placeholder="Start typing call type (e.g., Structure Fire)..." oninput="handleTypeInput(this.value)" autocomplete="off">
-        <div class="autocomplete-results" id="typeAutocompleteResults"></div>
+      <div style="display: flex; gap: 12px; margin-bottom: 15px;">
+        <div style="flex: 2;">
+          <div class="section-title">Call Type</div>
+          <div class="autocomplete-container">
+            <input type="text" id="incidentType" placeholder="Start typing call type (e.g., Structure Fire)..." oninput="handleTypeInput(this.value)" onfocus="handleTypeInput(this.value)" autocomplete="off" style="margin-bottom: 0;">
+            <div class="autocomplete-results" id="typeAutocompleteResults"></div>
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <div class="section-title">Initial Alarm Level</div>
+          <select id="incidentAlarmLevelSelect" style="margin-bottom: 0;">
+            <option value="0">1st Alarm (Default)</option>
+          </select>
+        </div>
       </div>
 
       <button onclick="submitPendingCall()" style="width: 100%; padding: 16px; font-size: 16px; background: #f39c12; color: #000;">Submit Pending Call</button>
@@ -420,7 +349,7 @@
 
   </div>
 
-  <!-- BOX AREAS MANAGER MODAL (WITH PRIORITY & ORDER ADJUSTMENTS) -->
+  <!-- BOX AREAS MANAGER MODAL -->
   <div class="modal-overlay" id="boxAreasModal">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -557,7 +486,7 @@
   <div class="modal-overlay" id="traitsModal">
     <div class="modal-content" style="max-width: 720px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="modalUnitEditTitle" style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
+        <h2 style="margin: 0; color: #2980b9;">Trait Types & Category Manager</h2>
         <button onclick="closeTraitsModal()" style="background: #555;">Close Window</button>
       </div>
       <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure unit capability traits and assign them to categories to control sorting priority when units are dispatched.</p>
@@ -586,7 +515,7 @@
     </div>
   </div>
 
-  <!-- EDIT / DISPATCH / UPGRADE INCIDENT MODAL (WITH LIVE ADDRESS & PIN MODIFIER) -->
+  <!-- EDIT / DISPATCH / UPGRADE INCIDENT MODAL -->
   <div class="modal-overlay" id="editCallModal">
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -613,26 +542,43 @@
             <span>Coordinates: <strong id="modalCoordsDisplay" style="color:#f1c40f;">Not Set</strong></span>
             <span>Box Area: <strong id="modalBoxAreaDisplay" style="color:#9b59b6;">Out of Area</strong></span>
           </div>
-          <small style="color: #888; display: block; margin-top: 4px;">Click the map or drag the pin to reposition the incident. Updating will automatically recalculate the box area and log an official entry.</small>
         </div>
 
-        <div class="section-title">Call Type</div>
-        <div class="autocomplete-container">
-          <input type="text" id="modalTypeInput" oninput="handleTypeInputModal(this.value)" autocomplete="off">
-          <div class="autocomplete-results" id="modalTypeAutocompleteResults"></div>
+        <div style="display: flex; gap: 12px; margin-bottom: 15px;">
+          <div style="flex: 2;">
+            <div class="section-title">Call Type</div>
+            <div class="autocomplete-container">
+              <input type="text" id="modalTypeInput" oninput="handleTypeInputModal(this.value)" onfocus="handleTypeInputModal(this.value)" autocomplete="off" style="margin-bottom: 0;">
+              <div class="autocomplete-results" id="modalTypeAutocompleteResults"></div>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <div class="section-title">Current Alarm Level</div>
+            <input type="text" id="modalCurrentAlarmDisplay" readonly style="margin-bottom: 0; background: #181818; color: #f39c12; font-weight: bold;">
+          </div>
         </div>
 
-        <!-- UPGRADE CALL SECTION -->
+        <!-- UPGRADE CALL / ALARM LEVEL SECTION -->
         <div style="background: #231b15; padding: 15px; border-radius: 4px; border: 1px solid #d35400; margin-bottom: 15px;">
-          <span class="section-title" style="color:#e67e22; display:block; margin-bottom:6px;">Upgrade / Change Call Alarm Level</span>
+          <span class="section-title" style="color:#e67e22; display:block; margin-bottom:8px;">Upgrade Call Alarm Level / Change Call Type</span>
+          
+          <!-- QUICK ALARM LEVEL ESCALATION FOR CURRENT CALL TYPE -->
+          <div style="display:flex; gap:10px; margin-bottom: 10px;" id="quickAlarmUpgradeRow">
+            <select id="modalAlarmUpgradeSelect" style="flex: 2; margin-bottom: 0;">
+              <option value="">-- Select Alarm Level --</option>
+            </select>
+            <button class="btn-upgrade" onclick="executeAlarmLevelUpgrade()" style="flex: 1; white-space: nowrap;">Upgrade Alarm & Dispatch</button>
+          </div>
+
+          <!-- OR RECLASSIFY TO ANOTHER CALL TYPE -->
           <div style="display:flex; gap:10px;">
             <div class="autocomplete-container" style="flex:2;">
-              <input type="text" id="modalUpgradeTypeInput" placeholder="Select upgraded call type (e.g. Structure Fire, 2nd Alarm)..." oninput="handleUpgradeTypeInput(this.value)" style="margin-bottom:0;" autocomplete="off">
+              <input type="text" id="modalUpgradeTypeInput" placeholder="Or switch to different call type (e.g. Working Fire, HazMat)..." oninput="handleUpgradeTypeInput(this.value)" onfocus="handleUpgradeTypeInput(this.value)" style="margin-bottom:0;" autocomplete="off">
               <div class="autocomplete-results" id="modalUpgradeAutocompleteResults"></div>
             </div>
-            <button class="btn-upgrade" onclick="executeCallUpgrade()" style="flex:1; white-space:nowrap;">Upgrade & Dispatch Additional</button>
+            <button class="btn-upgrade" style="background:#a04000; flex:1; white-space:nowrap;" onclick="executeCallTypeSwitchUpgrade()">Switch Type & Dispatch</button>
           </div>
-          <small style="color:#aaa; display:block; margin-top:6px;">Analyzes existing on-scene units and automatically calculates and dispatches only the additional differential units needed for the upgraded run card.</small>
+          <small style="color:#aaa; display:block; margin-top:6px;">Analyzes currently assigned units and automatically dispatches only the additional units required by the target alarm run card.</small>
         </div>
 
         <!-- MULTI-RADIO CHANNEL ASSIGNMENT MATRIX -->
@@ -754,30 +700,49 @@
     </div>
   </div>
 
-  <!-- CALL TYPES SETUP & RUN CARD BUILDER MODAL -->
+  <!-- CALL TYPES SETUP & MULTI-ALARM RUN CARD BUILDER MODAL -->
   <div class="modal-overlay" id="callTypesModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 820px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin: 0; color: #2980b9;">Preset Call Types & Response Run Cards</h2>
+        <h2 style="margin: 0; color: #2980b9;">Call Types & Custom Alarm Level Run Cards</h2>
         <button onclick="closeCallTypesModal()" style="background: #555;">Close Window</button>
       </div>
-      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure incident call types and build priority response order run cards for auto-suggestions.</p>
+      <p style="color: #aaa; font-size: 13px; margin: 5px 0 15px 0;">Configure call types with custom-named alarm levels (e.g. <em>1st Alarm</em>, <em>Working Fire</em>, <em>2nd Alarm</em>) and define the apparatus run card for each level.</p>
 
-      <input type="text" id="newCallTypeInput" placeholder="Call Type Name (e.g. Structure Fire, Trench Rescue, MVA)">
+      <div class="section-title">Call Type Name</div>
+      <input type="text" id="newCallTypeInput" placeholder="e.g. Structure Fire, Brush Fire, Technical Rescue, MVA">
 
-      <div class="section-title">Build Priority Response Order (Click tags to append to run card)</div>
-      <div style="margin-bottom: 12px; background: #141414; padding: 12px; border-radius: 4px; border: 1px solid #333;" id="callTypeTagPalette">
-        <em>Loading traits...</em>
+      <!-- ALARM LEVEL SELECTOR TABS -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span class="section-title" style="margin-bottom: 0; color: #f39c12;">Alarm Levels for this Call Type:</span>
+        <button onclick="addAlarmLevelToBuilder()" style="background: #27ae60; font-size: 12px; padding: 5px 12px;">+ Add Alarm Level</button>
+      </div>
+      <div class="alarm-tabs-bar" id="alarmBuilderTabs"></div>
+
+      <!-- ACTIVE ALARM LEVEL EDITOR -->
+      <div class="alarm-editor-box">
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
+          <div style="flex: 1;">
+            <span class="section-title">Alarm Level Custom Title</span>
+            <input type="text" id="activeAlarmTitleInput" placeholder="e.g. 1st Alarm, Box Alarm, Working Fire, 2nd Alarm" oninput="updateActiveAlarmTitle(this.value)" style="margin-bottom: 0;">
+          </div>
+          <button id="btnRemoveAlarmLevel" onclick="removeCurrentAlarmLevel()" style="background: #c0392b; font-size: 12px; padding: 10px 14px; margin-top: 18px;">Remove Alarm</button>
+        </div>
+
+        <div class="section-title">Build Run Card Sequence for <strong id="activeAlarmLabelIndicator" style="color:#f39c12;">Alarm 1</strong> (Click tags to append)</div>
+        <div style="margin-bottom: 12px; background: #101010; padding: 10px; border-radius: 4px; border: 1px solid #333;" id="callTypeTagPalette">
+          <em>Loading traits...</em>
+        </div>
+
+        <div style="background: #0a0a0a; padding: 12px; border-radius: 4px; min-height: 40px;" id="activeRunCardDisplay">
+          <em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>
+        </div>
       </div>
 
-      <div style="background: #0a0a0a; padding: 12px; border-radius: 4px; min-height: 40px; margin-bottom: 15px;" id="activeRunCardDisplay">
-        <em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>
-      </div>
+      <button onclick="saveNewCallType()" style="background: #2980b9; width: 100%; padding: 14px; font-size: 15px;">Save Call Type & All Alarm Levels</button>
 
-      <button onclick="saveNewCallType()" style="background: #2980b9; width: 100%;">Save Call Type Run Card</button>
-
-      <div class="section-title" style="margin-top: 20px;">Configured Call Type Run Cards</div>
-      <div id="configuredCallTypesList" style="max-height: 220px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+      <div class="section-title" style="margin-top: 20px;">Configured Call Types (Alphabetical)</div>
+      <div id="configuredCallTypesList" style="max-height: 240px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
         <em>Loading call types...</em>
       </div>
     </div>
@@ -819,14 +784,11 @@
           const now = this.ctx.currentTime;
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-
           osc.type = 'sine';
           osc.frequency.setValueAtTime(880, now);
           osc.frequency.setValueAtTime(440, now + 0.25);
-
           gain.gain.setValueAtTime(0.35, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-
           osc.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(now);
@@ -844,7 +806,6 @@
             osc.frequency.setValueAtTime(1100, now + delay);
             gain.gain.setValueAtTime(0.25, now + delay);
             gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
-
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(now + delay);
@@ -866,7 +827,6 @@
     function uploadAudioFile(soundKey, inputEl) {
       const file = inputEl.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(e) {
         CADAudio.setCustomSound(soundKey, e.target.result);
@@ -930,8 +890,12 @@
     let loadedRadioChannels = [];
     let loadedTraits = [];
     let loadedBoxAreas = {};
-    let currentBuildingRunCard = [];
+
+    // Multi-Alarm Call Type Builder State
+    let buildingAlarmsList = [{ title: "1st Alarm", responseOrder: [] }];
+    let activeBuildingAlarmIdx = 0;
     let editingCallTypeId = null;
+
     let currentDispatchSelectionOrder = [];
     let unitFulfilledTierMap = {};
 
@@ -977,7 +941,6 @@
       }).filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]));
     }
 
-    // Shoelace formula to calculate approximate surface polygon area
     function getPolygonArea(coords) {
       if (!coords || coords.length < 3) return 0;
       let area = 0;
@@ -1001,7 +964,6 @@
       return inside;
     }
 
-    // Evaluates prioritized / smaller enclave zones first
     function calculateBoxAreaForCoords(lat, lng) {
       if (!lat || !lng) return "Out of Area";
       const pt = [parseFloat(lat), parseFloat(lng)];
@@ -1199,33 +1161,15 @@
     // --- DISPATCH COMMAND-LINE ENGINE (CLI) ---
     // ==========================================
     const STATUS_MAP = {
-      'D': 'DISPATCHED',
-      'DISP': 'DISPATCHED',
-      'DISPATCHED': 'DISPATCHED',
-      'ER': 'ENROUTE',
-      'ENR': 'ENROUTE',
-      'ENROUTE': 'ENROUTE',
-      'OS': 'ONSCENE',
-      'ONS': 'ONSCENE',
-      'ONSCENE': 'ONSCENE',
-      'ARV': 'ARRIVED',
-      'ARRIVED': 'ARRIVED',
-      'TRN': 'TRANSPORTING',
-      'TRANS': 'TRANSPORTING',
-      'TRANSPORTING': 'TRANSPORTING',
-      'IQ': 'IN_QUARTERS',
-      'QTR': 'IN_QUARTERS',
-      'QUARTERS': 'IN_QUARTERS',
-      'IN_QUARTERS': 'IN_QUARTERS',
-      'AV': 'AVAILABLE',
-      'AVAIL': 'AVAILABLE',
-      'AVAILABLE': 'AVAILABLE',
-      'CALL': 'ON_CALL',
-      'ONCALL': 'ON_CALL',
-      'ON_CALL': 'ON_CALL',
-      'OOS': 'OUT_OF_SERVICE',
-      'OUT': 'OUT_OF_SERVICE',
-      'OUT_OF_SERVICE': 'OUT_OF_SERVICE'
+      'D': 'DISPATCHED', 'DISP': 'DISPATCHED', 'DISPATCHED': 'DISPATCHED',
+      'ER': 'ENROUTE', 'ENR': 'ENROUTE', 'ENROUTE': 'ENROUTE',
+      'OS': 'ONSCENE', 'ONS': 'ONSCENE', 'ONSCENE': 'ONSCENE',
+      'ARV': 'ARRIVED', 'ARRIVED': 'ARRIVED',
+      'TRN': 'TRANSPORTING', 'TRANS': 'TRANSPORTING', 'TRANSPORTING': 'TRANSPORTING',
+      'IQ': 'IN_QUARTERS', 'QTR': 'IN_QUARTERS', 'QUARTERS': 'IN_QUARTERS', 'IN_QUARTERS': 'IN_QUARTERS',
+      'AV': 'AVAILABLE', 'AVAIL': 'AVAILABLE', 'AVAILABLE': 'AVAILABLE',
+      'CALL': 'ON_CALL', 'ONCALL': 'ON_CALL', 'ON_CALL': 'ON_CALL',
+      'OOS': 'OUT_OF_SERVICE', 'OUT': 'OUT_OF_SERVICE', 'OUT_OF_SERVICE': 'OUT_OF_SERVICE'
     };
 
     function findUnitIdByQuery(query) {
@@ -1235,18 +1179,13 @@
       
       for (let k of keys) {
         const u = loadedUnits[k];
-        if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) {
-          return k;
-        }
+        if (k.toLowerCase() === clean || (u.shortId && u.shortId.toLowerCase() === clean)) return k;
       }
 
       for (let k of keys) {
         const u = loadedUnits[k];
-        if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) {
-          return k;
-        }
+        if (k.toLowerCase().startsWith(clean) || (u.shortId && u.shortId.toLowerCase().startsWith(clean))) return k;
       }
-
       return null;
     }
 
@@ -1255,9 +1194,7 @@
       if (!fb) return;
       fb.style.color = isSuccess ? '#2ecc71' : '#e74c3c';
       fb.innerText = msg;
-      setTimeout(() => {
-        if (fb.innerText === msg) fb.innerText = '';
-      }, 4500);
+      setTimeout(() => { if (fb.innerText === msg) fb.innerText = ''; }, 4500);
     }
 
     function executeCliCommand(rawCmd) {
@@ -1273,7 +1210,7 @@
               "  e.g.: 'E1 D', 'E1 ER', 'R33 OS', 'E1 IQ', 'E1 AV', 'E1 OOS'\n\n" +
               "• Dispatch Unit to Call: DISP <UNIT> <#>\n" +
               "  e.g.: 'DISP E1 1' or 'ADD R33 2'\n\n" +
-              "• Clear Unit from Call: CLEAR <UNIT> (or REM <UNIT> <#>)\n" +
+              "• Clear Unit from Call: CLEAR <UNIT>\n" +
               "  e.g.: 'CLEAR E1'\n\n" +
               "• Global Quarters / Available: ALL IQ or ALL AV\n\n" +
               "Shortcut: Press Ctrl+Space anywhere to focus command line.");
@@ -1310,9 +1247,7 @@
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
           const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
-          if (assigned.includes(resolvedUnitId)) {
-            foundCallId = incId;
-          }
+          if (assigned.includes(resolvedUnitId)) foundCallId = incId;
         });
 
         if (foundCallId) {
@@ -1323,13 +1258,9 @@
 
           db.ref(`incidents/${foundCallId}`).update({ assignedUnits: updated, status: newStatus });
           db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
-
           db.ref(`incidents/${foundCallId}/logs`).push({
-            author: 'CLI',
-            text: `${resolvedUnitId} cleared via CLI. Status: AVAILABLE.`,
-            timestamp: Date.now()
+            author: 'CLI', text: `${resolvedUnitId} cleared via CLI. Status: AVAILABLE.`, timestamp: Date.now()
           });
-
           showCliFeedback(`Cleared ${resolvedUnitId} from incident and returned to AVAILABLE.`);
         } else {
           db.ref(`units/${resolvedUnitId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() });
@@ -1343,7 +1274,6 @@
           showCliFeedback("Syntax: DISP <UNIT> <CALL_#>", false);
           return;
         }
-
         const unitTarget = tokens[1];
         const callNum = parseInt(tokens[2]);
         const resolvedUnitId = findUnitIdByQuery(unitTarget);
@@ -1352,7 +1282,6 @@
           showCliFeedback(`Unit "${unitTarget}" not found.`, false);
           return;
         }
-
         if (isNaN(callNum) || callNum < 1 || callNum > activeIncidentIdOrder.length) {
           showCliFeedback(`Invalid call index #${tokens[2]}. Active range: 1 to ${activeIncidentIdOrder.length}`, false);
           return;
@@ -1366,26 +1295,13 @@
         }
 
         const currentAssigned = Array.isArray(targetInc.assignedUnits) ? [...targetInc.assignedUnits] : Object.values(targetInc.assignedUnits || {});
-        if (!currentAssigned.includes(resolvedUnitId)) {
-          currentAssigned.push(resolvedUnitId);
-        }
+        if (!currentAssigned.includes(resolvedUnitId)) currentAssigned.push(resolvedUnitId);
 
-        db.ref(`incidents/${targetIncId}`).update({
-          assignedUnits: currentAssigned,
-          status: 'DISPATCHED'
-        });
-
-        db.ref(`units/${resolvedUnitId}`).update({
-          status: 'DISPATCHED',
-          lastUpdated: Date.now()
-        });
-
+        db.ref(`incidents/${targetIncId}`).update({ assignedUnits: currentAssigned, status: 'DISPATCHED' });
+        db.ref(`units/${resolvedUnitId}`).update({ status: 'DISPATCHED', lastUpdated: Date.now() });
         db.ref(`incidents/${targetIncId}/logs`).push({
-          author: 'CLI',
-          text: `Unit ${resolvedUnitId} dispatched to call via CLI.`,
-          timestamp: Date.now()
+          author: 'CLI', text: `Unit ${resolvedUnitId} dispatched to call via CLI.`, timestamp: Date.now()
         });
-
         showCliFeedback(`Dispatched ${resolvedUnitId} to Call #${callNum} (${targetInc.type}).`);
         return;
       }
@@ -1414,19 +1330,14 @@
           return;
         }
 
-        db.ref(`units/${resolvedUnitId}`).update({
-          status: targetStatus,
-          lastUpdated: Date.now()
-        });
+        db.ref(`units/${resolvedUnitId}`).update({ status: targetStatus, lastUpdated: Date.now() });
 
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
           const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
           if (assigned.includes(resolvedUnitId)) {
             db.ref(`incidents/${incId}/logs`).push({
-              author: 'CLI',
-              text: `${resolvedUnitId} status updated to ${targetStatus.replace(/_/g, ' ')} via CLI.`,
-              timestamp: Date.now()
+              author: 'CLI', text: `${resolvedUnitId} status updated to ${targetStatus.replace(/_/g, ' ')} via CLI.`, timestamp: Date.now()
             });
           }
         });
@@ -1442,16 +1353,10 @@
       if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
         e.preventDefault();
         const cliInput = document.getElementById('cadCliInput');
-        if (cliInput) {
-          cliInput.focus();
-          cliInput.select();
-        }
+        if (cliInput) { cliInput.focus(); cliInput.select(); }
       } else if (e.key === 'Escape') {
         const cliInput = document.getElementById('cadCliInput');
-        if (document.activeElement === cliInput) {
-          cliInput.value = '';
-          cliInput.blur();
-        }
+        if (document.activeElement === cliInput) { cliInput.value = ''; cliInput.blur(); }
       }
     });
 
@@ -1470,7 +1375,6 @@
 
     function getStationAvailableCrewsPool() {
       const stationPool = {};
-      
       Object.keys(loadedStations).forEach(stId => {
         const st = loadedStations[stId];
         stationPool[stId] = {
@@ -1490,9 +1394,8 @@
 
         if (isCrossStaffed && stId && stationPool[stId] && inServiceActiveStatuses.includes(currentStatus)) {
           const pool = stationPool[stId];
-          if (pool.staffedRemaining > 0) {
-            pool.staffedRemaining--;
-          } else if (pool.onCallRemaining > 0) {
+          if (pool.staffedRemaining > 0) pool.staffedRemaining--;
+          else if (pool.onCallRemaining > 0) {
             pool.onCallRemaining--;
             pool.onCallPulledCount++;
           }
@@ -1508,16 +1411,13 @@
         const size = this.getTileSize();
         tile.width = size.x;
         tile.height = size.y;
-
         const ctx = tile.getContext('2d');
         ctx.strokeStyle = 'rgba(230, 57, 70, 0.35)';
         ctx.lineWidth = 1;
         ctx.strokeRect(0, 0, size.x, size.y);
-
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = '10px monospace';
         ctx.fillText(`GRID ${coords.x}:${coords.y}`, 6, 14);
-
         return tile;
       }
     });
@@ -1539,45 +1439,26 @@
         const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=false`;
         const res = await fetch(url);
         const data = await res.json();
-
         if (data && data.routes && data.routes.length > 0) {
           const route = data.routes[0];
           const distanceMiles = (route.distance / 1609.34);
           const timeMinutes = ((route.duration * EMERGENCY_RESPONSE_MULTIPLIER) / 60);
-          return {
-            distanceMiles: distanceMiles,
-            timeMinutes: timeMinutes,
-            isRoadRoute: true
-          };
+          return { distanceMiles, timeMinutes, isRoadRoute: true };
         }
       } catch (err) {
         console.warn("OSRM fallback", err);
       }
-
       const dist = getStraightLineInMiles(originLat, originLng, destLat, destLng);
-      const approxMinutes = (dist / 35) * 60;
-      return {
-        distanceMiles: dist,
-        timeMinutes: approxMinutes,
-        isRoadRoute: false
-      };
+      return { distanceMiles: dist, timeMinutes: (dist / 35) * 60, isRoadRoute: false };
     }
 
     function initCallTakingMap() {
       if (callTakingMap) return;
-
       const initLat = defaultMapLat || 35.7327;
       const initLng = defaultMapLng || -78.8503;
-
       callTakingMap = L.map('callTakingMap').setView([initLat, initLng], defaultMapZoom);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(callTakingMap);
-
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(callTakingMap);
       new GridLayer({ tileSize: 256 }).addTo(callTakingMap);
-
       callTakingMap.on('click', function(e) {
         updateCallPinPosition(e.latlng.lat, e.latlng.lng);
         const addrInput = document.getElementById('incidentAddress');
@@ -1590,19 +1471,12 @@
     function updateCallPinPosition(lat, lng) {
       selectedLat = parseFloat(lat).toFixed(5);
       selectedLng = parseFloat(lng).toFixed(5);
-
       detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
-
       document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
       document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
-
-      if (callTakingMarker) {
-        callTakingMap.removeLayer(callTakingMarker);
-      }
-
+      if (callTakingMarker) callTakingMap.removeLayer(callTakingMarker);
       callTakingMarker = L.marker([selectedLat, selectedLng], { draggable: true }).addTo(callTakingMap);
       callTakingMap.panTo([selectedLat, selectedLng]);
-
       callTakingMarker.on('dragend', function(e) {
         const pos = e.target.getLatLng();
         selectedLat = pos.lat.toFixed(5);
@@ -1610,7 +1484,6 @@
         detectedBoxArea = calculateBoxAreaForCoords(selectedLat, selectedLng);
         document.getElementById('callCoordsDisplay').innerText = `${selectedLat}, ${selectedLng}`;
         document.getElementById('callBoxAreaDisplay').innerText = detectedBoxArea;
-
         const addrInput = document.getElementById('incidentAddress');
         if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
           addrInput.value = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
@@ -1625,11 +1498,7 @@
 
       if (!modalEditMap) {
         modalEditMap = L.map('modalEditMap').setView([lat, lng], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(modalEditMap);
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(modalEditMap);
         modalEditMap.on('click', function(e) {
           updateModalEditPinPosition(e.latlng.lat, e.latlng.lng);
           const addrInput = document.getElementById('modalAddressInput');
@@ -1641,10 +1510,7 @@
         modalEditMap.setView([lat, lng], 13);
       }
 
-      setTimeout(() => {
-        modalEditMap.invalidateSize();
-      }, 150);
-
+      setTimeout(() => modalEditMap.invalidateSize(), 150);
       updateModalEditPinPosition(lat, lng, false);
     }
 
@@ -1652,7 +1518,6 @@
       if (!lat || !lng) return;
       modalEditLat = parseFloat(lat).toFixed(5);
       modalEditLng = parseFloat(lng).toFixed(5);
-
       modalEditBoxArea = calculateBoxAreaForCoords(modalEditLat, modalEditLng);
 
       const coordsEl = document.getElementById('modalCoordsDisplay');
@@ -1661,11 +1526,7 @@
       if (boxEl) boxEl.innerText = modalEditBoxArea;
 
       if (!modalEditMap) return;
-
-      if (modalEditMarker) {
-        modalEditMap.removeLayer(modalEditMarker);
-      }
-
+      if (modalEditMarker) modalEditMap.removeLayer(modalEditMarker);
       modalEditMarker = L.marker([modalEditLat, modalEditLng], { draggable: true }).addTo(modalEditMap);
       if (pan) modalEditMap.panTo([modalEditLat, modalEditLng]);
 
@@ -1674,10 +1535,8 @@
         modalEditLat = pos.lat.toFixed(5);
         modalEditLng = pos.lng.toFixed(5);
         modalEditBoxArea = calculateBoxAreaForCoords(modalEditLat, modalEditLng);
-
         if (coordsEl) coordsEl.innerText = `${modalEditLat}, ${modalEditLng}`;
         if (boxEl) boxEl.innerText = modalEditBoxArea;
-
         const addrInput = document.getElementById('modalAddressInput');
         if (!addrInput.value || addrInput.value.trim() === '' || addrInput.value.startsWith('Plotted Coordinates')) {
           addrInput.value = `Plotted Coordinates (${modalEditLat}, ${modalEditLng})`;
@@ -1687,7 +1546,6 @@
 
     function saveEditedCallLocation() {
       if (!activeModalIncidentId) return;
-
       const inc = loadedIncidents[activeModalIncidentId];
       if (!inc) return;
 
@@ -1701,19 +1559,13 @@
       const prevBox = inc.boxArea || 'N/A';
       const updatedBox = modalEditBoxArea || calculateBoxAreaForCoords(modalEditLat, modalEditLng);
 
-      const updatePayload = {
-        address: newAddress,
-        boxArea: updatedBox,
-        updatedAt: Date.now()
-      };
-
+      const updatePayload = { address: newAddress, boxArea: updatedBox, updatedAt: Date.now() };
       if (modalEditLat && modalEditLng) {
         updatePayload.lat = modalEditLat;
         updatePayload.lng = modalEditLng;
       }
 
       db.ref(`incidents/${activeModalIncidentId}`).update(updatePayload);
-
       db.ref(`incidents/${activeModalIncidentId}/logs`).push({
         author: 'DISPATCH',
         text: `Incident location updated from [${prevAddress} - ${prevBox}] to [${newAddress} - ${updatedBox}].`,
@@ -1729,17 +1581,11 @@
 
     function initMap() {
       if (map) return;
-
       const initLat = defaultMapLat || 35.7327;
       const initLng = defaultMapLng || -78.8503;
 
       map = L.map('map').setView([initLat, initLng], defaultMapZoom);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(map);
       gridOverlay = new GridLayer({ tileSize: 256 }).addTo(map);
 
       incidentMarkersLayer = L.layerGroup().addTo(map);
@@ -1759,16 +1605,9 @@
 
       map.pm.addControls({
         position: 'topleft',
-        drawPolygon: true,
-        drawRectangle: true,
-        drawMarker: false,
-        drawCircleMarker: false,
-        drawPolyline: false,
-        drawCircle: false,
-        editMode: true,
-        dragMode: false,
-        cutPolygon: false,
-        removalMode: true
+        drawPolygon: true, drawRectangle: true,
+        drawMarker: false, drawCircleMarker: false, drawPolyline: false, drawCircle: false,
+        editMode: true, dragMode: false, cutPolygon: false, removalMode: true
       });
 
       map.on('pm:create', (e) => {
@@ -1803,16 +1642,11 @@
       btnEl.classList.add('active');
 
       if (tabId === 'callTakingTab' && callTakingMap) {
-        setTimeout(() => { 
-          callTakingMap.invalidateSize();
-        }, 150);
+        setTimeout(() => callTakingMap.invalidateSize(), 150);
       } else if (tabId === 'mapTab') {
         initMap();
-        setTimeout(() => { 
-          if (map) {
-            map.invalidateSize(); 
-            refreshMapLayers();
-          }
+        setTimeout(() => {
+          if (map) { map.invalidateSize(); refreshMapLayers(); }
         }, 150);
       }
     }
@@ -1826,6 +1660,7 @@
         if (inc.lat && inc.lng) {
           const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
           const boxTag = inc.boxArea ? ` [${inc.boxArea}]` : '';
+          const alarmTag = inc.alarmTitle ? ` [${inc.alarmTitle}]` : '';
           
           let radioInfo = '';
           const radios = Array.isArray(inc.radioChannels) ? inc.radioChannels : Object.values(inc.radioChannels || {});
@@ -1834,9 +1669,8 @@
           }
 
           const markerIcon = isPending ? yellowPendingIcon : redActiveIcon;
-
           const marker = L.marker([inc.lat, inc.lng], { icon: markerIcon })
-            .bindPopup(`<b>${inc.type} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
+            .bindPopup(`<b>${inc.type}${alarmTag} [${isPending ? 'PENDING' : 'ACTIVE'}]</b><br>${inc.address}${boxTag}${radioInfo}<br>Assigned: ${formatAssignedShortIds(inc.assignedUnits)}`);
           incidentMarkersLayer.addLayer(marker);
         }
       });
@@ -1876,8 +1710,6 @@
       });
 
       boxAreasLayer.clearLayers();
-      
-      // Sort render order: larger zones render first at bottom, higher-priority and smaller islands render on top
       const sortedRenderKeys = Object.keys(loadedBoxAreas).sort((a, b) => {
         const boxA = loadedBoxAreas[a];
         const boxB = loadedBoxAreas[b];
@@ -1896,10 +1728,7 @@
         if (coords.length >= 3) {
           const polygonColor = box.color || '#8e44ad';
           const polygon = L.polygon(coords, {
-            color: polygonColor,
-            fillColor: polygonColor,
-            weight: 2,
-            fillOpacity: 0.18
+            color: polygonColor, fillColor: polygonColor, weight: 2, fillOpacity: 0.18
           }).bindPopup(`<b>Response Zone: ${box.name}</b><br><small style="color:${polygonColor};">Priority: ${box.priority || 0}</small>`);
           boxAreasLayer.addLayer(polygon);
         }
@@ -1919,16 +1748,11 @@
 
         if (loc && loc.type === 'LIVE_GPS_AVL' && !committedStatuses.includes(currentStatus)) {
           const ageMs = now - (loc.lastUpdated || unit.lastUpdated || 0);
-
           if (ageMs > STALE_TIMEOUT_MS && unit.assignedStationId && loadedStations[unit.assignedStationId]) {
             const st = loadedStations[unit.assignedStationId];
             db.ref(`units/${uId}/location`).set({
-              lat: st.lat,
-              lng: st.lng,
-              type: 'STATIC_STATION',
-              lastUpdated: Date.now()
+              lat: st.lat, lng: st.lng, type: 'STATIC_STATION', lastUpdated: Date.now()
             });
-            console.log(`[AVL TIMEOUT] Unit ${uId} GPS signal lost >5m. Reverted location to ${st.name}.`);
           }
         }
       });
@@ -1941,11 +1765,9 @@
       refreshMapLayers();
     });
 
-    // --- LIVE FILTER SEARCH ON CONFIGURED BOX AREAS ---
     function handleBoxAreaSearchInput(query) {
       const filter = (query || '').toLowerCase().trim();
       const items = document.querySelectorAll('#configuredBoxAreasList .box-area-item');
-      
       items.forEach(item => {
         const name = (item.getAttribute('data-box-name') || '').toLowerCase();
         item.style.display = (!filter || name.includes(filter)) ? 'flex' : 'none';
@@ -1967,7 +1789,6 @@
         ? document.getElementById('boxAreaSearchInput').value.toLowerCase().trim() 
         : '';
 
-      // Sort display list so top priority layers appear at the top
       const sortedKeys = keys.sort((a, b) => {
         const prioA = parseInt(loadedBoxAreas[a].priority) || 0;
         const prioB = parseInt(loadedBoxAreas[b].priority) || 0;
@@ -1992,13 +1813,7 @@
         div.style.alignItems = 'center';
         div.innerHTML = `
           <div style="display: flex; align-items: center; gap: 8px;">
-            <input 
-              type="color" 
-              class="box-color-picker" 
-              value="${boxColor}" 
-              title="Change color for ${boxName}"
-              onchange="updateBoxAreaColor('${bId}', this.value)"
-            >
+            <input type="color" class="box-color-picker" value="${boxColor}" title="Change color for ${boxName}" onchange="updateBoxAreaColor('${bId}', this.value)">
             <div>
               <strong style="color:${boxColor};">${boxName}</strong>
               <div style="font-size:11px; color:#aaa;">
@@ -2020,27 +1835,18 @@
     function adjustBoxPriority(bId, delta) {
       if (!bId || !loadedBoxAreas[bId]) return;
       const currentPriority = parseInt(loadedBoxAreas[bId].priority) || 0;
-      db.ref(`boxAreas/${bId}`).update({
-        priority: currentPriority + delta,
-        updatedAt: Date.now()
-      });
+      db.ref(`boxAreas/${bId}`).update({ priority: currentPriority + delta, updatedAt: Date.now() });
     }
 
     function updateBoxAreaColor(bId, newColorHex) {
       if (!bId || !newColorHex) return;
-      db.ref(`boxAreas/${bId}`).update({
-        color: newColorHex,
-        updatedAt: Date.now()
-      });
+      db.ref(`boxAreas/${bId}`).update({ color: newColorHex, updatedAt: Date.now() });
     }
 
     function editBoxAreaName(bId, currentName) {
       const updated = prompt("Edit Response Box Area Name / Number:", currentName);
       if (updated !== null && updated.trim() !== "") {
-        db.ref(`boxAreas/${bId}`).update({
-          name: updated.trim(),
-          updatedAt: Date.now()
-        });
+        db.ref(`boxAreas/${bId}`).update({ name: updated.trim(), updatedAt: Date.now() });
       }
     }
 
@@ -2054,24 +1860,16 @@
     }
 
     function deleteBoxArea(id) {
-      if (confirm("Delete this response box area?")) {
-        db.ref(`boxAreas/${id}`).remove();
-      }
+      if (confirm("Delete this response box area?")) db.ref(`boxAreas/${id}`).remove();
     }
 
-    function openBoxAreasModal() {
-      document.getElementById('boxAreasModal').style.display = 'flex';
-    }
+    function openBoxAreasModal() { document.getElementById('boxAreasModal').style.display = 'flex'; }
 
     function closeBoxAreasModal() {
       document.getElementById('boxAreasModal').style.display = 'none';
       document.getElementById('jsonImportPanel').style.display = 'none';
-
       const searchInput = document.getElementById('boxAreaSearchInput');
-      if (searchInput) {
-        searchInput.value = '';
-        handleBoxAreaSearchInput('');
-      }
+      if (searchInput) { searchInput.value = ''; handleBoxAreaSearchInput(''); }
     }
 
     // --- KMZ, KML & JSON IMPORT SYSTEM ---
@@ -2083,31 +1881,25 @@
     async function handleBoxFileUpload(inputEl) {
       const file = inputEl.files[0];
       if (!file) return;
-
       const fileName = file.name.toLowerCase();
 
       if (fileName.endsWith('.kmz')) {
         try {
           const zip = await JSZip.loadAsync(file);
           let kmlFileName = Object.keys(zip.files).find(name => name.toLowerCase().endsWith('.kml'));
-          
           if (!kmlFileName) {
             alert("No .kml boundary document found inside the uploaded KMZ archive.");
             return;
           }
-
           const kmlText = await zip.file(kmlFileName).async("text");
           document.getElementById('boxJsonTextInput').value = kmlText;
           alert(`Extracted KML boundary data from ${file.name}. Click 'Append' or 'Replace' below to process.`);
         } catch (err) {
-          console.error("KMZ extraction error:", err);
-          alert("Failed to unzip and extract KMZ file. Ensure the file is a valid compressed KML archive.");
+          alert("Failed to unzip and extract KMZ file.");
         }
       } else {
         const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('boxJsonTextInput').value = e.target.result;
-        };
+        reader.onload = function(e) { document.getElementById('boxJsonTextInput').value = e.target.result; };
         reader.readAsText(file);
       }
     }
@@ -2125,29 +1917,15 @@
       }
 
       const normalizedBoxes = [];
-
       if (parsed.type === 'FeatureCollection' && Array.isArray(parsed.features)) {
         parsed.features.forEach((feature, idx) => {
           if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
             const props = feature.properties || {};
             const name = props.name || props.NAME || props.Box || props.BOX || props.district || props.DISTRICT || `Box ${idx + 1}`;
-            
-            let rings = [];
-            if (feature.geometry.type === 'Polygon') {
-              rings = [feature.geometry.coordinates[0]];
-            } else if (feature.geometry.type === 'MultiPolygon') {
-              rings = feature.geometry.coordinates.map(poly => poly[0]);
-            }
-
+            let rings = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates[0]] : feature.geometry.coordinates.map(poly => poly[0]);
             rings.forEach(ring => {
               const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
-              normalizedBoxes.push({
-                name: String(name).trim(),
-                color: props.stroke || props.fill || '#8e44ad',
-                priority: 0,
-                coordinates: leafletCoords,
-                createdAt: Date.now()
-              });
+              normalizedBoxes.push({ name: String(name).trim(), color: props.stroke || props.fill || '#8e44ad', priority: 0, coordinates: leafletCoords, createdAt: Date.now() });
             });
           }
         });
@@ -2156,93 +1934,54 @@
         const name = props.name || props.NAME || props.Box || props.district || 'Box 1';
         let ring = parsed.geometry.type === 'Polygon' ? parsed.geometry.coordinates[0] : parsed.geometry.coordinates[0][0];
         const leafletCoords = ring.map(pt => [parseFloat(pt[1].toFixed(5)), parseFloat(pt[0].toFixed(5))]);
-        normalizedBoxes.push({
-          name: String(name).trim(),
-          color: '#8e44ad',
-          priority: 0,
-          coordinates: leafletCoords,
-          createdAt: Date.now()
-        });
+        normalizedBoxes.push({ name: String(name).trim(), color: '#8e44ad', priority: 0, coordinates: leafletCoords, createdAt: Date.now() });
       } else if (Array.isArray(parsed)) {
         parsed.forEach((item, idx) => {
           if (item.coordinates && item.coordinates.length >= 3) {
-            normalizedBoxes.push({
-              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
-              color: item.color || '#8e44ad',
-              priority: parseInt(item.priority) || 0,
-              coordinates: getNormalizedCoords(item.coordinates),
-              createdAt: Date.now()
-            });
+            normalizedBoxes.push({ name: item.name ? String(item.name).trim() : `Box ${idx + 1}`, color: item.color || '#8e44ad', priority: parseInt(item.priority) || 0, coordinates: getNormalizedCoords(item.coordinates), createdAt: Date.now() });
           }
         });
       } else if (typeof parsed === 'object') {
         Object.keys(parsed).forEach((k, idx) => {
           const item = parsed[k];
           if (item.coordinates) {
-            normalizedBoxes.push({
-              name: item.name ? String(item.name).trim() : `Box ${idx + 1}`,
-              color: item.color || '#8e44ad',
-              priority: parseInt(item.priority) || 0,
-              coordinates: getNormalizedCoords(item.coordinates),
-              createdAt: Date.now()
-            });
+            normalizedBoxes.push({ name: item.name ? String(item.name).trim() : `Box ${idx + 1}`, color: item.color || '#8e44ad', priority: parseInt(item.priority) || 0, coordinates: getNormalizedCoords(item.coordinates), createdAt: Date.now() });
           }
         });
       }
-
       return normalizedBoxes;
     }
 
     function processBoundaryImport(overwriteAll = false) {
       const text = document.getElementById('boxJsonTextInput').value.trim();
-      if (!text) {
-        alert("Please select a KMZ/KML/JSON file or paste data into the text box.");
-        return;
-      }
+      if (!text) { alert("Please select a KMZ/KML/JSON file or paste data."); return; }
 
       try {
         const boxes = parseGeoJsonOrArray(text);
-        if (boxes.length === 0) {
-          alert("No valid polygon boundary areas found. Ensure the dataset contains polygons with at least 3 perimeter coordinates.");
-          return;
-        }
+        if (boxes.length === 0) { alert("No valid polygon boundary areas found."); return; }
 
         if (overwriteAll) {
-          if (!confirm(`Are you sure you want to OVERWRITE and DELETE all existing box areas with these ${boxes.length} imported area(s)?`)) {
-            return;
-          }
+          if (!confirm(`OVERWRITE and DELETE all existing box areas with these ${boxes.length} imported area(s)?`)) return;
           db.ref('boxAreas').set(null);
         }
 
-        boxes.forEach(box => {
-          db.ref('boxAreas').push(box);
-        });
-
+        boxes.forEach(box => db.ref('boxAreas').push(box));
         document.getElementById('boxJsonTextInput').value = '';
         document.getElementById('boxJsonFileInput').value = '';
         document.getElementById('jsonImportPanel').style.display = 'none';
-
         alert(`Successfully imported ${boxes.length} response box area(s)!`);
       } catch (err) {
-        console.error("Import parsing error:", err);
-        alert("Invalid file format. Please verify the KMZ, KML, or GeoJSON structure.");
+        alert("Invalid file format.");
       }
     }
 
     function exportBoxAreasJson() {
       const keys = Object.keys(loadedBoxAreas);
-      if (keys.length === 0) {
-        alert("No box areas to export.");
-        return;
-      }
-
+      if (keys.length === 0) { alert("No box areas to export."); return; }
       const exportData = keys.map(k => ({
-        name: loadedBoxAreas[k].name,
-        color: loadedBoxAreas[k].color || '#8e44ad',
-        priority: parseInt(loadedBoxAreas[k].priority) || 0,
-        coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
+        name: loadedBoxAreas[k].name, color: loadedBoxAreas[k].color || '#8e44ad',
+        priority: parseInt(loadedBoxAreas[k].priority) || 0, coordinates: getNormalizedCoords(loadedBoxAreas[k].coordinates)
       }));
-
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
@@ -2254,30 +1993,14 @@
 
     // --- DYNAMIC TRAIT & CATEGORY MANAGER ---
     const defaultInitialRoles = [
-      { name: "Engine", category: "1" },
-      { name: "Suppression", category: "1" },
-      { name: "EMS First Responder", category: "1" },
-      { name: "Ladder", category: "2" },
-      { name: "Truck", category: "2" },
-      { name: "Tower", category: "2" },
-      { name: "Rescue", category: "2" },
-      { name: "Extrication", category: "2" },
-      { name: "Technical Rescue", category: "2" },
-      { name: "Technical Rescue Support", category: "2" },
-      { name: "Search Company", category: "2" },
-      { name: "Water Rescue", category: "2" },
-      { name: "Tanker", category: "3" },
-      { name: "Water Tender", category: "3" },
-      { name: "Brush", category: "4" },
-      { name: "Utility", category: "5" },
-      { name: "Boat", category: "6" },
-      { name: "Air", category: "7" },
-      { name: "Ambulance", category: "8" },
-      { name: "ALS", category: "8" },
-      { name: "BLS", category: "8" },
-      { name: "Battalion", category: "9" },
-      { name: "EMS Supervisor", category: "9" },
-      { name: "Safety Officer", category: "9" }
+      { name: "Engine", category: "1" }, { name: "Suppression", category: "1" }, { name: "EMS First Responder", category: "1" },
+      { name: "Ladder", category: "2" }, { name: "Truck", category: "2" }, { name: "Tower", category: "2" },
+      { name: "Rescue", category: "2" }, { name: "Extrication", category: "2" }, { name: "Technical Rescue", category: "2" },
+      { name: "Technical Rescue Support", category: "2" }, { name: "Search Company", category: "2" }, { name: "Water Rescue", category: "2" },
+      { name: "Tanker", category: "3" }, { name: "Water Tender", category: "3" },
+      { name: "Brush", category: "4" }, { name: "Utility", category: "5" }, { name: "Boat", category: "6" }, { name: "Air", category: "7" },
+      { name: "Ambulance", category: "8" }, { name: "ALS", category: "8" }, { name: "BLS", category: "8" },
+      { name: "Battalion", category: "9" }, { name: "EMS Supervisor", category: "9" }, { name: "Safety Officer", category: "9" }
     ];
 
     db.ref('customRoles').on('value', (snapshot) => {
@@ -2288,9 +2011,7 @@
       }
 
       loadedTraits = Object.keys(data).map(k => ({
-        id: k,
-        name: data[k].name,
-        category: data[k].category || "10"
+        id: k, name: data[k].name, category: data[k].category || "10"
       })).sort((a, b) => {
         if (a.category !== b.category) return parseInt(a.category) - parseInt(b.category);
         return a.name.localeCompare(b.name);
@@ -2303,7 +2024,6 @@
     function renderTraitsManagerList() {
       const listContainer = document.getElementById('configuredTraitsList');
       if (!listContainer) return;
-
       listContainer.innerHTML = '';
       if (loadedTraits.length === 0) {
         listContainer.innerHTML = '<em>No custom trait types configured yet.</em>';
@@ -2344,25 +2064,19 @@
       const creatorGrid = document.getElementById('newMgrRoleGrid');
       if (creatorGrid) {
         creatorGrid.innerHTML = '';
-        loadedTraits.forEach(t => {
-          creatorGrid.innerHTML += `<label><input type="checkbox" class="mgr-role-tag" value="${t.name}"> ${t.name}</label>`;
-        });
+        loadedTraits.forEach(t => creatorGrid.innerHTML += `<label><input type="checkbox" class="mgr-role-tag" value="${t.name}"> ${t.name}</label>`);
       }
 
       const editGrid = document.getElementById('editUnitRoleGrid');
       if (editGrid) {
         editGrid.innerHTML = '';
-        loadedTraits.forEach(t => {
-          editGrid.innerHTML += `<label><input type="checkbox" class="edit-role-tag" value="${t.name}"> ${t.name}</label>`;
-        });
+        loadedTraits.forEach(t => editGrid.innerHTML += `<label><input type="checkbox" class="edit-role-tag" value="${t.name}"> ${t.name}</label>`);
       }
 
       const palette = document.getElementById('callTypeTagPalette');
       if (palette) {
         palette.innerHTML = '';
-        loadedTraits.forEach(t => {
-          palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${t.name.replace(/'/g, "\\'")}')">+ ${t.name}</span>`;
-        });
+        loadedTraits.forEach(t => palette.innerHTML += `<span class="tag-builder-btn" onclick="appendTagToRunCard('${t.name.replace(/'/g, "\\'")}')">+ ${t.name}</span>`);
       }
     }
 
@@ -2370,7 +2084,6 @@
       const name = document.getElementById('newTraitInput').value.trim();
       const cat = document.getElementById('newTraitCategorySelect').value;
       if (!name) return;
-
       db.ref('customRoles').push({ name: name, category: cat, createdAt: Date.now() });
       document.getElementById('newTraitInput').value = '';
     }
@@ -2378,52 +2091,29 @@
     function editTrait(id, currentName, currentCat) {
       const updated = prompt("Edit Trait Name:", currentName);
       if (updated === null || updated.trim() === "") return;
-
       const catPrompt = prompt("Category Tier (1=Engines, 2=Service Co, 3=Tankers, 4=Brush, 5=Utility, 6=Boat, 7=Air, 8=EMS, 9=Command, 10=Other):", currentCat || "10");
       if (catPrompt === null) return;
-
-      db.ref(`customRoles/${id}`).update({
-        name: updated.trim(),
-        category: catPrompt.trim() || "10",
-        updatedAt: Date.now()
-      });
+      db.ref(`customRoles/${id}`).update({ name: updated.trim(), category: catPrompt.trim() || "10", updatedAt: Date.now() });
     }
 
     function deleteTrait(id) {
-      if (confirm("Delete trait type?")) {
-        db.ref(`customRoles/${id}`).remove();
-      }
+      if (confirm("Delete trait type?")) db.ref(`customRoles/${id}`).remove();
     }
 
-    function openTraitsModal() {
-      document.getElementById('traitsModal').style.display = 'flex';
-    }
-
-    function closeTraitsModal() {
-      document.getElementById('traitsModal').style.display = 'none';
-    }
+    function openTraitsModal() { document.getElementById('traitsModal').style.display = 'flex'; }
+    function closeTraitsModal() { document.getElementById('traitsModal').style.display = 'none'; }
 
     // --- UNIT CREATOR & MANAGER FUNCTIONS ---
     function toggleUnitCreatorForm() {
       const form = document.getElementById('unitCreatorFormFields');
       const btn = document.getElementById('btnToggleCreator');
-      if (form.style.display === 'none') {
-        form.style.display = 'block';
-        btn.innerText = 'Collapse Form';
-      } else {
-        form.style.display = 'none';
-        btn.innerText = 'Expand Form';
-      }
+      if (form.style.display === 'none') { form.style.display = 'block'; btn.innerText = 'Collapse Form'; }
+      else { form.style.display = 'none'; btn.innerText = 'Expand Form'; }
     }
 
     function refreshUnitCreatorStationDropdown() {
-      const selects = [
-        document.getElementById('newMgrStationSelect'),
-        document.getElementById('editUnitStationSelect')
-      ];
-
+      const selects = [document.getElementById('newMgrStationSelect'), document.getElementById('editUnitStationSelect')];
       const sortedKeys = Object.keys(loadedStations).sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
-      
       selects.forEach(select => {
         if (!select) return;
         const currentVal = select.value;
@@ -2444,44 +2134,25 @@
       const initialStatus = document.getElementById('newMgrInitialStatus').value;
       const stationId = document.getElementById('newMgrStationSelect').value;
 
-      if (!unitId) {
-        alert("Please enter a Unit Identifier.");
-        return;
-      }
+      if (!unitId) { alert("Please enter a Unit Identifier."); return; }
 
       const roles = [];
-      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => {
-        roles.push(cb.value);
-      });
+      document.querySelectorAll('.mgr-role-tag:checked').forEach(cb => roles.push(cb.value));
 
-      const unitData = {
-        shortId: shortId,
-        password: password,
-        roles: roles,
-        staffingType: staffingType,
-        status: initialStatus,
-        lastUpdated: Date.now()
-      };
-
+      const unitData = { shortId: shortId, password: password, roles: roles, staffingType: staffingType, status: initialStatus, lastUpdated: Date.now() };
       if (stationId && loadedStations[stationId]) {
         const st = loadedStations[stationId];
         unitData.assignedStationId = stationId;
         unitData.assignedStationName = st.name;
-        unitData.location = {
-          lat: st.lat,
-          lng: st.lng,
-          type: 'STATIC_STATION'
-        };
+        unitData.location = { lat: st.lat, lng: st.lng, type: 'STATIC_STATION' };
       }
 
       db.ref(`units/${unitId}`).set(unitData);
-
       document.getElementById('newMgrUnitId').value = '';
       document.getElementById('newMgrShortId').value = '';
       document.getElementById('newMgrPassword').value = '';
       document.getElementById('newMgrStationSelect').value = '';
       document.querySelectorAll('.mgr-role-tag').forEach(cb => cb.checked = false);
-
       alert(`Unit ${unitId} registered successfully to CAD network!`);
     }
 
@@ -2501,16 +2172,11 @@
       document.getElementById('editUnitStationSelect').value = unit.assignedStationId || '';
 
       const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
-      document.querySelectorAll('.edit-role-tag').forEach(cb => {
-        cb.checked = roles.includes(cb.value);
-      });
-
+      document.querySelectorAll('.edit-role-tag').forEach(cb => cb.checked = roles.includes(cb.value));
       document.getElementById('editUnitModal').style.display = 'flex';
     }
 
-    function closeEditUnitModal() {
-      document.getElementById('editUnitModal').style.display = 'none';
-    }
+    function closeEditUnitModal() { document.getElementById('editUnitModal').style.display = 'none'; }
 
     function saveEditedUnitDetails() {
       const originalId = document.getElementById('editUnitOriginalId').value;
@@ -2520,35 +2186,19 @@
       const staffingType = document.getElementById('editUnitStaffingType').value;
       const stationId = document.getElementById('editUnitStationSelect').value;
 
-      if (!newUnitId) {
-        alert("Unit identifier cannot be empty.");
-        return;
-      }
+      if (!newUnitId) { alert("Unit identifier cannot be empty."); return; }
 
       const selectedRoles = [];
-      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => {
-        selectedRoles.push(cb.value);
-      });
+      document.querySelectorAll('.edit-role-tag:checked').forEach(cb => selectedRoles.push(cb.value));
 
       const existingUnit = loadedUnits[originalId] || {};
-      const updatedData = {
-        ...existingUnit,
-        shortId: newShortId,
-        password: newPassword,
-        staffingType: staffingType,
-        roles: selectedRoles,
-        lastUpdated: Date.now()
-      };
+      const updatedData = { ...existingUnit, shortId: newShortId, password: newPassword, staffingType: staffingType, roles: selectedRoles, lastUpdated: Date.now() };
 
       if (stationId && loadedStations[stationId]) {
         const st = loadedStations[stationId];
         updatedData.assignedStationId = stationId;
         updatedData.assignedStationName = st.name;
-        updatedData.location = {
-          lat: st.lat,
-          lng: st.lng,
-          type: 'STATIC_STATION'
-        };
+        updatedData.location = { lat: st.lat, lng: st.lng, type: 'STATIC_STATION' };
       } else {
         delete updatedData.assignedStationId;
         delete updatedData.assignedStationName;
@@ -2557,7 +2207,6 @@
       if (originalId !== newUnitId) {
         db.ref(`units/${newUnitId}`).set(updatedData);
         db.ref(`units/${originalId}`).remove();
-
         Object.keys(loadedIncidents).forEach(incId => {
           const inc = loadedIncidents[incId];
           const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
@@ -2578,7 +2227,6 @@
     function renderModalRadioList(radioChannelsArray = []) {
       const container = document.getElementById('modalAssignedRadiosContainer');
       if (!container) return;
-
       container.innerHTML = '';
       const arr = Array.isArray(radioChannelsArray) ? radioChannelsArray : Object.values(radioChannelsArray || {});
       if (!arr || arr.length === 0) {
@@ -2600,38 +2248,21 @@
 
     function addRadioChannelToCall() {
       if (!activeModalIncidentId) return;
-
       const select = document.getElementById('modalAddRadioSelect');
       const descInput = document.getElementById('modalAddRadioDescInput');
       const channelName = select.value;
       const channelDesc = descInput.value.trim();
 
-      if (!channelName) {
-        alert("Please select a radio channel to assign.");
-        return;
-      }
+      if (!channelName) { alert("Please select a radio channel to assign."); return; }
 
       const inc = loadedIncidents[activeModalIncidentId] || {};
       const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
+      if (currentRadios.some(r => r.name === channelName)) { alert(`Radio channel ${channelName} is already assigned.`); return; }
 
-      if (currentRadios.some(r => r.name === channelName)) {
-        alert(`Radio channel ${channelName} is already assigned to this call.`);
-        return;
-      }
-
-      currentRadios.push({
-        name: channelName,
-        desc: channelDesc
-      });
-
-      db.ref(`incidents/${activeModalIncidentId}`).update({
-        radioChannels: currentRadios
-      });
-
+      currentRadios.push({ name: channelName, desc: channelDesc });
+      db.ref(`incidents/${activeModalIncidentId}`).update({ radioChannels: currentRadios });
       db.ref(`incidents/${activeModalIncidentId}/logs`).push({
-        author: 'DISPATCH',
-        text: `Assigned Radio Channel: ${channelName}${channelDesc ? ' (' + channelDesc + ')' : ''}`,
-        timestamp: Date.now()
+        author: 'DISPATCH', text: `Assigned Radio Channel: ${channelName}${channelDesc ? ' (' + channelDesc + ')' : ''}`, timestamp: Date.now()
       });
 
       select.value = '';
@@ -2640,25 +2271,19 @@
 
     function removeRadioChannelFromCall(index) {
       if (!activeModalIncidentId) return;
-
       const inc = loadedIncidents[activeModalIncidentId] || {};
       const currentRadios = Array.isArray(inc.radioChannels) ? [...inc.radioChannels] : Object.values(inc.radioChannels || {});
       const removed = currentRadios.splice(index, 1)[0];
 
-      db.ref(`incidents/${activeModalIncidentId}`).update({
-        radioChannels: currentRadios
-      });
-
+      db.ref(`incidents/${activeModalIncidentId}`).update({ radioChannels: currentRadios });
       if (removed) {
         db.ref(`incidents/${activeModalIncidentId}/logs`).push({
-          author: 'DISPATCH',
-          text: `Removed Radio Channel: ${removed.name}`,
-          timestamp: Date.now()
+          author: 'DISPATCH', text: `Removed Radio Channel: ${removed.name}`, timestamp: Date.now()
         });
       }
     }
 
-    // --- DISTRICT BOUNDING BOX (25-MILE RADIUS OF STATIONS) ---
+    // --- DISTRICT BOUNDING BOX ---
     function getDistrictViewbox() {
       const stationKeys = Object.keys(loadedStations);
       let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
@@ -2686,30 +2311,21 @@
 
       const latBuffer = 0.36;
       const lngBuffer = 0.44;
-
-      const left = (minLng - lngBuffer).toFixed(5);
-      const bottom = (minLat - latBuffer).toFixed(5);
-      const right = (maxLng + lngBuffer).toFixed(5);
-      const top = (maxLat + latBuffer).toFixed(5);
-
-      return `${left},${top},${right},${bottom}`;
+      return `${(minLng - lngBuffer).toFixed(5)},${(maxLat + latBuffer).toFixed(5)},${(maxLng + lngBuffer).toFixed(5)},${(minLat - latBuffer).toFixed(5)}`;
     }
 
     function cleanAddressDisplayName(displayName) {
       if (!displayName) return '';
       let parts = displayName.split(',').map(p => p.trim());
-      
       parts = parts.filter(p => {
         const lower = p.toLowerCase();
         if (lower === 'united states' || lower === 'usa' || lower === 'us') return false;
         if (/^\d{5}(-\d{4})?$/.test(p)) return false;
         return true;
       });
-
       return parts.slice(0, 4).join(', ');
     }
 
-    // --- GENERIC ADDRESS & CROSS-STREET AUTOCOMPLETE WITH 25-MILE RADIUS CONSTRAINT ---
     function handleAddressInput(query, targetInputId, resultsContainerId, pinUpdateCallback) {
       clearTimeout(debounceTimer);
       const resultsContainer = document.getElementById(resultsContainerId);
@@ -2722,7 +2338,6 @@
       debounceTimer = setTimeout(() => {
         const viewbox = getDistrictViewbox();
         let cleanQuery = query.replace(/\s*[/@]\s*/g, ' & ').replace(/\s+and\s+/gi, ' & ');
-
         const lookupUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&bounded=1&addressdetails=1&limit=6`;
 
         fetch(lookupUrl)
@@ -2733,55 +2348,62 @@
             if (!data || data.length === 0) {
               fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQuery)}&viewbox=${viewbox}&addressdetails=1&limit=4`)
                 .then(r => r.json())
-                .then(fallbackData => {
-                  renderAddressSuggestions(fallbackData, targetInputId, resultsContainerId, pinUpdateCallback);
-                })
+                .then(fallbackData => renderAddressSuggestions(fallbackData, targetInputId, resultsContainerId, pinUpdateCallback))
                 .catch(() => { resultsContainer.style.display = 'none'; });
               return;
             }
-
             renderAddressSuggestions(data, targetInputId, resultsContainerId, pinUpdateCallback);
           })
-          .catch(err => {
-            console.error("Geocoding lookup error:", err);
-            if (resultsContainer) resultsContainer.style.display = 'none';
-          });
+          .catch(() => { if (resultsContainer) resultsContainer.style.display = 'none'; });
       }, 300);
     }
 
     function renderAddressSuggestions(items, targetInputId, resultsContainerId, pinUpdateCallback) {
       const resultsContainer = document.getElementById(resultsContainerId);
       if (!resultsContainer) return;
-
       resultsContainer.innerHTML = '';
-      if (!items || items.length === 0) {
-        resultsContainer.style.display = 'none';
-        return;
-      }
+      if (!items || items.length === 0) { resultsContainer.style.display = 'none'; return; }
 
       items.forEach(item => {
         const cleanedLabel = cleanAddressDisplayName(item.display_name);
         const div = document.createElement('div');
         div.className = 'autocomplete-item';
         div.innerHTML = `<strong>${cleanedLabel}</strong>`;
-        
         div.onclick = function() {
           const inputEl = document.getElementById(targetInputId);
           if (inputEl) inputEl.value = cleanedLabel;
-          if (typeof pinUpdateCallback === 'function') {
-            pinUpdateCallback(item.lat, item.lon);
-          }
+          if (typeof pinUpdateCallback === 'function') pinUpdateCallback(item.lat, item.lon);
           resultsContainer.style.display = 'none';
         };
         resultsContainer.appendChild(div);
       });
-
       resultsContainer.style.display = 'block';
+    }
+
+    // --- CALL TYPE AUTOCOMPLETE & ALARM DROPDOWN SYNC ---
+    function syncCallTakingAlarmOptions(typeName) {
+      const select = document.getElementById('incidentAlarmLevelSelect');
+      if (!select) return;
+      select.innerHTML = '';
+      const matched = loadedCallTypes.find(t => t.name.toLowerCase() === (typeName || '').trim().toLowerCase());
+      if (matched && matched.alarms && matched.alarms.length > 0) {
+        matched.alarms.forEach((al, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.innerText = al.title || `Alarm ${idx + 1}`;
+          select.appendChild(opt);
+        });
+      } else {
+        select.innerHTML = '<option value="0">1st Alarm (Default)</option>';
+      }
     }
 
     function handleTypeInput(query) {
       const container = document.getElementById('typeAutocompleteResults');
-      renderTypeSuggestions(query, container, 'incidentType');
+      renderTypeSuggestions(query, container, 'incidentType', (selectedName) => {
+        syncCallTakingAlarmOptions(selectedName);
+      });
+      syncCallTakingAlarmOptions(query);
     }
 
     function handleTypeInputModal(query) {
@@ -2794,14 +2416,9 @@
       renderTypeSuggestions(query, container, 'modalUpgradeTypeInput');
     }
 
-    function renderTypeSuggestions(query, containerEl, inputId) {
-      if (!query || query.trim().length === 0) {
-        containerEl.style.display = 'none';
-        return;
-      }
-
-      const q = query.toLowerCase();
-      const matches = loadedCallTypes.filter(t => t.name.toLowerCase().includes(q));
+    function renderTypeSuggestions(query, containerEl, inputId, onSelectCallback = null) {
+      const q = (query || '').toLowerCase().trim();
+      const matches = q ? loadedCallTypes.filter(t => t.name.toLowerCase().includes(q)) : loadedCallTypes;
 
       containerEl.innerHTML = '';
       if (matches.length === 0) {
@@ -2812,10 +2429,12 @@
       matches.forEach(item => {
         const div = document.createElement('div');
         div.className = 'autocomplete-item';
-        div.innerText = item.name;
+        const alarmCount = item.alarms ? item.alarms.length : 1;
+        div.innerHTML = `<strong>${item.name}</strong> <span style="font-size:11px; color:#f39c12; float:right;">(${alarmCount} Alarm Level${alarmCount > 1 ? 's' : ''})</span>`;
         div.onclick = function() {
           document.getElementById(inputId).value = item.name;
           containerEl.style.display = 'none';
+          if (onSelectCallback) onSelectCallback(item.name);
         };
         containerEl.appendChild(div);
       });
@@ -2825,48 +2444,38 @@
 
     document.addEventListener('click', function(e) {
       if (!e.target.closest('.autocomplete-container')) {
-        const drop1 = document.getElementById('autocompleteResults');
-        const drop2 = document.getElementById('modalAddressAutocompleteResults');
-        const drop3 = document.getElementById('typeAutocompleteResults');
-        const drop4 = document.getElementById('modalTypeAutocompleteResults');
-        const drop5 = document.getElementById('modalUpgradeAutocompleteResults');
-
-        if (drop1) drop1.style.display = 'none';
-        if (drop2) drop2.style.display = 'none';
-        if (drop3) drop3.style.display = 'none';
-        if (drop4) drop4.style.display = 'none';
-        if (drop5) drop5.style.display = 'none';
+        ['autocompleteResults', 'modalAddressAutocompleteResults', 'typeAutocompleteResults', 'modalTypeAutocompleteResults', 'modalUpgradeAutocompleteResults'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
       }
     });
 
-    // --- CALL UPGRADE LOGIC ---
-    async function executeCallUpgrade() {
-      if (!activeModalIncidentId) return;
+    // --- MULTI-ALARM UPGRADE & RUN CARD CALCULATION ENGINE ---
+    function getRunCardForCallTypeAndAlarm(typeName, alarmIndex = 0) {
+      const matched = loadedCallTypes.find(t => t.name.toLowerCase() === (typeName || '').trim().toLowerCase());
+      if (!matched || !matched.alarms || matched.alarms.length === 0) return null;
+      const safeIdx = Math.min(Math.max(0, alarmIndex), matched.alarms.length - 1);
+      return matched.alarms[safeIdx];
+    }
 
+    async function dispatchDifferentialRunCard(newTypeName, targetAlarmObj, targetAlarmIdx) {
+      if (!activeModalIncidentId) return;
       const inc = loadedIncidents[activeModalIncidentId];
       if (!inc) return;
 
-      const newTypeName = document.getElementById('modalUpgradeTypeInput').value.trim();
-      if (!newTypeName) {
-        alert("Please select or enter the upgraded call type.");
-        return;
-      }
-
       const oldTypeName = inc.type;
-      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === newTypeName.toLowerCase());
-      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
-        alert(`No response order / run card found for "${newTypeName}". Please configure it in Call Types Manager.`);
-        return;
-      }
+      const oldAlarmTitle = inc.alarmTitle || '1st Alarm';
+      const newAlarmTitle = targetAlarmObj.title || `Alarm ${targetAlarmIdx + 1}`;
+      const fullTargetRunCard = Array.isArray(targetAlarmObj.responseOrder) ? targetAlarmObj.responseOrder : Object.values(targetAlarmObj.responseOrder || {});
 
-      const fullUpgradedRunCard = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
       const currentlyAssigned = Array.isArray(inc.assignedUnits) ? [...inc.assignedUnits] : Object.values(inc.assignedUnits || {});
       const assignedUnitsSet = new Set(currentlyAssigned);
 
       const remainingNeededTraits = [];
       const usedAssignedForCoverage = new Set();
 
-      fullUpgradedRunCard.forEach(trait => {
+      fullTargetRunCard.forEach(trait => {
         const foundUnit = currentlyAssigned.find(uId => {
           if (usedAssignedForCoverage.has(uId)) return false;
           const u = loadedUnits[uId];
@@ -2884,27 +2493,28 @@
       if (remainingNeededTraits.length === 0) {
         db.ref(`incidents/${activeModalIncidentId}`).update({
           type: newTypeName,
+          alarmLevelIndex: targetAlarmIdx,
+          alarmTitle: newAlarmTitle,
           updatedAt: Date.now()
         });
 
         db.ref(`incidents/${activeModalIncidentId}/logs`).push({
           author: 'CAD SYSTEM',
-          text: `Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Existing units satisfy the upgraded run card.`,
+          text: `[ALARM UPDATE]: Incident set to [${newTypeName} - ${newAlarmTitle}] (from ${oldTypeName} - ${oldAlarmTitle}). Existing units satisfy the run card.`,
           timestamp: Date.now()
         });
 
         CADAudio.playUpgradeAlert();
-
         document.getElementById('modalTypeInput').value = newTypeName;
+        document.getElementById('modalCurrentAlarmDisplay').value = newAlarmTitle;
         document.getElementById('modalUpgradeTypeInput').value = '';
-        alert(`Call upgraded to ${newTypeName}! All required capabilities are already covered by assigned units.`);
+        alert(`Updated to ${newTypeName} (${newAlarmTitle})! All required capabilities are already covered by assigned units.`);
         return;
       }
 
       const stationCrewCapacity = getStationAvailableCrewsPool();
       const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
       const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
-
       const additionalDispatched = [];
 
       for (const requiredTrait of remainingNeededTraits) {
@@ -2919,20 +2529,16 @@
           const stId = unit.assignedStationId;
           const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
 
-          if (!roles.includes(requiredTrait) || !isAvailable || assignedUnitsSet.has(uId)) {
-            return;
-          }
+          if (!roles.includes(requiredTrait) || !isAvailable || assignedUnitsSet.has(uId)) return;
 
           let turnoutDelay = 0;
           if (status === 'ON_CALL') {
             turnoutDelay = 4.0;
           } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
             const cap = stationCrewCapacity[stId];
-            if (status === 'AVAILABLE') {
-              turnoutDelay = 0;
-            } else if (cap.staffedRemaining > 0) {
-              turnoutDelay = 0;
-            } else if (cap.onCallRemaining > 0) {
+            if (status === 'AVAILABLE') turnoutDelay = 0;
+            else if (cap.staffedRemaining > 0) turnoutDelay = 0;
+            else if (cap.onCallRemaining > 0) {
               const nextOnCallIndex = cap.onCallPulledCount + 1;
               turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
             } else {
@@ -2951,21 +2557,12 @@
           if (uLat && uLng) {
             candidatePromises.push((async () => {
               const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
-              const totalTime = routeInfo.timeMinutes + turnoutDelay;
-              return { 
-                id: uId, 
-                unit: unit, 
-                stId: stId,
-                turnoutDelay: turnoutDelay, 
-                totalTime: totalTime,
-                fulfilledTier: slotCategoryTier
-              };
+              return { id: uId, unit, stId, turnoutDelay, totalTime: routeInfo.timeMinutes + turnoutDelay, fulfilledTier: slotCategoryTier };
             })());
           }
         });
 
         const candidates = await Promise.all(candidatePromises);
-
         if (candidates.length > 0) {
           candidates.sort((a, b) => a.totalTime - b.totalTime);
           const best = candidates[0];
@@ -2976,25 +2573,16 @@
 
           if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
             const cap = stationCrewCapacity[best.stId];
-            if (cap.staffedRemaining > 0) {
-              cap.staffedRemaining--;
-            } else if (cap.onCallRemaining > 0) {
-              cap.onCallRemaining--;
-              cap.onCallPulledCount++;
-            }
+            if (cap.staffedRemaining > 0) cap.staffedRemaining--;
+            else if (cap.onCallRemaining > 0) { cap.onCallRemaining--; cap.onCallPulledCount++; }
           }
         }
       }
 
       const combinedUnits = [...currentlyAssigned, ...additionalDispatched];
-
       const sortedAllUnits = combinedUnits.map((uId, originalIndex) => {
         const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
-        return {
-          id: uId,
-          tier: assignedTier,
-          pickIndex: originalIndex
-        };
+        return { id: uId, tier: assignedTier, pickIndex: originalIndex };
       }).sort((a, b) => {
         if (a.tier !== b.tier) return a.tier - b.tier;
         return a.pickIndex - b.pickIndex;
@@ -3002,32 +2590,68 @@
 
       db.ref(`incidents/${activeModalIncidentId}`).update({
         type: newTypeName,
+        alarmLevelIndex: targetAlarmIdx,
+        alarmTitle: newAlarmTitle,
         assignedUnits: sortedAllUnits,
         status: 'DISPATCHED',
         updatedAt: Date.now()
       });
 
       additionalDispatched.forEach(uId => {
-        db.ref(`units/${uId}`).update({
-          status: 'DISPATCHED',
-          lastUpdated: Date.now()
-        });
+        db.ref(`units/${uId}`).update({ status: 'DISPATCHED', lastUpdated: Date.now() });
       });
 
       const addDisplay = formatAssignedShortIds(additionalDispatched);
-
       db.ref(`incidents/${activeModalIncidentId}/logs`).push({
         author: 'CAD SYSTEM',
-        text: `[UPGRADE]: Incident upgraded from [${oldTypeName}] to [${newTypeName}]. Additional units dispatched: [${addDisplay}].`,
+        text: `[ALARM UPGRADE]: [${oldTypeName} - ${oldAlarmTitle}] upgraded to [${newTypeName} - ${newAlarmTitle}]. Additional units dispatched: [${addDisplay}].`,
         timestamp: Date.now()
       });
 
       CADAudio.playUpgradeAlert();
-
       document.getElementById('modalTypeInput').value = newTypeName;
+      document.getElementById('modalCurrentAlarmDisplay').value = newAlarmTitle;
       document.getElementById('modalUpgradeTypeInput').value = '';
 
-      alert(`Incident upgraded to ${newTypeName}!\nAdditional Units Dispatched: ${addDisplay || 'None'}`);
+      alert(`Incident upgraded to ${newTypeName} (${newAlarmTitle})!\nAdditional Units Dispatched: ${addDisplay || 'None'}`);
+    }
+
+    async function executeAlarmLevelUpgrade() {
+      if (!activeModalIncidentId) return;
+      const inc = loadedIncidents[activeModalIncidentId];
+      if (!inc) return;
+
+      const selectEl = document.getElementById('modalAlarmUpgradeSelect');
+      const targetIdx = parseInt(selectEl.value);
+      if (isNaN(targetIdx)) {
+        alert("Please select an alarm level from the dropdown.");
+        return;
+      }
+
+      const alarmObj = getRunCardForCallTypeAndAlarm(inc.type, targetIdx);
+      if (!alarmObj) {
+        alert(`No alarm configuration found for "${inc.type}".`);
+        return;
+      }
+
+      await dispatchDifferentialRunCard(inc.type, alarmObj, targetIdx);
+    }
+
+    async function executeCallTypeSwitchUpgrade() {
+      if (!activeModalIncidentId) return;
+      const newTypeName = document.getElementById('modalUpgradeTypeInput').value.trim();
+      if (!newTypeName) {
+        alert("Please select or enter a call type to switch to.");
+        return;
+      }
+
+      const alarmObj = getRunCardForCallTypeAndAlarm(newTypeName, 0);
+      if (!alarmObj) {
+        alert(`No run card configured for "${newTypeName}". Configure it in Call Types Manager.`);
+        return;
+      }
+
+      await dispatchDifferentialRunCard(newTypeName, alarmObj, 0);
     }
 
     // --- LISTEN FOR RADIO CHANNELS ---
@@ -3060,14 +2684,12 @@
           });
         }
       }
-
       refreshModalAddRadioDropdown();
     });
 
     function saveNewRadioChannel() {
       const name = document.getElementById('newRadioChannelInput').value.trim();
       if (!name) return;
-
       db.ref('radioChannels').push({ name: name, createdAt: Date.now() });
       document.getElementById('newRadioChannelInput').value = '';
     }
@@ -3075,57 +2697,65 @@
     function editRadioChannel(id, currentName) {
       const updatedName = prompt("Edit Radio Channel Name:", currentName);
       if (updatedName !== null && updatedName.trim() !== "") {
-        db.ref(`radioChannels/${id}`).update({
-          name: updatedName.trim(),
-          updatedAt: Date.now()
-        });
+        db.ref(`radioChannels/${id}`).update({ name: updatedName.trim(), updatedAt: Date.now() });
       }
     }
 
     function deleteRadioChannel(id) {
-      if (confirm("Delete radio channel preset?")) {
-        db.ref(`radioChannels/${id}`).remove();
-      }
+      if (confirm("Delete radio channel preset?")) db.ref(`radioChannels/${id}`).remove();
     }
 
-    function openRadioChannelsModal() {
-      document.getElementById('radioChannelsModal').style.display = 'flex';
-    }
-
-    function closeRadioChannelsModal() {
-      document.getElementById('radioChannelsModal').style.display = 'none';
-    }
+    function openRadioChannelsModal() { document.getElementById('radioChannelsModal').style.display = 'flex'; }
+    function closeRadioChannelsModal() { document.getElementById('radioChannelsModal').style.display = 'none'; }
 
     function refreshModalAddRadioDropdown() {
       const select = document.getElementById('modalAddRadioSelect');
       if (!select) return;
-
       select.innerHTML = '<option value="">-- Add Radio Channel --</option>';
-      loadedRadioChannels.forEach(rc => {
-        select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`;
-      });
+      loadedRadioChannels.forEach(rc => select.innerHTML += `<option value="${rc.name}">${rc.name}</option>`);
     }
 
-    // --- CALL TYPES & RUN CARD MANAGER ---
-    function appendTagToRunCard(tag) {
-      currentBuildingRunCard.push(tag);
-      renderRunCardDisplay();
-    }
-
-    function removeTagFromRunCard(index) {
-      currentBuildingRunCard.splice(index, 1);
-      renderRunCardDisplay();
-    }
-
-    function renderRunCardDisplay() {
+    // ========================================================
+    // --- MULTI-ALARM CALL TYPES & RUN CARD BUILDER MANAGER ---
+    // ========================================================
+    function renderAlarmBuilderUI() {
+      const tabsBar = document.getElementById('alarmBuilderTabs');
+      const titleInput = document.getElementById('activeAlarmTitleInput');
+      const labelIndicator = document.getElementById('activeAlarmLabelIndicator');
+      const removeBtn = document.getElementById('btnRemoveAlarmLevel');
       const display = document.getElementById('activeRunCardDisplay');
+
+      if (!tabsBar || !display) return;
+
+      if (activeBuildingAlarmIdx >= buildingAlarmsList.length) {
+        activeBuildingAlarmIdx = Math.max(0, buildingAlarmsList.length - 1);
+      }
+
+      tabsBar.innerHTML = '';
+      buildingAlarmsList.forEach((al, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `alarm-tab-btn ${idx === activeBuildingAlarmIdx ? 'active' : ''}`;
+        btn.innerText = al.title || `Alarm ${idx + 1}`;
+        btn.onclick = () => {
+          activeBuildingAlarmIdx = idx;
+          renderAlarmBuilderUI();
+        };
+        tabsBar.appendChild(btn);
+      });
+
+      const activeAlarm = buildingAlarmsList[activeBuildingAlarmIdx];
+      if (titleInput) titleInput.value = activeAlarm.title;
+      if (labelIndicator) labelIndicator.innerText = activeAlarm.title || `Alarm ${activeBuildingAlarmIdx + 1}`;
+      if (removeBtn) removeBtn.style.display = buildingAlarmsList.length > 1 ? 'inline-block' : 'none';
+
       display.innerHTML = '';
-      if (currentBuildingRunCard.length === 0) {
-        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty. Click tags above to build sequence.</em>';
+      if (!activeAlarm.responseOrder || activeAlarm.responseOrder.length === 0) {
+        display.innerHTML = '<em style="color:#666; font-size: 12px;">Run card is empty for this alarm level. Click tags above to build sequence.</em>';
         return;
       }
 
-      currentBuildingRunCard.forEach((tag, idx) => {
+      activeAlarm.responseOrder.forEach((tag, idx) => {
         const chip = document.createElement('span');
         chip.className = 'run-card-chip';
         chip.innerHTML = `${idx + 1}. ${tag} <span onclick="removeTagFromRunCard(${idx})">×</span>`;
@@ -3133,12 +2763,68 @@
       });
     }
 
+    function addAlarmLevelToBuilder() {
+      const nextNum = buildingAlarmsList.length + 1;
+      const suffix = nextNum === 2 ? 'nd' : (nextNum === 3 ? 'rd' : 'th');
+      const prevRunCard = [...(buildingAlarmsList[buildingAlarmsList.length - 1]?.responseOrder || [])];
+      buildingAlarmsList.push({
+        title: `${nextNum}${suffix} Alarm`,
+        responseOrder: prevRunCard
+      });
+      activeBuildingAlarmIdx = buildingAlarmsList.length - 1;
+      renderAlarmBuilderUI();
+    }
+
+    function removeCurrentAlarmLevel() {
+      if (buildingAlarmsList.length <= 1) return;
+      buildingAlarmsList.splice(activeBuildingAlarmIdx, 1);
+      activeBuildingAlarmIdx = Math.max(0, activeBuildingAlarmIdx - 1);
+      renderAlarmBuilderUI();
+    }
+
+    function updateActiveAlarmTitle(newTitle) {
+      if (!buildingAlarmsList[activeBuildingAlarmIdx]) return;
+      buildingAlarmsList[activeBuildingAlarmIdx].title = newTitle;
+      const labelIndicator = document.getElementById('activeAlarmLabelIndicator');
+      if (labelIndicator) labelIndicator.innerText = newTitle || `Alarm ${activeBuildingAlarmIdx + 1}`;
+      
+      const tabBtns = document.querySelectorAll('#alarmBuilderTabs .alarm-tab-btn');
+      if (tabBtns[activeBuildingAlarmIdx]) {
+        tabBtns[activeBuildingAlarmIdx].innerText = newTitle || `Alarm ${activeBuildingAlarmIdx + 1}`;
+      }
+    }
+
+    function appendTagToRunCard(tag) {
+      if (!buildingAlarmsList[activeBuildingAlarmIdx]) return;
+      buildingAlarmsList[activeBuildingAlarmIdx].responseOrder.push(tag);
+      renderAlarmBuilderUI();
+    }
+
+    function removeTagFromRunCard(index) {
+      if (!buildingAlarmsList[activeBuildingAlarmIdx]) return;
+      buildingAlarmsList[activeBuildingAlarmIdx].responseOrder.splice(index, 1);
+      renderAlarmBuilderUI();
+    }
+
+    // Helper to normalize legacy flat responseOrder OR multi-alarm arrays
+    function normalizeCallTypeAlarms(rawCt) {
+      if (rawCt.alarms) {
+        const arr = Array.isArray(rawCt.alarms) ? rawCt.alarms : Object.values(rawCt.alarms);
+        return arr.map((al, idx) => ({
+          title: al.title || `Alarm ${idx + 1}`,
+          responseOrder: Array.isArray(al.responseOrder) ? al.responseOrder : Object.values(al.responseOrder || {})
+        }));
+      }
+      const legacyOrder = Array.isArray(rawCt.responseOrder) ? rawCt.responseOrder : Object.values(rawCt.responseOrder || {});
+      return [{ title: "1st Alarm", responseOrder: legacyOrder }];
+    }
+
     db.ref('callTypes').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       loadedCallTypes = Object.keys(data).map(k => ({
         id: k,
         name: data[k].name,
-        responseOrder: Array.isArray(data[k].responseOrder) ? data[k].responseOrder : Object.values(data[k].responseOrder || {})
+        alarms: normalizeCallTypeAlarms(data[k])
       })).sort((a, b) => a.name.localeCompare(b.name));
 
       const listContainer = document.getElementById('configuredCallTypesList');
@@ -3149,20 +2835,23 @@
         } else {
           loadedCallTypes.forEach(ct => {
             const div = document.createElement('div');
-            div.style.padding = '8px 0';
+            div.style.padding = '10px 0';
             div.style.borderBottom = '1px solid #222';
             div.style.display = 'flex';
             div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
-            
-            const cardText = ct.responseOrder.length > 0 ? ct.responseOrder.join(', ') : 'No run card set';
+            div.style.alignItems = 'flex-start';
+
+            const alarmsHtml = ct.alarms.map(al => {
+              const unitsText = al.responseOrder.length > 0 ? al.responseOrder.join(', ') : 'No units configured';
+              return `<div style="font-size:11px; color:#ccc; margin-top:3px;"><strong style="color:#f39c12;">[${al.title}]</strong>: ${unitsText}</div>`;
+            }).join('');
 
             div.innerHTML = `
-              <div>
-                <strong>${ct.name}</strong>
-                <div style="font-size:11px; color:#aaa; margin-top:2px;">Order: ${cardText}</div>
+              <div style="flex: 1; padding-right: 10px;">
+                <strong style="font-size:14px;">${ct.name}</strong>
+                ${alarmsHtml}
               </div>
-              <div>
+              <div style="white-space: nowrap;">
                 <button onclick="editCallType('${ct.id}')" class="btn-action-sm btn-edit-sm">Edit</button>
                 <button onclick="deleteCallType('${ct.id}')" class="btn-action-sm btn-delete-sm">Delete</button>
               </div>
@@ -3180,24 +2869,30 @@
         return;
       }
 
+      const cleanedAlarms = buildingAlarmsList.map((al, idx) => ({
+        title: (al.title || '').trim() || `Alarm ${idx + 1}`,
+        responseOrder: al.responseOrder || []
+      }));
+
+      const payload = {
+        name: name,
+        alarms: cleanedAlarms,
+        responseOrder: cleanedAlarms[0]?.responseOrder || [],
+        updatedAt: Date.now()
+      };
+
       if (editingCallTypeId) {
-        db.ref(`callTypes/${editingCallTypeId}`).update({
-          name: name,
-          responseOrder: currentBuildingRunCard,
-          updatedAt: Date.now()
-        });
+        db.ref(`callTypes/${editingCallTypeId}`).update(payload);
         editingCallTypeId = null;
       } else {
-        db.ref('callTypes').push({
-          name: name,
-          responseOrder: currentBuildingRunCard,
-          createdAt: Date.now()
-        });
+        payload.createdAt = Date.now();
+        db.ref('callTypes').push(payload);
       }
 
       document.getElementById('newCallTypeInput').value = '';
-      currentBuildingRunCard = [];
-      renderRunCardDisplay();
+      buildingAlarmsList = [{ title: "1st Alarm", responseOrder: [] }];
+      activeBuildingAlarmIdx = 0;
+      renderAlarmBuilderUI();
     }
 
     function editCallType(id) {
@@ -3206,21 +2901,24 @@
 
       editingCallTypeId = id;
       document.getElementById('newCallTypeInput').value = ct.name;
-      currentBuildingRunCard = [...(ct.responseOrder || [])];
-      renderRunCardDisplay();
+      buildingAlarmsList = ct.alarms.map(al => ({
+        title: al.title,
+        responseOrder: [...(al.responseOrder || [])]
+      }));
+      activeBuildingAlarmIdx = 0;
+      renderAlarmBuilderUI();
     }
 
     function deleteCallType(id) {
-      if (confirm("Delete call type preset?")) {
-        db.ref(`callTypes/${id}`).remove();
-      }
+      if (confirm("Delete call type preset?")) db.ref(`callTypes/${id}`).remove();
     }
 
     function openCallTypesModal() {
       editingCallTypeId = null;
-      currentBuildingRunCard = [];
+      buildingAlarmsList = [{ title: "1st Alarm", responseOrder: [] }];
+      activeBuildingAlarmIdx = 0;
       document.getElementById('newCallTypeInput').value = '';
-      renderRunCardDisplay();
+      renderAlarmBuilderUI();
       document.getElementById('callTypesModal').style.display = 'flex';
     }
 
@@ -3274,20 +2972,9 @@
       const staffedCrews = parseInt(document.getElementById('stationStaffedCrewsInput').value) || 0;
       const onCallCrews = parseInt(document.getElementById('stationOnCallCrewsInput').value) || 0;
 
-      if (!name || !lat || !lng) {
-        alert("Please enter Station Name, Latitude, and Longitude.");
-        return;
-      }
+      if (!name || !lat || !lng) { alert("Please enter Station Name, Latitude, and Longitude."); return; }
 
-      db.ref('stations').push({
-        name: name,
-        lat: lat,
-        lng: lng,
-        staffedCrews: staffedCrews,
-        onCallCrews: onCallCrews,
-        createdAt: Date.now()
-      });
-
+      db.ref('stations').push({ name, lat, lng, staffedCrews, onCallCrews, createdAt: Date.now() });
       document.getElementById('stationNameInput').value = '';
       document.getElementById('stationLatInput').value = '';
       document.getElementById('stationLngInput').value = '';
@@ -3298,26 +2985,18 @@
     function editStation(id, currentName, currentLat, currentLng, currStaffed, currOnCall) {
       const updatedName = prompt("Edit Station Name:", currentName);
       if (updatedName === null || updatedName.trim() === "") return;
-
       const updatedLat = prompt("Edit Latitude:", currentLat);
       if (updatedLat === null || updatedLat.trim() === "") return;
-
       const updatedLng = prompt("Edit Longitude:", currentLng);
       if (updatedLng === null || updatedLng.trim() === "") return;
-
       const updatedStaffed = prompt("Number of Staffed Crews (0 min delay):", currStaffed || 1);
       if (updatedStaffed === null || isNaN(parseInt(updatedStaffed))) return;
-
       const updatedOnCall = prompt("Number of On-Call Crews (+4m/+2m delay):", currOnCall || 1);
       if (updatedOnCall === null || isNaN(parseInt(updatedOnCall))) return;
 
       db.ref(`stations/${id}`).update({
-        name: updatedName.trim(),
-        lat: updatedLat.trim(),
-        lng: updatedLng.trim(),
-        staffedCrews: parseInt(updatedStaffed),
-        onCallCrews: parseInt(updatedOnCall),
-        updatedAt: Date.now()
+        name: updatedName.trim(), lat: updatedLat.trim(), lng: updatedLng.trim(),
+        staffedCrews: parseInt(updatedStaffed), onCallCrews: parseInt(updatedOnCall), updatedAt: Date.now()
       });
 
       Object.keys(loadedUnits).forEach(uId => {
@@ -3325,48 +3004,26 @@
         if (u.assignedStationId === id) {
           db.ref(`units/${uId}`).update({
             assignedStationName: updatedName.trim(),
-            location: {
-              lat: updatedLat.trim(),
-              lng: updatedLng.trim(),
-              type: 'STATIC_STATION'
-            }
+            location: { lat: updatedLat.trim(), lng: updatedLng.trim(), type: 'STATIC_STATION' }
           });
         }
       });
     }
 
     function deleteStation(id) {
-      if (confirm("Delete station configuration?")) {
-        db.ref(`stations/${id}`).remove();
-      }
+      if (confirm("Delete station configuration?")) db.ref(`stations/${id}`).remove();
     }
 
-    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS (IGNORES OUT_OF_SERVICE) ---
+    // --- GLOBAL ROSTER OVERRIDE FUNCTIONS ---
     function setAllUnitsStatus(targetStatus) {
       const unitKeys = Object.keys(loadedUnits);
-      if (unitKeys.length === 0) {
-        alert("No active units logged in to update.");
-        return;
-      }
+      if (unitKeys.length === 0) { alert("No active units logged in to update."); return; }
 
-      const actionableUnits = unitKeys.filter(uId => {
-        const unit = loadedUnits[uId];
-        return unit && unit.status !== 'OUT_OF_SERVICE';
-      });
+      const actionableUnits = unitKeys.filter(uId => loadedUnits[uId] && loadedUnits[uId].status !== 'OUT_OF_SERVICE');
+      if (actionableUnits.length === 0) { alert("No units available to update."); return; }
 
-      if (actionableUnits.length === 0) {
-        alert("No units available to update (all logged-in units are currently Out of Service).");
-        return;
-      }
-
-      if (confirm(`Set ${actionableUnits.length} in-service unit(s) status to ${targetStatus.replace(/_/g, ' ')}? (Out of service units will be skipped)`)) {
-        actionableUnits.forEach(uId => {
-          db.ref(`units/${uId}`).update({
-            status: targetStatus,
-            lastUpdated: Date.now()
-          });
-        });
-
+      if (confirm(`Set ${actionableUnits.length} in-service unit(s) status to ${targetStatus.replace(/_/g, ' ')}?`)) {
+        actionableUnits.forEach(uId => db.ref(`units/${uId}`).update({ status: targetStatus, lastUpdated: Date.now() }));
         alert(`${actionableUnits.length} unit(s) updated to ${targetStatus.replace(/_/g, ' ')}!`);
       }
     }
@@ -3378,28 +3035,20 @@
       refreshMapLayers();
     });
 
-    // --- LIVE FILTER SEARCH ON ROSTER ---
     function handleRosterSearchInput(query) {
       const filter = (query || '').toLowerCase().trim();
       const rows = document.querySelectorAll('#unitList .unit-row');
-      
       rows.forEach(row => {
         const text = row.innerText.toLowerCase();
-        if (!filter || text.includes(filter)) {
-          row.style.display = 'flex';
-        } else {
-          row.style.display = 'none';
-        }
+        row.style.display = (!filter || text.includes(filter)) ? 'flex' : 'none';
       });
     }
 
-    // IN-PLACE DOM ROSTER UPDATE (PREVENTS DROPDOWNS FROM COLLAPSING ON LIVE SYNC)
     function renderUnitRoster() {
       const unitListEl = document.getElementById('unitList');
       if (!unitListEl) return;
 
       const unitKeys = Object.keys(loadedUnits);
-
       if (unitKeys.length === 0) {
         unitListEl.innerHTML = '<em>No active units logged in yet...</em>';
         return;
@@ -3408,27 +3057,13 @@
       const placeholder = unitListEl.querySelector('em');
       if (placeholder) placeholder.remove();
 
-      const availableStatuses = [
-        "DISPATCHED",
-        "ENROUTE",
-        "ONSCENE",
-        "ARRIVED",
-        "TRANSPORTING",
-        "IN_QUARTERS",
-        "AVAILABLE",
-        "ON_CALL",
-        "OUT_OF_SERVICE"
-      ];
-
-      const sortedStationKeys = Object.keys(loadedStations)
-        .sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
+      const availableStatuses = ["DISPATCHED", "ENROUTE", "ONSCENE", "ARRIVED", "TRANSPORTING", "IN_QUARTERS", "AVAILABLE", "ON_CALL", "OUT_OF_SERVICE"];
+      const sortedStationKeys = Object.keys(loadedStations).sort((a, b) => loadedStations[a].name.localeCompare(loadedStations[b].name));
 
       const existingRows = unitListEl.querySelectorAll('.unit-row');
       existingRows.forEach(row => {
         const rowUnitId = row.getAttribute('data-unit-id');
-        if (!loadedUnits[rowUnitId]) {
-          row.remove();
-        }
+        if (!loadedUnits[rowUnitId]) row.remove();
       });
 
       const currentSearchQuery = document.getElementById('rosterSearchInput') ? document.getElementById('rosterSearchInput').value.toLowerCase().trim() : '';
@@ -3451,15 +3086,10 @@
           row.setAttribute('data-unit-id', unitId);
           
           let stationOptions = '<option value="">-- Assign Station (Static Location) --</option>';
-          sortedStationKeys.forEach(stId => {
-            const st = loadedStations[stId];
-            stationOptions += `<option value="${stId}">${st.name}</option>`;
-          });
+          sortedStationKeys.forEach(stId => stationOptions += `<option value="${stId}">${loadedStations[stId].name}</option>`);
 
           let statusOptions = '';
-          availableStatuses.forEach(stVal => {
-            statusOptions += `<option value="${stVal}">${stVal.replace(/_/g, ' ')}</option>`;
-          });
+          availableStatuses.forEach(stVal => statusOptions += `<option value="${stVal}">${stVal.replace(/_/g, ' ')}</option>`);
 
           row.innerHTML = `
             <div class="unit-header">
@@ -3470,9 +3100,7 @@
             <div class="unit-controls-row">
               <div style="flex: 1; min-width: 150px;">
                 <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Change Status:</span>
-                <select class="unit-status-select" onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
-                  ${statusOptions}
-                </select>
+                <select class="unit-status-select" onchange="dispatchChangeUnitStatus('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">${statusOptions}</select>
               </div>
               <div style="flex: 1; min-width: 150px;">
                 <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Staffing Type:</span>
@@ -3483,9 +3111,7 @@
               </div>
               <div style="flex: 1.5; min-width: 200px;">
                 <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 2px;">Assign Home Station:</span>
-                <select class="unit-station-select" onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">
-                  ${stationOptions}
-                </select>
+                <select class="unit-station-select" onchange="assignUnitStation('${unitId}', this.value)" style="margin-bottom:0; font-size:12px; padding:6px; background:#1e1e1e;">${stationOptions}</select>
               </div>
             </div>
           `;
@@ -3503,25 +3129,18 @@
         const statusBadge = row.querySelector('.unit-status-badge');
         statusBadge.className = `unit-status-badge status-${currentStatus}`;
         statusBadge.innerText = statusText;
-
         row.querySelector('.role-badges').innerHTML = tagsHtml;
 
         const statusSelect = row.querySelector('.unit-status-select');
-        if (document.activeElement !== statusSelect && statusSelect.value !== currentStatus) {
-          statusSelect.value = currentStatus;
-        }
+        if (document.activeElement !== statusSelect && statusSelect.value !== currentStatus) statusSelect.value = currentStatus;
 
         const staffingSelect = row.querySelector('.unit-staffing-select');
         const targetStaffing = isCrossStaffed ? 'CROSS_STAFFED' : 'DEDICATED';
-        if (document.activeElement !== staffingSelect && staffingSelect.value !== targetStaffing) {
-          staffingSelect.value = targetStaffing;
-        }
+        if (document.activeElement !== staffingSelect && staffingSelect.value !== targetStaffing) staffingSelect.value = targetStaffing;
 
         const stationSelect = row.querySelector('.unit-station-select');
         const targetStation = unit.assignedStationId || '';
-        if (document.activeElement !== stationSelect && stationSelect.value !== targetStation) {
-          stationSelect.value = targetStation;
-        }
+        if (document.activeElement !== stationSelect && stationSelect.value !== targetStation) stationSelect.value = targetStation;
 
         if (currentSearchQuery) {
           const matchText = (unitId + ' ' + (unit.shortId || '') + ' ' + (unit.assignedStationName || '') + ' ' + roles.join(' ')).toLowerCase();
@@ -3533,11 +3152,7 @@
     }
 
     function dispatchChangeUnitStatus(unitId, newStatus) {
-      db.ref(`units/${unitId}`).update({
-        status: newStatus,
-        lastUpdated: Date.now()
-      });
-
+      db.ref(`units/${unitId}`).update({ status: newStatus, lastUpdated: Date.now() });
       Object.keys(loadedIncidents).forEach(incId => {
         const inc = loadedIncidents[incId];
         const assigned = Array.isArray(inc.assignedUnits) ? inc.assignedUnits : Object.values(inc.assignedUnits || {});
@@ -3545,19 +3160,14 @@
           const u = loadedUnits[unitId];
           const displayName = u && u.shortId ? u.shortId : unitId;
           db.ref(`incidents/${incId}/logs`).push({
-            author: 'DISPATCH',
-            text: `${displayName} status updated to ${newStatus.replace(/_/g, ' ')} by Dispatch.`,
-            timestamp: Date.now()
+            author: 'DISPATCH', text: `${displayName} status updated to ${newStatus.replace(/_/g, ' ')} by Dispatch.`, timestamp: Date.now()
           });
         }
       });
     }
 
     function changeUnitStaffingType(unitId, type) {
-      db.ref(`units/${unitId}`).update({
-        staffingType: type,
-        lastUpdated: Date.now()
-      });
+      db.ref(`units/${unitId}`).update({ staffingType: type, lastUpdated: Date.now() });
     }
 
     function assignUnitStation(unitId, stationId) {
@@ -3567,50 +3177,38 @@
         db.ref(`units/${unitId}/location`).remove();
         return;
       }
-
       const st = loadedStations[stationId];
       if (st) {
         db.ref(`units/${unitId}`).update({
-          assignedStationId: stationId,
-          assignedStationName: st.name,
-          location: {
-            lat: st.lat,
-            lng: st.lng,
-            type: 'STATIC_STATION'
-          }
+          assignedStationId: stationId, assignedStationName: st.name,
+          location: { lat: st.lat, lng: st.lng, type: 'STATIC_STATION' }
         });
       }
     }
 
     function removeUnit(unitId) {
-      if (confirm(`Remove ${unitId} from the active unit roster?`)) {
-        db.ref('units/' + unitId).remove();
-      }
+      if (confirm(`Remove ${unitId} from the active unit roster?`)) db.ref('units/' + unitId).remove();
     }
 
-    // --- SUBMIT PENDING CALL ---
+    // --- SUBMIT PENDING CALL WITH INITIAL ALARM LEVEL ---
     function submitPendingCall() {
       let address = document.getElementById('incidentAddress').value.trim();
       const type = document.getElementById('incidentType').value.trim();
+      const alarmIdx = parseInt(document.getElementById('incidentAlarmLevelSelect').value) || 0;
       
-      if (!address && selectedLat && selectedLng) {
-        address = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
-      }
+      if (!address && selectedLat && selectedLng) address = `Plotted Coordinates (${selectedLat}, ${selectedLng})`;
+      if (!address) { alert("Please enter an address, cross streets, or plot on map."); return; }
+      if (!type) { alert("Please select or enter a call type."); return; }
 
-      if (!address) {
-        alert("Please enter an address, cross streets, or click on the map to plot the incident location.");
-        return;
-      }
-
-      if (!type) {
-        alert("Please select or enter a call type.");
-        return;
-      }
+      const alarmObj = getRunCardForCallTypeAndAlarm(type, alarmIdx);
+      const alarmTitle = alarmObj ? alarmObj.title : '1st Alarm';
 
       const newIncRef = db.ref('incidents').push();
       newIncRef.set({
         address: address,
         type: type,
+        alarmLevelIndex: alarmIdx,
+        alarmTitle: alarmTitle,
         boxArea: detectedBoxArea,
         assignedUnits: [],
         status: 'PENDING',
@@ -3621,7 +3219,7 @@
 
       newIncRef.child('logs').push({
         author: 'DISPATCH',
-        text: `Pending Call Created: [${type}] at ${address} [${detectedBoxArea}]. Awaiting unit dispatch.`,
+        text: `Pending Call Created: [${type} - ${alarmTitle}] at ${address} [${detectedBoxArea}]. Awaiting unit dispatch.`,
         timestamp: Date.now()
       });
 
@@ -3629,6 +3227,7 @@
 
       document.getElementById('incidentAddress').value = '';
       document.getElementById('incidentType').value = '';
+      document.getElementById('incidentAlarmLevelSelect').innerHTML = '<option value="0">1st Alarm (Default)</option>';
       document.getElementById('callCoordsDisplay').innerText = 'Not Set';
       document.getElementById('callBoxAreaDisplay').innerText = 'Out of Area';
       if (callTakingMarker) callTakingMap.removeLayer(callTakingMarker);
@@ -3655,6 +3254,7 @@
           const inc = loadedIncidents[id];
           const isPending = inc.status === 'PENDING' || (!inc.assignedUnits || inc.assignedUnits.length === 0);
           const boxBadge = inc.boxArea ? `<span class="box-badge">${inc.boxArea}</span>` : '';
+          const alarmBadge = inc.alarmTitle ? `<span class="alarm-badge">${inc.alarmTitle}</span>` : '';
           const callNumBadge = `<span class="call-num-badge">#${index + 1}</span>`;
           
           let radioInfo = '';
@@ -3666,12 +3266,11 @@
 
           const card = document.createElement('div');
           card.className = `incident-card ${isPending ? 'pending' : ''}`;
-          
           const statusBadge = isPending ? '<span class="badge-pending">PENDING</span>' : '<span class="badge-dispatched">DISPATCHED</span>';
 
           card.innerHTML = `
             <div class="incident-header">
-              <strong style="font-size: 16px;">${callNumBadge}${inc.type} ${statusBadge} ${boxBadge}</strong>
+              <strong style="font-size: 16px;">${callNumBadge}${inc.type} ${alarmBadge} ${statusBadge} ${boxBadge}</strong>
               <div>
                 <button class="btn-manage" onclick="openEditModal('${id}')">Open / Dispatch Call</button>
               </div>
@@ -3691,31 +3290,48 @@
       refreshMapLayers();
     });
 
-    // --- MANAGE INCIDENT MODAL & SEPARATE UNIT DISPATCH WINDOW ---
+    // --- MANAGE INCIDENT MODAL ---
     function openEditModal(incidentId) {
       activeModalIncidentId = incidentId;
       document.getElementById('editCallModal').style.display = 'flex';
 
       db.ref(`incidents/${incidentId}`).on('value', (snapshot) => {
         const inc = snapshot.val();
-        if (!inc) {
-          closeEditModal();
-          return;
-        }
+        if (!inc) { closeEditModal(); return; }
 
         const callIdx = activeIncidentIdOrder.indexOf(incidentId) + 1;
         const callNumText = callIdx > 0 ? `[Call #${callIdx}] ` : '';
         const boxText = inc.boxArea ? ` [${inc.boxArea}]` : '';
-        document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type}${boxText}`;
+        const alarmTitle = inc.alarmTitle || '1st Alarm';
+
+        document.getElementById('modalCallTitle').innerText = `Manage: ${callNumText}${inc.type} (${alarmTitle})${boxText}`;
         
         if (document.activeElement !== document.getElementById('modalAddressInput')) {
           document.getElementById('modalAddressInput').value = inc.address;
         }
         document.getElementById('modalTypeInput').value = inc.type;
+        document.getElementById('modalCurrentAlarmDisplay').value = alarmTitle;
+
+        // Populate quick alarm upgrade selector for this call type
+        const alarmSelect = document.getElementById('modalAlarmUpgradeSelect');
+        const matchedCt = loadedCallTypes.find(t => t.name.toLowerCase() === (inc.type || '').trim().toLowerCase());
+        if (alarmSelect) {
+          alarmSelect.innerHTML = '';
+          if (matchedCt && matchedCt.alarms && matchedCt.alarms.length > 0) {
+            matchedCt.alarms.forEach((al, idx) => {
+              const opt = document.createElement('option');
+              opt.value = idx;
+              opt.innerText = `${al.title} (${al.responseOrder.length} units)`;
+              if (idx === (inc.alarmLevelIndex || 0)) opt.selected = true;
+              alarmSelect.appendChild(opt);
+            });
+          } else {
+            alarmSelect.innerHTML = '<option value="0">1st Alarm (Default)</option>';
+          }
+        }
 
         renderModalRadioList(inc.radioChannels || []);
         renderModalAssignedUnitsChips(inc.assignedUnits || []);
-
         initModalEditMap(inc.lat, inc.lng);
 
         const logs = inc.logs || {};
@@ -3735,30 +3351,24 @@
 
     function openUnitDispatchModal() {
       if (!activeModalIncidentId) return;
-
       document.getElementById('suggestResponseNotice').style.display = 'none';
-      
       const inc = loadedIncidents[activeModalIncidentId];
       const assigned = Array.isArray(inc?.assignedUnits) ? inc.assignedUnits : Object.values(inc?.assignedUnits || {});
       currentDispatchSelectionOrder = [...assigned];
       unitFulfilledTierMap = {};
-
       renderUnitDispatchList();
       document.getElementById('unitDispatchModal').style.display = 'flex';
     }
 
     function toggleUnitDispatchSelection(uId, isChecked) {
       if (isChecked) {
-        if (!currentDispatchSelectionOrder.includes(uId)) {
-          currentDispatchSelectionOrder.push(uId);
-        }
+        if (!currentDispatchSelectionOrder.includes(uId)) currentDispatchSelectionOrder.push(uId);
       } else {
         currentDispatchSelectionOrder = currentDispatchSelectionOrder.filter(id => id !== uId);
         delete unitFulfilledTierMap[uId];
       }
     }
 
-    // --- RENDER DISPATCH LIST ---
     async function renderUnitDispatchList() {
       const container = document.getElementById('unitDispatchScrollList');
       container.innerHTML = '<em>Calculating driving routes and staffing turnout times...</em>';
@@ -3772,7 +3382,6 @@
       const inc = loadedIncidents[activeModalIncidentId] || {};
       const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
       const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
-
       const stationCrewTracking = getStationAvailableCrewsPool();
 
       const unitTravelData = await Promise.all(unitKeys.map(async uId => {
@@ -3787,18 +3396,9 @@
         }
 
         let routeInfo = { distanceMiles: 999, timeMinutes: 999, isRoadRoute: false };
-        if (uLat && uLng) {
-          routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
-        }
+        if (uLat && uLng) routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
 
-        return {
-          id: uId,
-          unit: unit,
-          stId: stId,
-          drivingTimeMinutes: routeInfo.timeMinutes,
-          distanceMiles: routeInfo.distanceMiles,
-          isRoadRoute: routeInfo.isRoadRoute
-        };
+        return { id: uId, unit, stId, drivingTimeMinutes: routeInfo.timeMinutes, distanceMiles: routeInfo.distanceMiles };
       }));
 
       unitTravelData.sort((a, b) => a.drivingTimeMinutes - b.drivingTimeMinutes);
@@ -3814,7 +3414,6 @@
           staffingTag = "On-Call Status";
         } else if (isCrossStaffed && item.stId && stationCrewTracking[item.stId]) {
           const track = stationCrewTracking[item.stId];
-          
           if (currentStatus === 'AVAILABLE' || currentStatus === 'DISPATCHED' || currentStatus === 'ENROUTE') {
             turnoutDelay = 0;
             staffingTag = "In-Service (Active Crew)";
@@ -3839,7 +3438,6 @@
       });
 
       unitTravelData.sort((a, b) => a.totalEstimatedMinutes - b.totalEstimatedMinutes);
-
       container.innerHTML = '';
 
       unitTravelData.forEach(item => {
@@ -3854,9 +3452,7 @@
         const roles = Array.isArray(unit.roles) ? unit.roles : Object.values(unit.roles || {});
         const rolesText = roles.join(', ') || 'No capability tags';
         const staffingTypeBadge = unit.staffingType === 'CROSS_STAFFED' ? '[Cross-Staffed]' : '[Dedicated]';
-
         const delayDisplay = item.turnoutDelay > 0 ? `<span style="color:#f1c40f; font-size:11px;"> [${item.staffingTag}]</span>` : '';
-
         const travelBadge = item.distanceMiles < 900 
           ? `<span style="color:#2ecc71; font-weight:bold; margin-left:8px;">~${item.totalEstimatedMinutes.toFixed(1)} mins (${item.distanceMiles.toFixed(1)} mi)</span>${delayDisplay}`
           : '<span style="color:#888; margin-left:8px;">[No Station/Location Set]</span>';
@@ -3876,30 +3472,28 @@
       });
     }
 
-    function closeUnitDispatchModal() {
-      document.getElementById('unitDispatchModal').style.display = 'none';
-    }
+    function closeUnitDispatchModal() { document.getElementById('unitDispatchModal').style.display = 'none'; }
 
-    // --- AUTOMATED RESPONSE SUGGESTION ENGINE ---
+    // --- AUTOMATED RESPONSE SUGGESTION ENGINE (USES ACTIVE ALARM LEVEL) ---
     async function suggestResponseForCall() {
       if (!activeModalIncidentId) return;
-
       const inc = loadedIncidents[activeModalIncidentId];
       if (!inc) return;
 
-      const matchedCallType = loadedCallTypes.find(t => t.name.toLowerCase() === inc.type.toLowerCase());
-      if (!matchedCallType || !matchedCallType.responseOrder || matchedCallType.responseOrder.length === 0) {
-        alert(`No response order / run card configured for "${inc.type}". Configure it in Call Types Manager.`);
+      const alarmIdx = inc.alarmLevelIndex || 0;
+      const alarmObj = getRunCardForCallTypeAndAlarm(inc.type, alarmIdx);
+
+      if (!alarmObj || !alarmObj.responseOrder || alarmObj.responseOrder.length === 0) {
+        alert(`No run card configured for "${inc.type}" (${inc.alarmTitle || 'Alarm 1'}). Configure it in Call Types Manager.`);
         return;
       }
 
-      const runCardOrder = Array.isArray(matchedCallType.responseOrder) ? matchedCallType.responseOrder : Object.values(matchedCallType.responseOrder || {});
+      const runCardOrder = alarmObj.responseOrder;
       const suggestedOrder = [];
       const suggestedSet = new Set();
       unitFulfilledTierMap = {};
 
       const stationCrewCapacity = getStationAvailableCrewsPool();
-
       const incLat = parseFloat(inc.lat || selectedLat || defaultMapLat);
       const incLng = parseFloat(inc.lng || selectedLng || defaultMapLng);
 
@@ -3915,20 +3509,15 @@
           const stId = unit.assignedStationId;
           const isCrossStaffed = unit.staffingType === 'CROSS_STAFFED';
 
-          if (!roles.includes(requiredTrait) || !isAvailable || suggestedSet.has(uId)) {
-            return;
-          }
+          if (!roles.includes(requiredTrait) || !isAvailable || suggestedSet.has(uId)) return;
 
           let turnoutDelay = 0;
-          if (status === 'ON_CALL') {
-            turnoutDelay = 4.0;
-          } else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
+          if (status === 'ON_CALL') turnoutDelay = 4.0;
+          else if (isCrossStaffed && stId && stationCrewCapacity[stId]) {
             const cap = stationCrewCapacity[stId];
-            if (status === 'AVAILABLE') {
-              turnoutDelay = 0;
-            } else if (cap.staffedRemaining > 0) {
-              turnoutDelay = 0;
-            } else if (cap.onCallRemaining > 0) {
+            if (status === 'AVAILABLE') turnoutDelay = 0;
+            else if (cap.staffedRemaining > 0) turnoutDelay = 0;
+            else if (cap.onCallRemaining > 0) {
               const nextOnCallIndex = cap.onCallPulledCount + 1;
               turnoutDelay = nextOnCallIndex === 1 ? 4.0 : 4.0 + (nextOnCallIndex - 1) * 2.0;
             } else {
@@ -3947,21 +3536,12 @@
           if (uLat && uLng) {
             candidatePromises.push((async () => {
               const routeInfo = await calculateRoadRoute(uLat, uLng, incLat, incLng);
-              const totalTime = routeInfo.timeMinutes + turnoutDelay;
-              return { 
-                id: uId, 
-                unit: unit, 
-                stId: stId,
-                turnoutDelay: turnoutDelay, 
-                totalTime: totalTime,
-                fulfilledTier: slotCategoryTier
-              };
+              return { id: uId, unit, stId, turnoutDelay, totalTime: routeInfo.timeMinutes + turnoutDelay, fulfilledTier: slotCategoryTier };
             })());
           }
         });
 
         const candidates = await Promise.all(candidatePromises);
-
         if (candidates.length > 0) {
           candidates.sort((a, b) => a.totalTime - b.totalTime);
           const best = candidates[0];
@@ -3972,12 +3552,8 @@
 
           if (best.stId && stationCrewCapacity[best.stId] && best.unit.status !== 'ON_CALL' && best.unit.status !== 'AVAILABLE') {
             const cap = stationCrewCapacity[best.stId];
-            if (cap.staffedRemaining > 0) {
-              cap.staffedRemaining--;
-            } else if (cap.onCallRemaining > 0) {
-              cap.onCallRemaining--;
-              cap.onCallPulledCount++;
-            }
+            if (cap.staffedRemaining > 0) cap.staffedRemaining--;
+            else if (cap.onCallRemaining > 0) { cap.onCallRemaining--; cap.onCallPulledCount++; }
           }
         }
       }
@@ -3992,7 +3568,7 @@
 
       const notice = document.getElementById('suggestResponseNotice');
       const shortDisplay = formatAssignedShortIds(suggestedOrder);
-      notice.innerText = `Suggested ${suggestedOrder.length} unit(s) based on staffing & travel time: ${shortDisplay}`;
+      notice.innerText = `Suggested ${suggestedOrder.length} unit(s) for [${alarmObj.title}]: ${shortDisplay}`;
       notice.style.display = 'block';
     }
 
@@ -4001,41 +3577,27 @@
 
       const newAddress = document.getElementById('modalAddressInput').value.trim();
       const newType = document.getElementById('modalTypeInput').value.trim();
-
       const rawSelection = [...currentDispatchSelectionOrder];
       
       const sortedSelectedUnits = rawSelection.map((uId, originalIndex) => {
         const assignedTier = unitFulfilledTierMap[uId] !== undefined ? unitFulfilledTierMap[uId] : getUnitDefaultCategoryTier(uId);
-        return {
-          id: uId,
-          tier: assignedTier,
-          pickIndex: originalIndex
-        };
+        return { id: uId, tier: assignedTier, pickIndex: originalIndex };
       }).sort((a, b) => {
-        if (a.tier !== b.tier) {
-          return a.tier - b.tier;
-        }
+        if (a.tier !== b.tier) return a.tier - b.tier;
         return a.pickIndex - b.pickIndex;
       }).map(item => item.id);
 
       const newStatus = sortedSelectedUnits.length > 0 ? 'DISPATCHED' : 'PENDING';
 
       db.ref(`incidents/${activeModalIncidentId}`).update({
-        address: newAddress,
-        type: newType,
-        assignedUnits: sortedSelectedUnits,
-        status: newStatus
+        address: newAddress, type: newType, assignedUnits: sortedSelectedUnits, status: newStatus
       });
 
       sortedSelectedUnits.forEach(uId => {
-        db.ref(`units/${uId}`).update({
-          status: 'DISPATCHED',
-          lastUpdated: Date.now()
-        });
+        db.ref(`units/${uId}`).update({ status: 'DISPATCHED', lastUpdated: Date.now() });
       });
 
       const shortLogDisplay = formatAssignedShortIds(sortedSelectedUnits);
-
       db.ref(`incidents/${activeModalIncidentId}/logs`).push({
         author: 'DISPATCH',
         text: `Units dispatched in category tier order: [${shortLogDisplay}]. Call status set to ${newStatus}.`,
@@ -4047,9 +3609,7 @@
     }
 
     function closeEditModal() {
-      if (activeModalIncidentId) {
-        db.ref(`incidents/${activeModalIncidentId}`).off();
-      }
+      if (activeModalIncidentId) db.ref(`incidents/${activeModalIncidentId}`).off();
       activeModalIncidentId = null;
       document.getElementById('editCallModal').style.display = 'none';
       if (modalEditMarker && modalEditMap) {
@@ -4063,18 +3623,11 @@
       if (!activeModalIncidentId) return;
       if (confirm("Clear and archive this incident? Assigned units will automatically be set to AVAILABLE.")) {
         const id = activeModalIncidentId;
-        
         db.ref(`incidents/${id}`).once('value', (snapshot) => {
           const callData = snapshot.val();
           if (callData) {
             const assignedUnits = Array.isArray(callData.assignedUnits) ? callData.assignedUnits : Object.values(callData.assignedUnits || {});
-
-            assignedUnits.forEach(uId => {
-              db.ref(`units/${uId}`).update({
-                status: 'AVAILABLE',
-                lastUpdated: Date.now()
-              });
-            });
+            assignedUnits.forEach(uId => db.ref(`units/${uId}`).update({ status: 'AVAILABLE', lastUpdated: Date.now() }));
 
             db.ref(`incidents/${id}/logs`).push({
               author: 'CAD SYSTEM',
@@ -4083,11 +3636,7 @@
             });
 
             db.ref(`incidents/${id}`).once('value', (finalSnap) => {
-              db.ref('pastIncidents').push({
-                ...finalSnap.val(),
-                clearedAt: Date.now()
-              });
-
+              db.ref('pastIncidents').push({ ...finalSnap.val(), clearedAt: Date.now() });
               db.ref(`incidents/${id}`).remove();
               closeEditModal();
               alert("Incident cleared! Assigned units returned to AVAILABLE.");
@@ -4102,24 +3651,12 @@
     function postModalLog() {
       const text = document.getElementById('modalLogInput').value.trim();
       if (!text || !activeModalIncidentId) return;
-
-      db.ref(`incidents/${activeModalIncidentId}/logs`).push({
-        author: 'COMMAND',
-        text: text,
-        timestamp: Date.now()
-      });
-
+      db.ref(`incidents/${activeModalIncidentId}/logs`).push({ author: 'COMMAND', text, timestamp: Date.now() });
       document.getElementById('modalLogInput').value = '';
     }
 
-    function openStationModal() {
-      document.getElementById('stationModal').style.display = 'flex';
-      initMap();
-    }
-
-    function closeStationModal() {
-      document.getElementById('stationModal').style.display = 'none';
-    }
+    function openStationModal() { document.getElementById('stationModal').style.display = 'flex'; initMap(); }
+    function closeStationModal() { document.getElementById('stationModal').style.display = 'none'; }
   </script>
 </body>
 </html>
